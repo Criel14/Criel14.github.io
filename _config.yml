@@ -1,0 +1,8 @@
+# 标题
+title: Heloooo World
+# 描述
+description: This is a test website
+# 主题风格
+theme: jekyll-theme-primer
+# markdown增强功能
+markdown: kramdown
