@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Welcome</title>
+    <title>欢迎界面</title>
     <style>
         body {
             background-color: #f0f0f0;
@@ -13,13 +13,33 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            flex-direction: column;
         }
         h1 {
             color: #333;
         }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 20px;
+            color: #fff;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
-    <h1>Hello World</h1>
+    <h1>欢迎来到我们的网站！</h1>
+    <button onclick="alert('欢迎！')">点击这里</button>
+    <script>
+        function alertWelcome() {
+            alert('欢迎使用我们的网站！');
+        }
+    </script>
 </body>
 </html>
