@@ -2,44 +2,45 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Welcome</title>
+    <title>Criel</title>
     <style>
         body {
-            background-color: #f0f0f0;
-            font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
+            background-color: #ffffff;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             flex-direction: column;
         }
-        h1 {
-            color: #333;
+        .hello {
+            font-size: 72px;
+            font-weight: bold;
+            color: #61e6ba;
+            margin-bottom: 50px;
         }
-        button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 20px;
-            color: #fff;
-            background-color: #007BFF;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
+        .icon-container {
+            display: flex;
         }
-        button:hover {
-            background-color: #0056b3;
+        .icon {
+            width: 30px;
+            height: 30px;
+            background-color: #bfe9ff;
+            margin: 0 10px;
+            border-radius: 50%; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
     </style>
 </head>
 <body>
-    <h1>欢迎欢迎欢迎欢迎欢迎</h1>
-    <button onclick="alert('欢迎！')">点击这里</button>
-    <script>
-        function alertWelcome() {
-            alert('欢迎进入网站！');
-        }
-    </script>
+    <div class="hello">Hello</div>
+    <div class="icon-container">
+        <div class="icon"></div>
+        <div class="icon"></div>
+        <div class="icon"></div>
+    </div>
 </body>
 </html>
