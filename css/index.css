@@ -1,0 +1,95 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+}
+
+.menu {
+    width: 24%;
+    height: 100%;
+    /* border-color: black;
+    border-width: 2px;
+    border-style: solid; */
+}
+
+.main {
+    width: 50%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* border-color: black;
+    border-width: 2px;
+    border-style: solid; */
+}
+
+.data {
+    width: 24%;
+    height: 100%;
+    /* border-color: black;
+    border-width: 2px;
+    border-style: solid; */
+}
+
+.puzzle-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.puzzle {
+    width: 500px;
+    height: 500px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+    margin-bottom: 20px;
+}
+
+.shuffleButton {
+    margin-top: 40px;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+}
+
+.tile {
+    width: 120px;
+    height: 120px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+    color: white;
+    font-weight: bold;
+    font-size: 56px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+
+/* 旋转动画 */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spin-animation {
+    animation: spin 0.3s linear;
+}
