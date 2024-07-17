@@ -1,7 +1,25 @@
-const puzzle = document.getElementById("puzzle"); // 获取拼图容器的引用
-const shuffleButton = document.getElementById("shuffleButton"); // 获取打乱按钮的引用
-let size = 4; // 定义拼图的阶数（边长）
-let tiles = []; // 用于存储拼图块的数组
+// 获取拼图容器的引用
+const puzzle = document.getElementById("puzzle");
+// 获取打乱按钮的引用
+const shuffleButton = document.getElementById("shuffleButton");
+// 获取计时器的引用
+const timerElement = document.getElementById("timer");
+// 获取步数的引用
+const stepElement = document.getElementById("step");
+// 获取TPS的引用
+const tpsElement = document.getElementById("tps");
+// 定义拼图的阶数（边长）
+let size = 4;
+// 用于存储拼图块的数组
+let tiles = [];
+// 计时
+let timerInterval;
+let timeEclapsed = 0;
+// 是否开始还原
+let isMoving = false;
+// 步数
+let step = 0;
+
 
 // 颜色字典，按层降阶，即从左上到右下
 const colorMap = {
@@ -45,16 +63,20 @@ function getColor(number) {
 
 // 创建并初始化拼图块
 function createTiles() {
+    // 清除计时
+    resetTimer();
+    // 重置步数
+    step = 0;
     // 生成数组并打乱
     scramble();
     // 渲染拼图块
     renderTiles();
 
     // 旋转动画
-    this.classList.add('spin-animation');
+    shuffleButton.classList.add('spin-animation');
     // 在动画结束后移除动画类，以便下次点击时可以再次触发动画
     setTimeout(() => {
-        this.classList.remove('spin-animation');
+        shuffleButton.classList.remove('spin-animation');
     }, 300); // 这里的1000是动画持续时间，单位是毫秒
 }
 
@@ -67,7 +89,7 @@ function scramble() {
         // 随机打乱
         tiles = Array.from({ length: size * size }, (_, i) => i).sort(() => Math.random() - 0.5);
         // 计算0的行号和列号
-        zeroIndex = tiles.findIndex(i => i === 0);
+        zeroIndex = tiles.indexOf(0);
         // 判断（总逆序数 + 0的行号 + 0的列号）与 N 是否不同奇偶 => 奇偶相加必为奇
         if ((countInversions(tiles) + Math.floor(zeroIndex / size) + zeroIndex % size + size) % 2 == 1) {
             break;
@@ -92,32 +114,103 @@ function renderTiles() {
             tileElement.textContent = tile; // 设置拼图块的文本
             tileElement.style.backgroundColor = getColor(tile); // 设置拼图块的背景颜色
             // 为拼图块添加鼠标移入事件监听器
-            tileElement.addEventListener("mouseover", () => moveTile(index));
+            tileElement.addEventListener("mouseover", () => moveTileMouse(index));
         }
         puzzle.appendChild(tileElement); // 将拼图块添加到拼图容器中
     });
 }
 
-// 移动拼图块
-function moveTile(index) {
-    const emptyIndex = tiles.indexOf(0); // 找到空白块的位置
-    const [x1, y1] = [index % size, Math.floor(index / size)]; // 计算当前拼图块的坐标
-    const [x2, y2] = [emptyIndex % size, Math.floor(emptyIndex / size)]; // 计算空白块的坐标
+// 鼠标移动方法
+function moveTileMouse(index) {
+    let zeroIndex = tiles.indexOf(0); // 找到空白块的位置
+    const [line1, row1] = [index % size, Math.floor(index / size)]; // 计算当前拼图块的坐标
+    const [line0, row0] = [zeroIndex % size, Math.floor(zeroIndex / size)]; // 计算空白块的坐标
 
-    // 如果当前拼图块与空白块相邻
-    if (Math.abs(x1 - x2) + Math.abs(y1 - y2) === 1) {
-        // 交换当前拼图块与空白块的位置
-        [tiles[index], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[index]];
-        renderTiles(); // 重新渲染拼图块
-        checkWin(); // 检查是否拼图成功
+
+    // 移动整行或整列，flag为移动一块后，空白快位置的偏移量
+    function move(flag) {
+        while (index != zeroIndex) {
+            [tiles[zeroIndex], tiles[zeroIndex + flag]] = [tiles[zeroIndex + flag], tiles[zeroIndex]];
+            step++;
+            zeroIndex += flag;
+        }
     }
+
+    // 当前块与空白块在同一行
+    if (row1 == row0 && line1 != line0) {
+        move(line1 < line0 ? -1 : 1); // 左为-1，右为1
+        // 首次移动启用计时器
+        startTimer();
+    }
+    // 当前块与空白块在同一列
+    else if (line1 == line0 && row1 != row0) {
+        move(row1 < row0 ? -size : size); // 上为-size，下为size
+        // 首次移动启用计时器
+        startTimer();
+    }
+
+    // 重新渲染拼图块
+    renderTiles();
+    // 检查是否拼图成功
+    checkWin();
 }
+
+// 键盘移动方法
+// 传入参数：up、down、left、right
+function moveTileKeyboard(direction) {
+    // 获取空白快的坐标
+    zeroIndex = tiles.indexOf(0);
+    const [line0, row0] = [zeroIndex % size, Math.floor(zeroIndex / size)];
+    switch (direction) {
+        case "up":
+            if (row0 <= size - 2) {
+                [tiles[zeroIndex], tiles[zeroIndex + size]] = [tiles[zeroIndex + size], tiles[zeroIndex]];
+                step++;
+                // 首次移动启用计时器
+                startTimer();
+            }
+            break;
+        case "down":
+            if (row0 >= 1) {
+                [tiles[zeroIndex], tiles[zeroIndex - size]] = [tiles[zeroIndex - size], tiles[zeroIndex]];
+                step++;
+                // 首次移动启用计时器
+                startTimer();
+            }
+            break;
+        case "left":
+            if (line0 <= size - 2) {
+                [tiles[zeroIndex], tiles[zeroIndex + 1]] = [tiles[zeroIndex + 1], tiles[zeroIndex]];
+                step++;
+                // 首次移动启用计时器
+                startTimer();
+            }
+            break;
+        case "right":
+            if (line0 >= 1) {
+                [tiles[zeroIndex], tiles[zeroIndex - 1]] = [tiles[zeroIndex - 1], tiles[zeroIndex]];
+                step++;
+                // 首次移动启用计时器
+                startTimer();
+            }
+            break;
+        default:
+            break;
+    }
+    // 重新渲染拼图块
+    renderTiles();
+    // 检查是否拼图成功
+    checkWin();
+}
+
+
 
 // 检查是否拼图成功
 function checkWin() {
     // 如果拼图块按顺序排列
     if (tiles.slice(0, -1).every((tile, i) => tile === i + 1)) {
-        alert("You win!"); // 弹出胜利提示
+        clearInterval(timerInterval); // 停止计时器
+        // alert("You win!"); // 弹出胜利提示
     }
 }
 
@@ -184,7 +277,6 @@ function countInversions(originalArr) {
 }
 
 
-
 // 当整个HTML文档加载完毕后执行以下代码
 document.addEventListener("DOMContentLoaded", () => {
     // 为打乱按钮添加点击事件监听器
@@ -195,21 +287,87 @@ document.addEventListener("DOMContentLoaded", () => {
 // 为页面添加按键监听
 document.addEventListener('keydown', function (event) {
     switch (event.key) {
-        case 'ArrowUp':
+        case '>':
+            // 升阶
             if (size < 10) {
                 console.log("阶数增加");
                 size++;
                 createTiles();
             }
             break;
-        case 'ArrowDown':
+        case '<':
+            // 降阶
             if (size > 2) {
                 console.log("阶数减少");
                 size--;
                 createTiles();
             }
             break;
+        case ' ':
+            // 打乱
+            createTiles();
+            break;
+        case 'w':
+        case "ArrowUp":
+            // 向上移动
+            moveTileKeyboard("up");
+            break;
+        case 's':
+        case "ArrowDown":
+            // 向下移动
+            moveTileKeyboard("down");
+            break;
+        case 'a':
+        case "ArrowLeft":
+            // 向左移动
+            moveTileKeyboard("left");
+            break;
+        case 'd':
+        case "ArrowRight":
+            // 向右移动
+            moveTileKeyboard("right");
+            break;
         default:
             break;
     }
 });
+
+// 开始计时
+function startTimer() {
+    // 首次移动后开始计时
+    if (!isMoving) {
+        clearInterval(timerInterval);
+        timeEclapsed = 0;
+        updateTimerAndStep();
+        timerInterval = setInterval(() => {
+            timeEclapsed += 10;
+            updateTimerAndStep();
+        }, 10);
+        isMoving = true;
+    }
+}
+
+// 更新计时器显示
+function updateTimerAndStep() {
+    const seconds = Math.floor(timeEclapsed / 1000);
+    const milliseconds = timeEclapsed % 1000;
+    // 格式化时间，保留2位小数
+    let time = `${seconds}.${milliseconds}`;
+    let formattedTime = parseFloat(time).toFixed(2);
+    timerElement.textContent = `Time: ${formattedTime}`;
+    stepElement.textContent = `Step: ${step}`;
+    // 计算tps，保留3位小数
+    let tps = 0;
+    if (timeEclapsed != 0) {
+        tps = (step / (timeEclapsed / 1000)).toFixed(2);
+    }
+    tpsElement.textContent = `TPS: ${tps}`;
+}
+
+// 清除计时
+function resetTimer() {
+    clearInterval(timerInterval);
+    timeEclapsed = 0;
+    updateTimerAndStep();
+    isMoving = false;
+}

@@ -15,30 +15,21 @@ body {
 }
 
 .menu {
-    width: 24%;
+    width: 29%;
     height: 100%;
-    /* border-color: black;
-    border-width: 2px;
-    border-style: solid; */
 }
 
 .main {
-    width: 50%;
+    width: 40%;
     height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
-    /* border-color: black;
-    border-width: 2px;
-    border-style: solid; */
 }
 
 .data {
-    width: 24%;
+    width: 29%;
     height: 100%;
-    /* border-color: black;
-    border-width: 2px;
-    border-style: solid; */
 }
 
 .puzzle-container {
@@ -92,4 +83,28 @@ body {
 
 .spin-animation {
     animation: spin 0.3s linear;
+}
+
+#timer{
+    font-size: 64px;
+    font-weight: bold;
+    display: block;
+    margin-top: 40%;
+    margin-left: 5%;
+}
+
+#step{
+    font-size: 64px;
+    font-weight: bold;
+    display: block;
+    margin-top: 30px;
+    margin-left: 5%;
+}
+
+#tps{
+    font-size: 64px;
+    font-weight: bold;
+    display: block;
+    margin-top: 30px;
+    margin-left: 5%;
 }
