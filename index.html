@@ -4,17 +4,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>15 Puzzle Game</title>
+    <title>Puzzle Game</title>
     <link rel="stylesheet" href="css/index.css">
 </head>
 
 <body>
     <div class="container">
-        <div class="menu"></div>
+        <div class="menu">
+            <span id="level">4&times;4</span>
+            <div id="level-up" class="level-up">
+                <img src="image/increase.png" alt="increase" width="40px" height="40px" title="增加阶数（ > ）">
+            </div>
+            <div id="level-down" class="level-down">
+                <img src="image/decrease.png" alt="decrease" width="40px" height="40px" title="减少阶数（ < ）">
+            </div>
+            <div id="level-down" class="level-down"></div>
+        </div>
         <div class="main">
             <div class="puzzle-container">
                 <div class="puzzle" id="puzzle"></div>
-                <img src="image/reflesh.png" alt="reflesh" id="shuffleButton" class="shuffleButton">
+                <img src="image/reflesh.png" alt="reflesh" id="shuffleButton" class="shuffleButton" title="刷新打乱（空格）">
             </div>
         </div>
         <div class="data">
@@ -22,7 +31,8 @@
             <span id="step">0</span>
             <span id="tps">0</span>
             <div class="switch-data">
-                <img src="image/switch.png" alt="switch" id="switch-data" width="44px" height="44px">
+                <img src="image/switch.png" alt="switch" id="switch-data" width="44px" height="44px"
+                    title="切换显示模式（ / ）">
             </div>
         </div>
     </div>

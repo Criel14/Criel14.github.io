@@ -1,15 +1,20 @@
-// 获取拼图容器的引用
+// 引用拼图荣去
 const puzzle = document.getElementById("puzzle");
-// 获取打乱按钮的引用
+// 引用打乱按钮
 const shuffleButton = document.getElementById("shuffleButton");
-// 获取计时器的引用
+// 引用计时器
 const timerElement = document.getElementById("timer");
-// 获取步数的引用
+// 引用步数
 const stepElement = document.getElementById("step");
-// 获取TPS的引用
+// 引用TPS
 const tpsElement = document.getElementById("tps");
-// 获取切换数据显示按钮的引用
+// 引用切换数据显示按钮
 const switchDataElement = document.getElementById("switch-data");
+// 引用阶数显示
+const levelShowElement = document.getElementById("level");
+// 引用阶数增加和减少按钮
+const levelUpElement = document.getElementById("level-up");
+const levelDownElement = document.getElementById("level-down");
 // 定义拼图的阶数（边长）
 let size = 4;
 // 用于存储拼图块的数组
@@ -22,7 +27,7 @@ let isMoving = false;
 // 步数
 let step = 0;
 // 数据显示模式：是否显示提示信息：例如显示 ”步数：98“ 还是 ”98“
-let showTip = true;
+let showTip = false;
 
 
 // 颜色字典，按层降阶，即从左上到右下
@@ -67,10 +72,10 @@ function getColor(number) {
 
 // 创建并初始化拼图块
 function createTiles() {
-    // 清除计时
-    resetTimer();
     // 重置步数
     step = 0;
+    // 清除计时
+    resetTimer();
     // 生成数组并打乱
     scramble();
     // 渲染拼图块
@@ -285,6 +290,9 @@ function countInversions(originalArr) {
 document.addEventListener("DOMContentLoaded", () => {
     // 为打乱按钮添加点击事件监听器
     shuffleButton.addEventListener("click", createTiles);
+    // 为阶数按钮添加监听
+    levelUpElement.addEventListener("click", increaseSize);
+    levelDownElement.addEventListener("click", decreaseSize);
     // 为switchDataElement添加监听
     switchDataElement.addEventListener("click", switswitchDataView);
     createTiles(); // 初始化拼图
@@ -296,20 +304,12 @@ document.addEventListener('keydown', function (event) {
         case '.':
         case '>':
             // 升阶
-            if (size < 10) {
-                console.log("阶数增加");
-                size++;
-                createTiles();
-            }
+            increaseSize();
             break;
         case ',':
         case '<':
             // 降阶
-            if (size > 2) {
-                console.log("阶数减少");
-                size--;
-                createTiles();
-            }
+            decreaseSize();
             break;
         case '/':
         case '?':
@@ -406,4 +406,24 @@ function switswitchDataView() {
         showTip = true;
     }
     updateTimerAndStep();
+}
+
+// 增加阶数
+function increaseSize() {
+    if (size < 10) {
+        console.log("阶数增加");
+        size++;
+        levelShowElement.textContent = size + "×" + size;
+        createTiles();
+    }
+}
+
+// 减少阶数
+function decreaseSize() {
+    if (size > 2) {
+        console.log("阶数减少");
+        size--;
+        levelShowElement.textContent = size + "×" + size;
+        createTiles();
+    }
 }
