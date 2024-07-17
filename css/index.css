@@ -85,7 +85,7 @@ body {
     animation: spin 0.3s linear;
 }
 
-#timer{
+#timer {
     font-size: 64px;
     font-weight: bold;
     display: block;
@@ -93,7 +93,7 @@ body {
     margin-left: 5%;
 }
 
-#step{
+#step {
     font-size: 64px;
     font-weight: bold;
     display: block;
@@ -101,10 +101,30 @@ body {
     margin-left: 5%;
 }
 
-#tps{
+#tps {
     font-size: 64px;
     font-weight: bold;
     display: block;
     margin-top: 30px;
     margin-left: 5%;
+}
+
+.switch-data {
+    width: 70px;
+    height: 60px;
+    background-color: rgb(250, 250, 250);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    margin-top: 50px;
+    margin-left: 5%;
+}
+
+.switch-data:hover {
+    background-color: rgb(244, 244, 244);
+    transition: 0.3s;
 }

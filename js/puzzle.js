@@ -8,6 +8,8 @@ const timerElement = document.getElementById("timer");
 const stepElement = document.getElementById("step");
 // 获取TPS的引用
 const tpsElement = document.getElementById("tps");
+// 获取切换数据显示按钮的引用
+const switchDataElement = document.getElementById("switch-data");
 // 定义拼图的阶数（边长）
 let size = 4;
 // 用于存储拼图块的数组
@@ -19,6 +21,8 @@ let timeEclapsed = 0;
 let isMoving = false;
 // 步数
 let step = 0;
+// 数据显示模式：是否显示提示信息：例如显示 ”步数：98“ 还是 ”98“
+let showTip = true;
 
 
 // 颜色字典，按层降阶，即从左上到右下
@@ -281,12 +285,15 @@ function countInversions(originalArr) {
 document.addEventListener("DOMContentLoaded", () => {
     // 为打乱按钮添加点击事件监听器
     shuffleButton.addEventListener("click", createTiles);
+    // 为switchDataElement添加监听
+    switchDataElement.addEventListener("click", switswitchDataView);
     createTiles(); // 初始化拼图
 });
 
 // 为页面添加按键监听
 document.addEventListener('keydown', function (event) {
     switch (event.key) {
+        case '.':
         case '>':
             // 升阶
             if (size < 10) {
@@ -295,6 +302,7 @@ document.addEventListener('keydown', function (event) {
                 createTiles();
             }
             break;
+        case ',':
         case '<':
             // 降阶
             if (size > 2) {
@@ -303,26 +311,34 @@ document.addEventListener('keydown', function (event) {
                 createTiles();
             }
             break;
+        case '/':
+        case '?':
+            switswitchDataView();
+            break;
         case ' ':
             // 打乱
             createTiles();
             break;
         case 'w':
+        case 'W':
         case "ArrowUp":
             // 向上移动
             moveTileKeyboard("up");
             break;
         case 's':
+        case 'S':
         case "ArrowDown":
             // 向下移动
             moveTileKeyboard("down");
             break;
         case 'a':
+        case 'A':
         case "ArrowLeft":
             // 向左移动
             moveTileKeyboard("left");
             break;
         case 'd':
+        case 'D':
         case "ArrowRight":
             // 向右移动
             moveTileKeyboard("right");
@@ -347,21 +363,30 @@ function startTimer() {
     }
 }
 
-// 更新计时器显示
+// 更新计时器、步数、TPS显示
 function updateTimerAndStep() {
     const seconds = Math.floor(timeEclapsed / 1000);
     const milliseconds = timeEclapsed % 1000;
     // 格式化时间，保留2位小数
     let time = `${seconds}.${milliseconds}`;
     let formattedTime = parseFloat(time).toFixed(2);
-    timerElement.textContent = `Time: ${formattedTime}`;
-    stepElement.textContent = `Step: ${step}`;
     // 计算tps，保留3位小数
     let tps = 0;
     if (timeEclapsed != 0) {
         tps = (step / (timeEclapsed / 1000)).toFixed(2);
     }
-    tpsElement.textContent = `TPS: ${tps}`;
+    // 显示数据
+    timerElement.textContent = ``;
+    stepElement.textContent = ``;
+    tpsElement.textContent = ``;
+    if (showTip == true) {
+        timerElement.textContent += `Time: `;
+        stepElement.textContent += `Step: `;
+        tpsElement.textContent += `TPS: `;
+    }
+    timerElement.textContent += `${formattedTime}`;
+    stepElement.textContent += `${step}`;
+    tpsElement.textContent += `${tps}`;
 }
 
 // 清除计时
@@ -370,4 +395,15 @@ function resetTimer() {
     timeEclapsed = 0;
     updateTimerAndStep();
     isMoving = false;
+}
+
+// 数据显示模式
+function switswitchDataView() {
+    if (showTip == true) {
+        showTip = false;
+    }
+    else {
+        showTip = true;
+    }
+    updateTimerAndStep();
 }
