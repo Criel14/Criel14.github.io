@@ -220,6 +220,14 @@ function checkWin() {
     if (tiles.slice(0, -1).every((tile, i) => tile === i + 1)) {
         clearInterval(timerInterval); // 停止计时器
         // alert("You win!"); // 弹出胜利提示
+
+        // 记录成绩
+        const score = {
+            time: parseFloat(timerElement.textContent),
+            step: step,
+            tps: parseFloat(tpsElement.textContent)
+        };
+        saveScore(score);
     }
 }
 
@@ -426,4 +434,14 @@ function decreaseSize() {
         levelShowElement.textContent = size + "×" + size;
         createTiles();
     }
+}
+
+// 保存成绩
+function saveScore(score) {
+    // 获取现有成绩列表
+    let scores = JSON.parse(localStorage.getItem('scores')) || [];
+    // 添加新成绩
+    scores.push(score);
+    // 保存回 localStorage
+    localStorage.setItem('scores', JSON.stringify(scores));
 }

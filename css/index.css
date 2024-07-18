@@ -116,6 +116,7 @@ body {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
     border-radius: 8px;
     display: flex;
+    float: left;
     justify-content: center;
     align-items: center;
     cursor: pointer;
@@ -125,6 +126,27 @@ body {
 }
 
 .switch-data:hover {
+    background-color: rgb(244, 244, 244);
+    transition: 0.3s;
+}
+
+.score-list {
+    width: 70px;
+    height: 60px;
+    background-color: rgb(250, 250, 250);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
+    border-radius: 8px;
+    display: flex;
+    float: left;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    margin-top: 50px;
+    margin-left: 5%;
+}
+
+.score-list:hover {
     background-color: rgb(244, 244, 244);
     transition: 0.3s;
 }
