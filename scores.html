@@ -1,28 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>成绩列表</title>
-    <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 10px;
-            border: 1px solid #ddd;
-        }
-        th {
-            background-color: #f4f4f4;
-        }
-    </style>
+    <link rel="stylesheet" href="css/scoreList.css">
 </head>
+
 <body>
-    <h1>成绩列表</h1>
+    <br>
     <table>
         <thead>
             <tr>
+                <th>阶数</th>
                 <th>时间 (秒)</th>
                 <th>步数</th>
                 <th>TPS</th>
@@ -31,18 +22,7 @@
         <tbody id="scores-tbody">
         </tbody>
     </table>
-    <script>
-        // 读取成绩并显示
-        document.addEventListener("DOMContentLoaded", () => {
-            const scores = JSON.parse(localStorage.getItem('scores')) || [];
-            const tbody = document.getElementById('scores-tbody');
-
-            scores.forEach(score => {
-                const row = document.createElement('tr');
-                row.innerHTML = `<td>${score.time}</td><td>${score.step}</td><td>${score.tps}</td>`;
-                tbody.appendChild(row);
-            });
-        });
-    </script>
+    <script src="js/scoreList.js"></script>
 </body>
+
 </html>

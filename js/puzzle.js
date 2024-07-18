@@ -223,6 +223,7 @@ function checkWin() {
 
         // 记录成绩
         const score = {
+            size: size,
             time: parseFloat(timerElement.textContent),
             step: step,
             tps: parseFloat(tpsElement.textContent)
