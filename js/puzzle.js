@@ -352,6 +352,11 @@ document.addEventListener('keydown', function (event) {
             // 向右移动
             moveTileKeyboard("right");
             break;
+        case "l":
+        case "L":
+            // 跳转到成绩列表页
+            window.location.href = "scoreList.html";
+            break;
         default:
             break;
     }
@@ -441,7 +446,30 @@ function decreaseSize() {
 function saveScore(score) {
     // 获取现有成绩列表
     let scores = JSON.parse(localStorage.getItem('scores')) || [];
-    // 添加新成绩
+    // 计算5次平均
+    if (scores.length >= 4) {
+        let sum5 = parseFloat(score.time);
+        for (i = 1; i <= 4; i++) {
+            sum5 += parseFloat(scores[scores.length - i].time);
+            score.ao5 = (sum5 / 5).toFixed(2);
+        }
+    }
+    else {
+        score.ao5 = "--";
+    }
+    // 计算12次平均
+    if (scores.length >= 11) {
+        let sum12 = parseFloat(score.time);
+        for (i = 1; i <= 11; i++) {
+            sum12 += parseFloat(scores[scores.length - i].time);
+        }
+        score.ao12 = (sum12 / 12).toFixed(2);
+    }
+    else {
+        score.ao12 = "--";
+    }
+
+    // 添加新成绩（添加在列表的最后）
     scores.push(score);
     // 保存回 localStorage
     localStorage.setItem('scores', JSON.stringify(scores));

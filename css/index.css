@@ -198,3 +198,23 @@ body {
     background-color: rgb(244, 244, 244);
     transition: 0.3s;
 }
+
+.about {
+    width: 70px;
+    height: 60px;
+    background-color: rgb(250, 250, 250);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    margin-top: 30px;
+    margin-left: 40%;
+}
+
+.about:hover {
+    background-color: rgb(244, 244, 244);
+    transition: 0.3s;
+}
