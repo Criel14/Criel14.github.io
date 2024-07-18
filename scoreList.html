@@ -13,17 +13,25 @@
     <table>
         <thead>
             <tr>
-                <th>阶数</th>
+                <th id="size-info">3阶</th>
                 <th>时间 (秒)</th>
                 <th>步数</th>
                 <th>TPS</th>
-                <th>ao5</th>
-                <th>ao12</th>
+                <th>ao5 (秒)</th>
+                <th>ao12 (秒)</th>
             </tr>
         </thead>
         <tbody id="scores-tbody">
         </tbody>
     </table>
+
+    <div id="overlay" class="hidden">
+        <div id="overlay-content">
+            <p id="scramble-text">This is the overlay content.</p>
+            <button onclick="hideOverlay()">Close</button>
+        </div>
+    </div>
+
     <script src="js/scoreList.js"></script>
 </body>
 

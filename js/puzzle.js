@@ -19,6 +19,8 @@ const levelDownElement = document.getElementById("level-down");
 let size = 4;
 // 用于存储拼图块的数组
 let tiles = [];
+// 用于存储拼图块本次打乱的数组
+let scrambleTiles = [];
 // 计时
 let timerInterval;
 let timeEclapsed = 0;
@@ -104,6 +106,7 @@ function scramble() {
             break;
         }
     }
+    scrambleTiles = Array.from(tiles);
 }
 
 
@@ -224,9 +227,10 @@ function checkWin() {
         // 记录成绩
         const score = {
             size: size,
-            time: parseFloat(timerElement.textContent),
+            time: parseFloat(timerElement.textContent).toFixed(2),
             step: step,
-            tps: parseFloat(tpsElement.textContent)
+            tps: parseFloat(tpsElement.textContent).toFixed(2),
+            scramble: scrambleTiles.toString()
         };
         saveScore(score);
     }
@@ -444,26 +448,34 @@ function decreaseSize() {
 
 // 保存成绩
 function saveScore(score) {
-    // 获取现有成绩列表
+    // 获取现有总成绩列表
     let scores = JSON.parse(localStorage.getItem('scores')) || [];
+    // 获取当前阶数的成绩列表
+    let currentSizeScores = scores.filter(score => score.size == size);
+    // 计算序号
+    if (currentSizeScores.length == 0) {
+        score.number = 1;
+    } else {
+        score.number = currentSizeScores[currentSizeScores.length - 1].number + 1;
+    }
     // 计算5次平均
-    if (scores.length >= 4) {
-        let sum5 = parseFloat(score.time);
+    if (currentSizeScores.length >= 4) {
+        let tempList = [parseFloat(score.time)];
         for (i = 1; i <= 4; i++) {
-            sum5 += parseFloat(scores[scores.length - i].time);
-            score.ao5 = (sum5 / 5).toFixed(2);
+            tempList.push(parseFloat(currentSizeScores[currentSizeScores.length - i].time));
+            score.ao5 = averageOfList(tempList);
         }
     }
     else {
         score.ao5 = "--";
     }
     // 计算12次平均
-    if (scores.length >= 11) {
-        let sum12 = parseFloat(score.time);
+    if (currentSizeScores.length >= 11) {
+        let tempList = [parseFloat(score.time)];
         for (i = 1; i <= 11; i++) {
-            sum12 += parseFloat(scores[scores.length - i].time);
+            tempList.push(parseFloat(currentSizeScores[currentSizeScores.length - i].time));
+            score.ao12 = averageOfList(tempList);
         }
-        score.ao12 = (sum12 / 12).toFixed(2);
     }
     else {
         score.ao12 = "--";
@@ -473,4 +485,14 @@ function saveScore(score) {
     scores.push(score);
     // 保存回 localStorage
     localStorage.setItem('scores', JSON.stringify(scores));
+}
+
+// 计算一个列表的去尾平均
+function averageOfList(list) {
+    list.sort();
+    let sum = 0
+    for (i = 1; i <= list.length - 2; i++) {
+        sum += list[i];
+    }
+    return (sum / (list.length - 2)).toFixed(2);
 }
