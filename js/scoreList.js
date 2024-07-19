@@ -15,6 +15,14 @@ let gameModeList = ["normal", "blind"];
 let gameMode = "normal";
 
 function displayScores(size) {
+    // 修改背景颜色
+    if (gameMode == "normal") {
+        document.body.style.backgroundColor = "#f0f0f0";
+    }
+    else if (gameMode == "blind") {
+        document.body.style.backgroundColor = "#e6e9f1";
+    }
+
     // 修改表头
     sizeInfoElement.innerHTML = `${size}阶` + "-" + gameMode + "&nbsp;&nbsp;⇋";
     tableHead.addEventListener("click", switchGameMode);

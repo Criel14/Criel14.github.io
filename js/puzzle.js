@@ -93,6 +93,13 @@ function getColor(number) {
 
 // 创建并初始化拼图块
 function createTiles() {
+    // 修改背景颜色
+    if (gameMode == "normal") {
+        document.body.style.backgroundColor = "#f0f0f0";
+    }
+    else if (gameMode == "blind") {
+        document.body.style.backgroundColor = "#e6e9f1";
+    }
     isFinish = false;
     isMoving = false;
     // 重置步数

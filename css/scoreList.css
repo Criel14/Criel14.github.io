@@ -1,10 +1,41 @@
 body {
-    background-color: rgb(237, 237, 237);
+    background-color: #e6e9f1;
+}
+
+
+.menu {
+    background-color: #f4f4f4;
+    padding: 20px 10% 20px 10%;
+}
+
+.main {
+    flex-grow: 1;
+    padding: 20px;
+}
+
+.menu-button {
+    width: 70px;
+    height: 60px;
+    background-color: rgb(250, 250, 250);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
+    border-radius: 8px;
+    display: flex;
+    float: left;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    margin-left: 20px;
+}
+
+.menu-button:hover {
+    background-color: rgb(244, 244, 244);
+    transition: 0.3s;
 }
 
 table {
     width: 80%;
-    margin: 15px auto;
+    margin: 20px auto;
     border-collapse: collapse;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);

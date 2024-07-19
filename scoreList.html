@@ -9,21 +9,34 @@
 </head>
 
 <body>
-    <br>
-    <table>
-        <thead>
-            <tr id="scores-head">
-                <th id="size-info">3阶</th>
-                <th>时间 (秒)</th>
-                <th>步数</th>
-                <th>TPS</th>
-                <th>ao5 (秒)</th>
-                <th>ao12 (秒)</th>
-            </tr>
-        </thead>
-        <tbody id="scores-tbody">
-        </tbody>
-    </table>
+    <div class="menu">
+        <div class="menu-button" title="回到游戏页">
+            <img src="image/back.png" alt="switch" id="menu-button" width="44px" height="44px">
+        </div>
+        <div class="menu-button" title="增加阶数（ > ）">
+            <img src="image/increase.png" alt="switch" id="menu-button" width="44px" height="44px">
+        </div>
+        <div class="menu-button" title="减少阶数（ < ）">
+            <img src="image/decrease.png" alt="switch" id="menu-button" width="44px" height="44px">
+        </div>
+    </div>
+    <div class="main">
+        <br>
+        <table>
+            <thead>
+                <tr id="scores-head">
+                    <th id="size-info">3阶</th>
+                    <th>时间 (秒)</th>
+                    <th>步数</th>
+                    <th>TPS</th>
+                    <th>ao5 (秒)</th>
+                    <th>ao12 (秒)</th>
+                </tr>
+            </thead>
+            <tbody id="scores-tbody">
+            </tbody>
+        </table>
+    </div>
 
     <div id="overlay" class="hidden" onclick="hideOverlay()">
         <div id="overlay-content">
