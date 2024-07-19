@@ -1,4 +1,4 @@
-// 引用拼图荣去
+// 引用拼图容器
 const puzzle = document.getElementById("puzzle");
 // 引用打乱按钮
 const shuffleButton = document.getElementById("shuffleButton");
@@ -30,6 +30,8 @@ let isMoving = false;
 let step = 0;
 // 数据显示模式：是否显示提示信息：例如显示 ”步数：98“ 还是 ”98“
 let showTip = false;
+// 点击或滑动或键盘:click,slide,keyboard
+let moveMode = "slide";
 
 
 // 颜色字典，按层降阶，即从左上到右下
@@ -125,8 +127,13 @@ function renderTiles() {
         if (tile !== 0) { // 如果拼图块不是空白块
             tileElement.textContent = tile; // 设置拼图块的文本
             tileElement.style.backgroundColor = getColor(tile); // 设置拼图块的背景颜色
-            // 为拼图块添加鼠标移入事件监听器
-            tileElement.addEventListener("mouseover", () => moveTileMouse(index));
+            // 为拼图块添加事件监听器
+            if (moveMode == "click") {
+                tileElement.addEventListener("click", () => moveTileMouse(index));
+            }
+            else if (moveMode == "slide") {
+                tileElement.addEventListener("mouseover", () => moveTileMouse(index));
+            }
         }
         puzzle.appendChild(tileElement); // 将拼图块添加到拼图容器中
     });
@@ -170,6 +177,9 @@ function moveTileMouse(index) {
 // 键盘移动方法
 // 传入参数：up、down、left、right
 function moveTileKeyboard(direction) {
+    if (moveMode != "keyboard") {
+        return;
+    }
     // 获取空白快的坐标
     zeroIndex = tiles.indexOf(0);
     const [line0, row0] = [zeroIndex % size, Math.floor(zeroIndex / size)];
@@ -230,7 +240,8 @@ function checkWin() {
             time: parseFloat(timerElement.textContent).toFixed(2),
             step: step,
             tps: parseFloat(tpsElement.textContent).toFixed(2),
-            scramble: scrambleTiles.toString()
+            scramble: scrambleTiles.toString(),
+            moveMode: moveMode,
         };
         saveScore(score);
     }
@@ -360,6 +371,12 @@ document.addEventListener('keydown', function (event) {
         case "L":
             // 跳转到成绩列表页
             window.location.href = "scoreList.html";
+            break;
+        case "M":
+        case "m":
+            // 切换模式
+            console.log("切换移动模式");
+            switchMoveMode();
             break;
         default:
             break;
@@ -495,4 +512,14 @@ function averageOfList(list) {
         sum += list[i];
     }
     return (sum / (list.length - 2)).toFixed(2);
+}
+
+// 切换移动模式
+function switchMoveMode() {
+    let modeList = ["click", "slide", "keyboard"];
+    let currentIndex = modeList.indexOf(moveMode);
+    moveMode = modeList[(currentIndex + 1) % modeList.length];
+    console.log(moveMode);
+    // 重新生成打乱
+    createTiles();
 }

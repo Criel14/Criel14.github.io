@@ -65,12 +65,86 @@ tr:nth-child(odd):hover {
 
 #overlay-content {
     background: white;
-    padding: 10px 80px 10px 80px;
-    border-radius: 6px;
+    padding: 50px 60px 50px 60px;
+    border-radius: 8px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.137);
     text-align: center;
 }
 
+#info-container {
+    width: 200px;
+    height: 300px;
+    /* border-width: 1px;
+    border-style: solid;
+    border-color: black; */
+    float: left;
+    margin-left: 40px;
+    padding-left: 20px;
+    text-align: left;
+}
+
 #scramble-text {
     font-size: 24px;
+}
+
+.puzzle-container {
+    float: left;
+    align-items: center;
+}
+
+.puzzle {
+    width: 300px;
+    height: 300px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+    margin-bottom: 20px;
+}
+
+.tile {
+    width: 90px;
+    height: 90px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+    color: white;
+    font-weight: bold;
+    font-size: 56px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+}
+
+.time-info {
+    font-size: 64px;
+    line-height: 64px;
+    font-weight: bold;
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+.move-mode-info {
+    color: rgb(127, 166, 183);
+    font-size: 24px;
+    line-height: 24px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.other-info {
+    color: rgb(0, 0, 0);
+    font-weight: bold;
+    font-size: 28px;
+    line-height: 28px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.ao-info {
+    color: rgb(97, 97, 97);
+    font-weight: bold;
+    font-size: 28px;
+    line-height: 28px;
+    margin-top: 20px;
+    margin-bottom: 20px;
 }

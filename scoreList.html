@@ -25,10 +25,12 @@
         </tbody>
     </table>
 
-    <div id="overlay" class="hidden">
+    <div id="overlay" class="hidden" onclick="hideOverlay()">
         <div id="overlay-content">
-            <p id="scramble-text">This is the overlay content.</p>
-            <button onclick="hideOverlay()">Close</button>
+            <div class="puzzle-container">
+                <div class="puzzle" id="puzzle"></div>
+            </div>
+            <div id="info-container"></div>
         </div>
     </div>
 
