@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Page</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.0.12/marked.min.js"></script>
+    <link rel="stylesheet" href="css/github.css">
+    <style>
+        body {
+            background-color: rgb(228, 228, 228);
+        }
+        #about-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 60px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="about-content">Loading...</div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            fetch('about.md')
+                .then(response => response.text())
+                .then(text => {
+                    // 使用marked库将Markdown文本转换为HTML
+                    document.getElementById('about-content').innerHTML = marked.parse(text);
+                })
+                .catch(error => console.error('Error fetching the Markdown file:', error));
+        });
+    </script>
+</body>
+</html>
