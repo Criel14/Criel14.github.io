@@ -195,10 +195,10 @@ body {
     margin-left: 40%;
     font-size: 24px;
     text-align: center;
-    color: rgb(75, 75, 75);
+    color: rgb(94, 94, 94);
 }
 
-.play-mode {
+.game-mode {
     width: 160px;
     height: 60px;
     background-color: rgb(250, 250, 250);
@@ -213,7 +213,7 @@ body {
     margin-left: 40%;
     font-size: 24px;
     text-align: center;
-    color: rgb(75, 75, 75);
+    color: rgb(94, 94, 94);
 }
 
 .level-up {
@@ -251,7 +251,7 @@ body {
     transition: 0.3s;
 }
 
-.play-mode:hover {
+.game-mode:hover {
     background-color: rgb(244, 244, 244);
     transition: 0.3s;
 }

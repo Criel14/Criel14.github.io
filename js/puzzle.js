@@ -15,6 +15,10 @@ const levelShowElement = document.getElementById("level");
 // 引用阶数增加和减少按钮
 const levelUpElement = document.getElementById("level-up");
 const levelDownElement = document.getElementById("level-down");
+// 引用移动模式切换按钮
+const moveModeElement = document.getElementById("move-mode");
+// 引用游戏模式切换按钮
+const gameModeElement = document.getElementById("game-mode");
 // 定义拼图的阶数（边长）
 let size = 4;
 // 用于存储拼图块的数组
@@ -312,13 +316,12 @@ function countInversions(originalArr) {
 
 // 当整个HTML文档加载完毕后执行以下代码
 document.addEventListener("DOMContentLoaded", () => {
-    // 为打乱按钮添加点击事件监听器
+    // 为按钮添加点击事件监听器
     shuffleButton.addEventListener("click", createTiles);
-    // 为阶数按钮添加监听
     levelUpElement.addEventListener("click", increaseSize);
     levelDownElement.addEventListener("click", decreaseSize);
-    // 为switchDataElement添加监听
     switchDataElement.addEventListener("click", switswitchDataView);
+    moveModeElement.addEventListener("click", switchMoveMode);
     createTiles(); // 初始化拼图
 });
 
@@ -520,6 +523,8 @@ function switchMoveMode() {
     let currentIndex = modeList.indexOf(moveMode);
     moveMode = modeList[(currentIndex + 1) % modeList.length];
     console.log(moveMode);
+    // 显示模式
+    moveModeElement.textContent = moveMode;
     // 重新生成打乱
     createTiles();
 }
