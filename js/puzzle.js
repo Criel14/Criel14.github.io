@@ -27,15 +27,21 @@ let tiles = [];
 let scrambleTiles = [];
 // 计时
 let timerInterval;
+let formattedTime = "0.00";
 let timeEclapsed = 0;
 // 是否开始还原
 let isMoving = false;
+// 是否已经还原
+let isFinish = false;
 // 步数
 let step = 0;
-// 数据显示模式：是否显示提示信息：例如显示 ”步数：98“ 还是 ”98“
-let showTip = false;
-// 点击或滑动或键盘:click,slide,keyboard
+let tps = 0.00;
+// 数据显示模式：是否显示提示信息：例如显示 ”Step：98“ 还是 ”98“
+let showTip = true;
+// 移动模式
 let moveMode = "slide";
+// 游戏模式
+let gameMode = "normal";
 
 
 // 颜色字典，按层降阶，即从左上到右下
@@ -60,6 +66,13 @@ const colorMap = {
     17: "#dc98ff"
 };
 
+// 移动模式列表
+let moveModeList = ["click", "slide", "keyboard"];
+
+// 游戏模式列表
+let gameModeList = ["normal", "blind"];
+
+
 // 根据数字返回对应的颜色，默认为66ccff
 // number为0-15，0为空白格，number和显示出来的数字是一样的
 function getColor(number) {
@@ -80,6 +93,8 @@ function getColor(number) {
 
 // 创建并初始化拼图块
 function createTiles() {
+    isFinish = false;
+    isMoving = false;
     // 重置步数
     step = 0;
     // 清除计时
@@ -124,13 +139,21 @@ function renderTiles() {
     tiles.forEach((tile, index) => {
         const tileElement = document.createElement("div"); // 创建一个新的div元素
         tileElement.classList.add("tile"); // 添加样式类
+        if (isFinish == true) {
+            tileElement.style.boxShadow = "0 0 40px #ffff0046";
+        }
         tileElement.style.width = 500 / size + "px";
         tileElement.style.height = 500 / size + "px";
         tileElement.style.fontSize = 250 / size + "px";
 
         if (tile !== 0) { // 如果拼图块不是空白块
-            tileElement.textContent = tile; // 设置拼图块的文本
-            tileElement.style.backgroundColor = getColor(tile); // 设置拼图块的背景颜色
+            if (gameMode == "blind" && isMoving == true && isFinish == false) {
+                tileElement.style.backgroundColor = "#66ccff"; // 设置拼图块的背景颜色
+            }
+            else {
+                tileElement.textContent = tile; // 设置拼图块的文本
+                tileElement.style.backgroundColor = getColor(tile); // 设置拼图块的背景颜色
+            }
             // 为拼图块添加事件监听器
             if (moveMode == "click") {
                 tileElement.addEventListener("click", () => moveTileMouse(index));
@@ -148,7 +171,6 @@ function moveTileMouse(index) {
     let zeroIndex = tiles.indexOf(0); // 找到空白块的位置
     const [line1, row1] = [index % size, Math.floor(index / size)]; // 计算当前拼图块的坐标
     const [line0, row0] = [zeroIndex % size, Math.floor(zeroIndex / size)]; // 计算空白块的坐标
-
 
     // 移动整行或整列，flag为移动一块后，空白快位置的偏移量
     function move(flag) {
@@ -230,20 +252,25 @@ function moveTileKeyboard(direction) {
 }
 
 
-
 // 检查是否拼图成功
 function checkWin() {
     // 如果拼图块按顺序排列
     if (tiles.slice(0, -1).every((tile, i) => tile === i + 1)) {
-        clearInterval(timerInterval); // 停止计时器
-        // alert("You win!"); // 弹出胜利提示
-
+        // 停止计时器
+        clearInterval(timerInterval);
+        // 标记完成
+        isFinish = true;
+        // 重新显示数据
+        updateTimerAndStep();
+        // 重新渲染拼图块
+        renderTiles();
+        
         // 记录成绩
         const score = {
             size: size,
-            time: parseFloat(timerElement.textContent).toFixed(2),
+            time: formattedTime,
             step: step,
-            tps: parseFloat(tpsElement.textContent).toFixed(2),
+            tps: tps,
             scramble: scrambleTiles.toString(),
             moveMode: moveMode,
         };
@@ -322,6 +349,7 @@ document.addEventListener("DOMContentLoaded", () => {
     levelDownElement.addEventListener("click", decreaseSize);
     switchDataElement.addEventListener("click", switswitchDataView);
     moveModeElement.addEventListener("click", switchMoveMode);
+    gameModeElement.addEventListener("click", switchGameMode);
     createTiles(); // 初始化拼图
 });
 
@@ -377,9 +405,13 @@ document.addEventListener('keydown', function (event) {
             break;
         case "M":
         case "m":
-            // 切换模式
-            console.log("切换移动模式");
+            // 切换移动模式
             switchMoveMode();
+            break;
+        case "N":
+        case "n":
+            // 切换游戏模式
+            switchGameMode();
             break;
         default:
             break;
@@ -407,9 +439,9 @@ function updateTimerAndStep() {
     const milliseconds = timeEclapsed % 1000;
     // 格式化时间，保留2位小数
     let time = `${seconds}.${milliseconds}`;
-    let formattedTime = parseFloat(time).toFixed(2);
+    formattedTime = parseFloat(time).toFixed(2);
     // 计算tps，保留3位小数
-    let tps = 0;
+    tps = 0;
     if (timeEclapsed != 0) {
         tps = (step / (timeEclapsed / 1000)).toFixed(2);
     }
@@ -432,7 +464,6 @@ function resetTimer() {
     clearInterval(timerInterval);
     timeEclapsed = 0;
     updateTimerAndStep();
-    isMoving = false;
 }
 
 // 数据显示模式
@@ -519,12 +550,20 @@ function averageOfList(list) {
 
 // 切换移动模式
 function switchMoveMode() {
-    let modeList = ["click", "slide", "keyboard"];
-    let currentIndex = modeList.indexOf(moveMode);
-    moveMode = modeList[(currentIndex + 1) % modeList.length];
-    console.log(moveMode);
+    let currentIndex = moveModeList.indexOf(moveMode);
+    moveMode = moveModeList[(currentIndex + 1) % moveModeList.length];
     // 显示模式
     moveModeElement.textContent = moveMode;
+    // 重新生成打乱
+    createTiles();
+}
+
+// 切换游戏模式
+function switchGameMode() {
+    let currentIndex = gameModeList.indexOf(gameMode);
+    gameMode = gameModeList[(currentIndex + 1) % gameModeList.length];
+    // 显示模式
+    gameModeElement.textContent = gameMode;
     // 重新生成打乱
     createTiles();
 }
