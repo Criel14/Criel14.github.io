@@ -258,23 +258,24 @@ function checkWin() {
     if (tiles.slice(0, -1).every((tile, i) => tile === i + 1)) {
         // 停止计时器
         clearInterval(timerInterval);
-        // 标记完成
-        isFinish = true;
-        // 重新显示数据
-        updateTimerAndStep();
+        if (isFinish == false) {
+            // 重新显示数据
+            updateTimerAndStep();
+            // 记录成绩
+            const score = {
+                size: size,
+                time: formattedTime,
+                step: step,
+                tps: tps,
+                scramble: scrambleTiles.toString(),
+                moveMode: moveMode,
+            };
+            saveScore(score);
+            // 标记完成
+            isFinish = true;
+        }
         // 重新渲染拼图块
         renderTiles();
-        
-        // 记录成绩
-        const score = {
-            size: size,
-            time: formattedTime,
-            step: step,
-            tps: tps,
-            scramble: scrambleTiles.toString(),
-            moveMode: moveMode,
-        };
-        saveScore(score);
     }
 }
 
