@@ -59,7 +59,7 @@ function displayScores(size) {
     });
     let endRow = document.createElement('tr');
     let tip = document.createElement("td");
-    tip.colSpan = tbody.rows[0].cells.length;
+    tip.colSpan = document.querySelectorAll('thead th').length;; // 设置单元格跨越的列数
     tip.textContent = "下面没有了╮(╯▽╰)╭"
     endRow.appendChild(tip);
     tbody.appendChild(endRow);
@@ -92,6 +92,10 @@ document.addEventListener('keydown', (event) => {
         localStorage.removeItem("scores"); // 清空成绩
         // 刷新页面
         location.reload();
+    }
+    else if (event.key === 'l' || event.key === 'L') {
+        // 返回index页
+        window.location.href = "index.html";
     }
     else if (event.key === 'Escape') {
         hideOverlay(); // 隐藏弹框
