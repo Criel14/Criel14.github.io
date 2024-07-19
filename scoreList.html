@@ -10,21 +10,23 @@
 
 <body>
     <div class="menu">
-        <div class="menu-button" title="回到游戏页">
-            <img src="image/back.png" alt="switch" id="menu-button" width="44px" height="44px">
+        <a href="index.html">
+            <div class="menu-button" title="回到游戏页">
+                <img src="image/back.png" alt="switch" width="44px" height="44px">
+            </div>
+        </a>
+        <div class="menu-button" title="增加阶数（ > ）" id="level-up">
+            <img src="image/increase.png" alt="switch" width="44px" height="44px">
         </div>
-        <div class="menu-button" title="增加阶数（ > ）">
-            <img src="image/increase.png" alt="switch" id="menu-button" width="44px" height="44px">
-        </div>
-        <div class="menu-button" title="减少阶数（ < ）">
-            <img src="image/decrease.png" alt="switch" id="menu-button" width="44px" height="44px">
+        <div class="menu-button" title="减少阶数（ < ）" id="level-down">
+            <img src="image/decrease.png" alt="switch" width="44px" height="44px">
         </div>
     </div>
     <div class="main">
         <br>
         <table>
             <thead>
-                <tr id="scores-head">
+                <tr id="scores-head" title="切换游戏模式（ N ）">
                     <th id="size-info">3阶</th>
                     <th>时间 (秒)</th>
                     <th>步数</th>

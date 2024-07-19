@@ -6,7 +6,9 @@ const puzzleInfo = document.getElementById("info-container");
 const tableHead = document.getElementById("scores-head");
 const tbody = document.getElementById('scores-tbody');
 const scores = JSON.parse(localStorage.getItem('scores')) || [];
- // 当前显示阶数
+const levelUpElement = document.getElementById("level-up");
+const levelDownElement = document.getElementById("level-down");
+// 当前显示阶数
 let currentSize = 3;
 
 // 游戏模式列表
@@ -98,13 +100,20 @@ document.addEventListener('keydown', (event) => {
 
 document.addEventListener("DOMContentLoaded", () => {
     displayScores(currentSize); // 初始显示3阶成绩
+    // 升阶和降阶按钮
+    levelUpElement.addEventListener("click", () => {
+        changeSize(1);
+    })
+    levelDownElement.addEventListener("click", () => {
+        changeSize(-1);
+    })
 });
 
 // 显示打乱
 function showScramble(size, number) {
     const scores = JSON.parse(localStorage.getItem('scores')) || [];
     // 找到scores中对应的行
-    const score = scores.find(s => s.size === size && s.number === number);
+    const score = scores.find(s => s.size === size && s.number === number && s.gameMode === gameMode);
     // 获取打乱数组
     const scrambleList = score.scramble.split(',');
     // 弹框中显示打乱
@@ -113,13 +122,6 @@ function showScramble(size, number) {
     showInfo(size, score);
     // 显示弹框
     showOverlay();
-}
-
-// 映射操作模式中英文
-const moveModeMap = {
-    "click": "点击",
-    "slide": "滑动",
-    "keyboard": "键盘"
 }
 
 
@@ -134,11 +136,11 @@ function showInfo(size, score) {
     timeInfo.textContent = score.time + "s";
     timeInfo.classList.add("time-info");
     puzzleInfo.appendChild(timeInfo);
-    // 显示操作模式
-    moveModeInfo = document.createElement("p");
-    moveModeInfo.textContent = score.moveMode;
-    moveModeInfo.classList.add("move-mode-info");
-    puzzleInfo.appendChild(moveModeInfo);
+    // 显示模式
+    modeInfo = document.createElement("p");
+    modeInfo.textContent = score.gameMode + "-" + score.moveMode;
+    modeInfo.classList.add("move-mode-info");
+    puzzleInfo.appendChild(modeInfo);
     // 显示步数
     stepInfo = document.createElement("p");
     stepInfo.textContent = "Step: " + score.step;
