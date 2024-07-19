@@ -3,72 +3,92 @@ const overlayElement = document.getElementById("overlay");
 const scrambleTextElement = document.getElementById("scramble-text");
 const puzzle = document.getElementById("puzzle");
 const puzzleInfo = document.getElementById("info-container");
+const tableHead = document.getElementById("scores-head");
+const tbody = document.getElementById('scores-tbody');
+const scores = JSON.parse(localStorage.getItem('scores')) || [];
+ // 当前显示阶数
+let currentSize = 3;
+
+// 游戏模式列表
+let gameModeList = ["normal", "blind"];
+// 游戏模式
+let gameMode = "normal";
+
+function displayScores(size) {
+    // 修改表头
+    sizeInfoElement.innerHTML = `${size}阶` + "-" + gameMode + "&nbsp;&nbsp;⇋";
+    tableHead.addEventListener("click", switchGameMode);
+
+    tbody.innerHTML = ''; // 清空现有内容
+
+    scores.filter(score => score.size == size && score.gameMode === gameMode).reverse().forEach(score => {
+        let row = document.createElement('tr');
+        let numberTd = document.createElement("td");
+        let timeTd = document.createElement("td");
+        let stepTd = document.createElement("td");
+        let tpsTd = document.createElement("td");
+        let ao5Td = document.createElement("td");
+        let ao12Td = document.createElement("td");
+        numberTd.textContent = score.number;
+        timeTd.textContent = score.time;
+        stepTd.textContent = score.step;
+        tpsTd.textContent = score.tps;
+        ao5Td.textContent = score.ao5;
+        ao12Td.textContent = score.ao12;
+        row.appendChild(numberTd);
+        row.appendChild(timeTd);
+        row.appendChild(stepTd);
+        row.appendChild(tpsTd);
+        row.appendChild(ao5Td);
+        row.appendChild(ao12Td);
+        tbody.appendChild(row);
+        // 添加鼠标监听
+        row.addEventListener("click", function () {
+            showScramble(size, score.number);
+        });
+    });
+    let endRow = document.createElement('tr');
+    let tip = document.createElement("td");
+    tip.colSpan = tbody.rows[0].cells.length;
+    tip.textContent = "下面没有了╮(╯▽╰)╭"
+    endRow.appendChild(tip);
+    tbody.appendChild(endRow);
+}
+
+function changeSize(direction) {
+    currentSize += direction;
+    if (currentSize < 2) {
+        currentSize = 2;
+    } else if (currentSize > 10) {
+        currentSize = 10;
+    }
+    displayScores(currentSize);
+}
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === ',' || event.key === '<') {
+        changeSize(-1); // 显示低一阶成绩
+        hideOverlay(); // 隐藏弹框
+    }
+    else if (event.key === '.' || event.key === '>') {
+        changeSize(1); // 显示高一阶成绩
+        hideOverlay(); // 隐藏弹框
+    }
+    else if (event.key === 'N' || event.key === "n") {
+        switchGameMode();
+        hideOverlay(); // 隐藏弹框
+    }
+    else if (event.key === 'c' || event.key === 'C') {
+        localStorage.removeItem("scores"); // 清空成绩
+        // 刷新页面
+        location.reload();
+    }
+    else if (event.key === 'Escape') {
+        hideOverlay(); // 隐藏弹框
+    }
+});
 
 document.addEventListener("DOMContentLoaded", () => {
-    const scores = JSON.parse(localStorage.getItem('scores')) || [];
-    const tbody = document.getElementById('scores-tbody');
-    let currentSize = 3; // 初始显示3阶成绩
-
-    function displayScores(size) {
-        // 修改表头
-        sizeInfoElement.textContent = `${size}阶`;
-
-        tbody.innerHTML = ''; // 清空现有内容
-
-        scores.filter(score => score.size == size).reverse().forEach(score => {
-            let row = document.createElement('tr');
-            let numberTd = document.createElement("td");
-            let timeTd = document.createElement("td");
-            let stepTd = document.createElement("td");
-            let tpsTd = document.createElement("td");
-            let ao5Td = document.createElement("td");
-            let ao12Td = document.createElement("td");
-            numberTd.textContent = score.number;
-            timeTd.textContent = score.time;
-            stepTd.textContent = score.step;
-            tpsTd.textContent = score.tps;
-            ao5Td.textContent = score.ao5;
-            ao12Td.textContent = score.ao12;
-            row.appendChild(numberTd);
-            row.appendChild(timeTd);
-            row.appendChild(stepTd);
-            row.appendChild(tpsTd);
-            row.appendChild(ao5Td);
-            row.appendChild(ao12Td);
-            tbody.appendChild(row);
-            // 添加鼠标监听
-            row.addEventListener("click", function () {
-                showScramble(size, score.number);
-            });
-        });
-    }
-
-    function changeSize(direction) {
-        currentSize += direction;
-        if (currentSize < 2) {
-            currentSize = 2;
-        } else if (currentSize > 10) {
-            currentSize = 10;
-        }
-        displayScores(currentSize);
-    }
-
-    document.addEventListener('keydown', (event) => {
-        if (event.key === ',' || event.key === '<') {
-            changeSize(-1); // 显示低一阶成绩
-            hideOverlay(); // 隐藏弹框
-        } else if (event.key === '.' || event.key === '>') {
-            changeSize(1); // 显示高一阶成绩
-            hideOverlay(); // 隐藏弹框
-        } else if (event.key === 'c' || event.key === 'C') {
-            localStorage.removeItem("scores"); // 清空成绩
-            // 刷新页面
-            location.reload();
-        } else if (event.key === 'Escape') {
-            hideOverlay(); // 隐藏弹框
-        }
-    });
-
     displayScores(currentSize); // 初始显示3阶成绩
 });
 
@@ -131,6 +151,14 @@ function showInfo(size, score) {
     ao12Info.textContent = "ao12: " + score.ao12;
     ao12Info.classList.add("ao-info");
     puzzleInfo.appendChild(ao12Info);
+}
+
+// 切换游戏模式
+function switchGameMode() {
+    let currentIndex = gameModeList.indexOf(gameMode);
+    gameMode = gameModeList[(currentIndex + 1) % gameModeList.length];
+    // 重新渲染表格
+    displayScores(currentSize);
 }
 
 // 显示弹框

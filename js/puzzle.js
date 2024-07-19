@@ -140,7 +140,7 @@ function renderTiles() {
         const tileElement = document.createElement("div"); // 创建一个新的div元素
         tileElement.classList.add("tile"); // 添加样式类
         if (isFinish == true) {
-            tileElement.style.boxShadow = "0 0 40px #ffff0046";
+            tileElement.style.boxShadow = "0 0 80px #ffff0046";
         }
         tileElement.style.width = 500 / size + "px";
         tileElement.style.height = 500 / size + "px";
@@ -269,6 +269,7 @@ function checkWin() {
                 tps: tps,
                 scramble: scrambleTiles.toString(),
                 moveMode: moveMode,
+                gameMode: gameMode,
             };
             saveScore(score);
             // 标记完成
@@ -502,8 +503,8 @@ function decreaseSize() {
 function saveScore(score) {
     // 获取现有总成绩列表
     let scores = JSON.parse(localStorage.getItem('scores')) || [];
-    // 获取当前阶数的成绩列表
-    let currentSizeScores = scores.filter(score => score.size == size);
+    // 获取当前阶数和模式的成绩列表
+    let currentSizeScores = scores.filter(score => score.size == size && score.gameMode === gameMode);
     // 计算序号
     if (currentSizeScores.length == 0) {
         score.number = 1;
