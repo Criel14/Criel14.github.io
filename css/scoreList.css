@@ -108,9 +108,6 @@ tr:nth-child(odd):hover {
 #info-container {
     width: 240px;
     height: 300px;
-    /* border-width: 1px;
-    border-style: solid;
-    border-color: black; */
     float: left;
     margin-left: 40px;
     padding-left: 20px;

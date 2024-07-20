@@ -19,6 +19,11 @@ const levelDownElement = document.getElementById("level-down");
 const moveModeElement = document.getElementById("move-mode");
 // 引用游戏模式切换按钮
 const gameModeElement = document.getElementById("game-mode");
+// 引用成绩列表
+const scoreListElement = document.getElementById("score-list");
+// 引用关于按钮
+const aboutElement = document.getElementById("about");
+
 // 定义拼图的阶数（边长）
 let size = 4;
 // 用于存储拼图块的数组
@@ -509,9 +514,21 @@ function timeFormat(originalTime) {
 function switswitchDataView() {
     if (showTip == true) {
         showTip = false;
+        gameModeElement.classList.add("hidden");
+        moveModeElement.classList.add("hidden");
+        levelUpElement.classList.add("hidden");
+        levelDownElement.classList.add("hidden");
+        scoreListElement.classList.add("hidden");
+        aboutElement.classList.add("hidden");
     }
     else {
         showTip = true;
+        gameModeElement.classList.remove("hidden");
+        moveModeElement.classList.remove("hidden");
+        levelUpElement.classList.remove("hidden");
+        levelDownElement.classList.remove("hidden");
+        scoreListElement.classList.remove("hidden");
+        aboutElement.classList.remove("hidden");
     }
     updateTimerAndStep();
 }
