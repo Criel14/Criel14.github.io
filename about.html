@@ -24,6 +24,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // 移除原本获取到的 HTML 内容
+            document.getElementById('about-content').innerHTML = '';
+            // 在文档加载完成后，通过fetch API获取Markdown文件并转换为HTML
             fetch('about.md')
                 .then(response => response.text())
                 .then(text => {
