@@ -27,10 +27,15 @@
             // 移除原本获取到的 HTML 内容
             document.getElementById('about-content').innerHTML = '';
             // 在文档加载完成后，通过fetch API获取Markdown文件并转换为HTML
-            fetch('about.md')
+            const timestamp = new Date().getTime();
+            fetch('about.md?' + timestamp)
                 .then(response => response.text())
                 .then(text => {
-                    // 使用marked库将Markdown文本转换为HTML
+                    // 使用marked库将Markdown文本转换为HTML，并保留单行换行符
+                    marked.setOptions({
+                        gfm: true,
+                        breaks: true // 启用GFM breaks选项
+                    });
                     document.getElementById('about-content').innerHTML = marked.parse(text);
                 })
                 .catch(error => console.error('Error fetching the Markdown file:', error));
