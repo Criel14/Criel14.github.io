@@ -371,7 +371,10 @@ document.addEventListener("DOMContentLoaded", () => {
     moveModeElement.addEventListener("click", switchMoveMode);
     gameModeElement.addEventListener("click", switchGameMode);
     cursorModeElement.addEventListener("click", switchCursorStyle);
-    createTiles(); // 初始化拼图
+     // 初始化拼图
+    createTiles();
+    // 初始更改光标样式
+    switchCursorStyle();
 });
 
 // 为页面添加按键监听
