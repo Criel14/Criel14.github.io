@@ -368,6 +368,22 @@ function countInversions(originalArr) {
 
 // 当整个HTML文档加载完毕后执行以下代码
 document.addEventListener("DOMContentLoaded", () => {
+    // 获取url中传递的参数
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlSize = urlParams.get('size');
+    const urlGameMode = urlParams.get('gameMode');
+    const urlGroupNum = urlParams.get('groupNum');
+    // 判断参数是否存在
+    if (urlSize) {
+        size = parseInt(urlSize);
+    }
+    if (urlGameMode) {
+        gameMode = urlGameMode;
+    }
+    if (urlGroupNum) {
+        groupNum = parseInt(urlGroupNum);
+    }
+    groupElement.textContent = groupNum;
     // 为按钮添加点击事件监听器
     shuffleButton.addEventListener("click", createTiles);
     levelUpElement.addEventListener("click", increaseSize);
@@ -379,6 +395,7 @@ document.addEventListener("DOMContentLoaded", () => {
     groupElement.addEventListener("click", () => {
         switchGroup(1);
     });
+    scoreListElement.addEventListener("click", redirectToScoreList);
     // 初始化拼图
     createTiles();
 });
@@ -679,4 +696,10 @@ function switchCursorStyle() {
 function switchGroup(next) {
     groupNum = (groupNum - 1 + next + 10) % 10 + 1;
     groupElement.textContent = groupNum;
+}
+
+// 切换到成绩列表页
+function redirectToScoreList() {
+    const url = `scoreList.html?size=${size}&gameMode=${gameMode}&groupNum=${groupNum}`;
+    window.location.href = url;
 }

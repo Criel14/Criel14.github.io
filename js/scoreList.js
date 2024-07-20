@@ -9,6 +9,7 @@ const scores = JSON.parse(localStorage.getItem('scores')) || [];
 const levelUpElement = document.getElementById("level-up");
 const levelDownElement = document.getElementById("level-down");
 const groupElement = document.getElementById("group");
+const backElement = document.getElementById("back-to-index");
 
 // 当前显示阶数
 let currentSize = 3;
@@ -134,7 +135,14 @@ document.addEventListener('keydown', (event) => {
 
 
 document.addEventListener("DOMContentLoaded", () => {
-    displayScores(currentSize); // 初始显示3阶成绩
+    // 获取url中传递的参数
+    const urlParams = new URLSearchParams(window.location.search);
+    currentSize = parseInt(urlParams.get('size'));
+    gameMode = urlParams.get('gameMode');
+    groupNum = parseInt(urlParams.get('groupNum'));
+    groupElement.textContent = groupNum;
+    // 初始显示列表
+    displayScores(currentSize);
     // 升阶和降阶按钮
     levelUpElement.addEventListener("click", () => {
         changeSize(1);
@@ -142,9 +150,12 @@ document.addEventListener("DOMContentLoaded", () => {
     levelDownElement.addEventListener("click", () => {
         changeSize(-1);
     })
+    // 换组按钮
     groupElement.addEventListener("click", () => {
         switchGroup(1);
     });
+    // 返回按钮
+    backElement.addEventListener("click", redirectToindex);
 });
 
 // 显示打乱
@@ -284,4 +295,11 @@ function renderTiles(size, puzzleList) {
 function switchGroup(next) {
     groupNum = (groupNum - 1 + next + 10) % 10 + 1;
     groupElement.textContent = groupNum;
+    displayScores(currentSize);
+}
+
+// 切换到index页
+function redirectToindex() {
+    const url = `index.html?size=${currentSize}&gameMode=${gameMode}&groupNum=${groupNum}`;
+    window.location.href = url;
 }
