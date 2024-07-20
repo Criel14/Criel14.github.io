@@ -19,6 +19,8 @@ const levelDownElement = document.getElementById("level-down");
 const moveModeElement = document.getElementById("move-mode");
 // 引用游戏模式切换按钮
 const gameModeElement = document.getElementById("game-mode");
+// 引用光标切换按钮
+const cursorModeElement = document.getElementById("cursor-mode");
 // 引用成绩列表
 const scoreListElement = document.getElementById("score-list");
 // 引用关于按钮
@@ -368,6 +370,7 @@ document.addEventListener("DOMContentLoaded", () => {
     switchDataElement.addEventListener("click", switswitchDataView);
     moveModeElement.addEventListener("click", switchMoveMode);
     gameModeElement.addEventListener("click", switchGameMode);
+    cursorModeElement.addEventListener("click", switchCursorStyle);
     createTiles(); // 初始化拼图
 });
 
@@ -430,6 +433,11 @@ document.addEventListener('keydown', function (event) {
         case "n":
             // 切换游戏模式
             switchGameMode();
+            break;
+        case "c":
+        case "C":
+            // 切换鼠标指针样式
+            switchCursorStyle();
             break;
         default:
             break;
@@ -519,7 +527,9 @@ function switswitchDataView() {
         levelUpElement.classList.add("hidden");
         levelDownElement.classList.add("hidden");
         scoreListElement.classList.add("hidden");
+        cursorModeElement.classList.add("hidden");
         aboutElement.classList.add("hidden");
+        levelShowElement.classList.add("hidden");
     }
     else {
         showTip = true;
@@ -528,7 +538,9 @@ function switswitchDataView() {
         levelUpElement.classList.remove("hidden");
         levelDownElement.classList.remove("hidden");
         scoreListElement.classList.remove("hidden");
+        cursorModeElement.classList.remove("hidden");
         aboutElement.classList.remove("hidden");
+        levelShowElement.classList.remove("hidden");
     }
     updateTimerAndStep();
 }
@@ -622,4 +634,20 @@ function switchGameMode() {
     gameModeElement.textContent = gameMode;
     // 重新生成打乱
     createTiles();
+}
+
+// 调整鼠标样式
+function switchCursorStyle() {
+    console.log("切换样式");
+    // 切换样式
+    document.body.classList.toggle("custom-cursor");
+    moveModeElement.classList.toggle("custom-pointer");
+    gameModeElement.classList.toggle("custom-pointer");
+    levelUpElement.classList.toggle("custom-pointer");
+    levelDownElement.classList.toggle("custom-pointer");
+    shuffleButton.classList.toggle("custom-pointer");
+    switchDataElement.classList.toggle("custom-pointer");
+    scoreListElement.classList.toggle("custom-pointer");
+    cursorModeElement.classList.toggle("custom-pointer");
+    aboutElement.classList.toggle("custom-pointer");
 }

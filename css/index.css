@@ -40,6 +40,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    margin-top: 40px;
 }
 
 .puzzle {
@@ -55,7 +56,6 @@ body {
     margin-top: 40px;
     width: 40px;
     height: 40px;
-    cursor: pointer;
 }
 
 .tile {
@@ -69,7 +69,6 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    cursor: pointer;
     user-select: none;
     /* box-shadow: 0 0 20px #ffff0046; */
 }
@@ -160,6 +159,32 @@ body {
     transition: 0.3s;
 }
 
+.cursor-mode {
+    width: 70px;
+    height: 60px;
+    background-color: rgb(250, 250, 250);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
+    border-radius: 8px;
+    display: flex;
+    float: left;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    margin-top: 50px;
+    margin-left: 5%;
+}
+
+.cursor-mode.hidden {
+    display: none;
+}
+
+.cursor-mode:hover {
+    background-color: rgb(244, 244, 244);
+    transition: 0.3s;
+}
+
+
 .about {
     width: 70px;
     height: 60px;
@@ -191,6 +216,10 @@ body {
     display: block;
     margin-top: 40%;
     margin-left: 50%;
+}
+
+#level.hidden {
+    display: none;
 }
 
 .move-mode {

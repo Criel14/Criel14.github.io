@@ -1,0 +1,12 @@
+/*鼠标样式*/
+body {
+    cursor: auto;
+}
+
+.custom-cursor {
+    cursor: url(../cur/normal.png), auto;
+}
+
+.custom-pointer {
+    cursor: url(../cur/link.png), auto;
+}
