@@ -23,6 +23,8 @@ const gameModeElement = document.getElementById("game-mode");
 const cursorModeElement = document.getElementById("cursor-mode");
 // 引用成绩列表
 const scoreListElement = document.getElementById("score-list");
+// 引用换组按钮
+const groupElement = document.getElementById("group");
 // 引用关于按钮
 const aboutElement = document.getElementById("about");
 
@@ -55,6 +57,8 @@ let showTip = true;
 let moveMode = "slide";
 // 游戏模式
 let gameMode = "normal";
+// 当前组号
+let groupNum = 1;
 
 
 // 颜色字典，按层降阶，即从左上到右下
@@ -288,6 +292,7 @@ function checkWin() {
                 moveMode: moveMode,
                 gameMode: gameMode,
                 observeTime: timeFormat(observeTime),
+                group: groupNum,
             };
             saveScore(score);
             // 标记完成
@@ -371,10 +376,11 @@ document.addEventListener("DOMContentLoaded", () => {
     moveModeElement.addEventListener("click", switchMoveMode);
     gameModeElement.addEventListener("click", switchGameMode);
     cursorModeElement.addEventListener("click", switchCursorStyle);
-     // 初始化拼图
+    groupElement.addEventListener("click", () => {
+        switchGroup(1);
+    });
+    // 初始化拼图
     createTiles();
-    // 初始更改光标样式
-    switchCursorStyle();
 });
 
 // 为页面添加按键监听
@@ -442,6 +448,17 @@ document.addEventListener('keydown', function (event) {
             // 切换鼠标指针样式
             switchCursorStyle();
             break;
+        case "g":
+        case "G":
+            // 切换上一组
+            switchGroup(-1);
+            break;
+        case "h":
+        case "H":
+            // 切换下一组
+            switchGroup(1);
+            break;
+
         default:
             break;
     }
@@ -533,6 +550,7 @@ function switswitchDataView() {
         cursorModeElement.classList.add("hidden");
         aboutElement.classList.add("hidden");
         levelShowElement.classList.add("hidden");
+        groupElement.classList.add("hidden");
     }
     else {
         showTip = true;
@@ -544,6 +562,7 @@ function switswitchDataView() {
         cursorModeElement.classList.remove("hidden");
         aboutElement.classList.remove("hidden");
         levelShowElement.classList.remove("hidden");
+        groupElement.classList.remove("hidden");
     }
     updateTimerAndStep();
 }
@@ -572,8 +591,8 @@ function decreaseSize() {
 function saveScore(score) {
     // 获取现有总成绩列表
     let scores = JSON.parse(localStorage.getItem('scores')) || [];
-    // 获取当前阶数和模式的成绩列表
-    let currentSizeScores = scores.filter(score => score.size == size && score.gameMode === gameMode);
+    // 确定列表需要：阶数、 游戏模式、分组
+    let currentSizeScores = scores.filter(score => score.size == size && score.gameMode === gameMode && score.group === groupNum);
     // 计算序号
     if (currentSizeScores.length == 0) {
         score.number = 1;
@@ -653,4 +672,11 @@ function switchCursorStyle() {
     scoreListElement.classList.toggle("custom-pointer");
     cursorModeElement.classList.toggle("custom-pointer");
     aboutElement.classList.toggle("custom-pointer");
+    groupElement.classList.toggle("custom-pointer");
+}
+
+// 切换分组：next取1或-1
+function switchGroup(next) {
+    groupNum = (groupNum - 1 + next + 10) % 10 + 1;
+    groupElement.textContent = groupNum;
 }

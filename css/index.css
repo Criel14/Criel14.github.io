@@ -146,7 +146,7 @@ body {
     align-items: center;
     cursor: pointer;
     user-select: none;
-    margin-top: 50px;
+    margin-top: 20px;
     margin-left: 5%;
 }
 
@@ -184,6 +184,34 @@ body {
     transition: 0.3s;
 }
 
+.group {
+    width: 70px;
+    height: 60px;
+    background-color: rgb(250, 250, 250);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
+    border-radius: 8px;
+    display: flex;
+    float: left;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    margin-top: 20px;
+    margin-left: 5%;
+    font-size: 36px;
+    font-weight: bold;
+    text-align: center;
+    color: #8a8a8a;
+}
+
+.group.hidden {
+    display: none;
+}
+
+.group:hover {
+    background-color: rgb(244, 244, 244);
+    transition: 0.3s;
+}
 
 .about {
     width: 70px;

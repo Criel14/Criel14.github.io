@@ -8,13 +8,16 @@ const tbody = document.getElementById('scores-tbody');
 const scores = JSON.parse(localStorage.getItem('scores')) || [];
 const levelUpElement = document.getElementById("level-up");
 const levelDownElement = document.getElementById("level-down");
+const groupElement = document.getElementById("group");
+
 // 当前显示阶数
 let currentSize = 3;
-
 // 游戏模式列表
 let gameModeList = ["normal", "blind"];
 // 游戏模式
 let gameMode = "normal";
+// 当前分组
+let groupNum = 1;
 
 function displayScores(size) {
     // 修改背景颜色
@@ -31,7 +34,8 @@ function displayScores(size) {
 
     tbody.innerHTML = ''; // 清空现有内容
 
-    scores.filter(score => score.size == size && score.gameMode === gameMode).reverse().forEach(score => {
+    // 确定列表需要：阶数、 游戏模式、分组
+    scores.filter(score => score.size == size && score.gameMode === gameMode && score.group == groupNum).reverse().forEach(score => {
         let row = document.createElement('tr');
         let numberTd = document.createElement("td");
         let timeTd = document.createElement("td");
@@ -76,31 +80,58 @@ function changeSize(direction) {
 }
 
 document.addEventListener('keydown', (event) => {
-    if (event.key === ',' || event.key === '<') {
-        changeSize(-1); // 显示低一阶成绩
-        hideOverlay(); // 隐藏弹框
-    }
-    else if (event.key === '.' || event.key === '>') {
-        changeSize(1); // 显示高一阶成绩
-        hideOverlay(); // 隐藏弹框
-    }
-    else if (event.key === 'N' || event.key === "n") {
-        switchGameMode();
-        hideOverlay(); // 隐藏弹框
-    }
-    else if (event.key === 'c' || event.key === 'C') {
-        localStorage.removeItem("scores"); // 清空成绩
-        // 刷新页面
-        location.reload();
-    }
-    else if (event.key === 'l' || event.key === 'L') {
-        // 返回index页
-        window.location.href = "index.html";
-    }
-    else if (event.key === 'Escape') {
-        hideOverlay(); // 隐藏弹框
+    switch (event.key) {
+        case ',':
+        case '<':
+            // 显示低一阶成绩
+            changeSize(-1);
+            // 隐藏弹框
+            hideOverlay();
+            break;
+        case '.':
+        case '>':
+            // 显示高一阶成绩
+            changeSize(1);
+            // 隐藏弹框
+            hideOverlay();
+            break;
+        case 'N':
+        case 'n':
+            switchGameMode();
+            // 隐藏弹框
+            hideOverlay();
+            break;
+        case 'C':
+        case 'c':
+            // 清空成绩
+            localStorage.removeItem("scores");
+            // 刷新页面
+            location.reload();
+            break;
+        case 'L':
+        case 'l':
+            // 返回index页
+            window.location.href = "index.html";
+            break;
+        case 'Escape':
+            // 隐藏弹框
+            hideOverlay();
+            break;
+        case "g":
+        case "G":
+            // 切换上一组
+            switchGroup(-1);
+            break;
+        case "h":
+        case "H":
+            // 切换下一组
+            switchGroup(1);
+            break;
+        default:
+            break;
     }
 });
+
 
 document.addEventListener("DOMContentLoaded", () => {
     displayScores(currentSize); // 初始显示3阶成绩
@@ -111,6 +142,9 @@ document.addEventListener("DOMContentLoaded", () => {
     levelDownElement.addEventListener("click", () => {
         changeSize(-1);
     })
+    groupElement.addEventListener("click", () => {
+        switchGroup(1);
+    });
 });
 
 // 显示打乱
@@ -244,4 +278,10 @@ function renderTiles(size, puzzleList) {
         }
         puzzle.appendChild(tileElement); // 将拼图块添加到拼图容器中
     });
+}
+
+// 切换分组：next取1或-1
+function switchGroup(next) {
+    groupNum = (groupNum - 1 + next + 10) % 10 + 1;
+    groupElement.textContent = groupNum;
 }
