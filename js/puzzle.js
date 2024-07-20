@@ -383,7 +383,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (urlGroupNum) {
         groupNum = parseInt(urlGroupNum);
     }
-    groupElement.textContent = groupNum;
+    groupElement.textContent = "G" + groupNum;
     // 为按钮添加点击事件监听器
     shuffleButton.addEventListener("click", createTiles);
     levelUpElement.addEventListener("click", increaseSize);
@@ -695,7 +695,7 @@ function switchCursorStyle() {
 // 切换分组：next取1或-1
 function switchGroup(next) {
     groupNum = (groupNum - 1 + next + 10) % 10 + 1;
-    groupElement.textContent = groupNum;
+    groupElement.textContent = "G" + groupNum;
 }
 
 // 切换到成绩列表页

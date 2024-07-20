@@ -140,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
     currentSize = parseInt(urlParams.get('size'));
     gameMode = urlParams.get('gameMode');
     groupNum = parseInt(urlParams.get('groupNum'));
-    groupElement.textContent = groupNum;
+    groupElement.textContent = "G" + groupNum;
     // 初始显示列表
     displayScores(currentSize);
     // 升阶和降阶按钮
@@ -294,7 +294,7 @@ function renderTiles(size, puzzleList) {
 // 切换分组：next取1或-1
 function switchGroup(next) {
     groupNum = (groupNum - 1 + next + 10) % 10 + 1;
-    groupElement.textContent = groupNum;
+    groupElement.textContent = "G" + groupNum;
     displayScores(currentSize);
 }
 
