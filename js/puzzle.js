@@ -27,9 +27,15 @@ let tiles = [];
 let scrambleTiles = [];
 // 计时
 let timerInterval;
-let formattedTime = "0.00";
 let timeEclapsed = 0;
-// 是否开始还原
+let formattedTime = "0.00";
+// 当前模式纪录的时间（需要显示的时间）
+let displayTime = 0;
+// 纪录盲拧模式下的观察时间
+let observeTime = 0;
+// 是否开始游戏
+let isStart = false;
+// 是否开始移动
 let isMoving = false;
 // 是否已经还原
 let isFinish = false;
@@ -101,6 +107,7 @@ function createTiles() {
         document.body.style.backgroundColor = "#e6e9f1";
     }
     isFinish = false;
+    isStart = false;
     isMoving = false;
     // 重置步数
     step = 0;
@@ -110,6 +117,8 @@ function createTiles() {
     scramble();
     // 渲染拼图块
     renderTiles();
+    // 开始计时
+    startTimer();
 
     // 旋转动画
     shuffleButton.classList.add('spin-animation');
@@ -154,7 +163,7 @@ function renderTiles() {
         tileElement.style.fontSize = 250 / size + "px";
 
         if (tile !== 0) { // 如果拼图块不是空白块
-            if (gameMode == "blind" && isMoving == true && isFinish == false) {
+            if (gameMode == "blind" && isStart == true && isFinish == false) {
                 tileElement.style.backgroundColor = "#66ccff"; // 设置拼图块的背景颜色
             }
             else {
@@ -191,14 +200,12 @@ function moveTileMouse(index) {
     // 当前块与空白块在同一行
     if (row1 == row0 && line1 != line0) {
         move(line1 < line0 ? -1 : 1); // 左为-1，右为1
-        // 首次移动启用计时器
-        startTimer();
+        isMoving = true;
     }
     // 当前块与空白块在同一列
     else if (line1 == line0 && row1 != row0) {
         move(row1 < row0 ? -size : size); // 上为-size，下为size
-        // 首次移动启用计时器
-        startTimer();
+        isMoving = true;
     }
 
     // 重新渲染拼图块
@@ -221,32 +228,28 @@ function moveTileKeyboard(direction) {
             if (row0 <= size - 2) {
                 [tiles[zeroIndex], tiles[zeroIndex + size]] = [tiles[zeroIndex + size], tiles[zeroIndex]];
                 step++;
-                // 首次移动启用计时器
-                startTimer();
+                isMoving = true;
             }
             break;
         case "down":
             if (row0 >= 1) {
                 [tiles[zeroIndex], tiles[zeroIndex - size]] = [tiles[zeroIndex - size], tiles[zeroIndex]];
                 step++;
-                // 首次移动启用计时器
-                startTimer();
+                isMoving = true;
             }
             break;
         case "left":
             if (line0 <= size - 2) {
                 [tiles[zeroIndex], tiles[zeroIndex + 1]] = [tiles[zeroIndex + 1], tiles[zeroIndex]];
                 step++;
-                // 首次移动启用计时器
-                startTimer();
+                isMoving = true;
             }
             break;
         case "right":
             if (line0 >= 1) {
                 [tiles[zeroIndex], tiles[zeroIndex - 1]] = [tiles[zeroIndex - 1], tiles[zeroIndex]];
                 step++;
-                // 首次移动启用计时器
-                startTimer();
+                isMoving = true;
             }
             break;
         default:
@@ -277,6 +280,7 @@ function checkWin() {
                 scramble: scrambleTiles.toString(),
                 moveMode: moveMode,
                 gameMode: gameMode,
+                observeTime: timeFormat(observeTime),
             };
             saveScore(score);
             // 标记完成
@@ -427,10 +431,11 @@ document.addEventListener('keydown', function (event) {
     }
 });
 
-// 开始计时
+// 打乱完成后开始计时
+// 普通模式——时间 = 计时时间 - 观察时间
+// 盲玩模式——时间 = 计时时间
 function startTimer() {
-    // 首次移动后开始计时
-    if (!isMoving) {
+    if (!isStart) {
         clearInterval(timerInterval);
         timeEclapsed = 0;
         updateTimerAndStep();
@@ -438,22 +443,40 @@ function startTimer() {
             timeEclapsed += 10;
             updateTimerAndStep();
         }, 10);
-        isMoving = true;
+        isStart = true;
     }
 }
 
 // 更新计时器、步数、TPS显示
 function updateTimerAndStep() {
-    const seconds = Math.floor(timeEclapsed / 1000);
-    const milliseconds = timeEclapsed % 1000;
-    // 格式化时间，保留2位小数
-    let time = `${seconds}.${milliseconds}`;
-    formattedTime = parseFloat(time).toFixed(2);
-    // 计算tps，保留3位小数
-    tps = 0;
-    if (timeEclapsed != 0) {
-        tps = (step / (timeEclapsed / 1000)).toFixed(2);
+    // 保存观察时间
+    // 当isMoving为false时，表示当前没有移动，此时更新观察时间
+    // 当isMoving为true时，表示当前正在移动，此时不更新观察时间
+    if (!isMoving) {
+        observeTime = timeEclapsed;
     }
+
+    // 计算显示时间
+    if (gameMode == "normal") {
+        if (isMoving) {
+            displayTime = timeEclapsed - observeTime;
+        }
+        else {
+            displayTime = 0;
+        }
+    }
+    else if (gameMode == "blind") {
+        displayTime = timeEclapsed;
+    }
+
+    // 格式化时间，保留2位小数
+    formattedTime = timeFormat(displayTime);
+    // 计算tps，保留2位小数
+    tps = 0;
+    if (displayTime != 0) {
+        tps = (step / (displayTime / 1000)).toFixed(2);
+    }
+
     // 显示数据
     timerElement.textContent = ``;
     stepElement.textContent = ``;
@@ -473,6 +496,13 @@ function resetTimer() {
     clearInterval(timerInterval);
     timeEclapsed = 0;
     updateTimerAndStep();
+}
+
+// 格式化时间，保留2位小数，参数是毫秒
+function timeFormat(originalTime) {
+    const seconds = Math.floor(originalTime / 1000);
+    const milliseconds = originalTime % 1000;
+    return parseFloat(`${seconds}.${milliseconds}`).toFixed(2);
 }
 
 // 数据显示模式

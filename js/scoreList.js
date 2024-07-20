@@ -140,9 +140,9 @@ function showInfo(size, score) {
     timeInfo.textContent = score.time + "s";
     timeInfo.classList.add("time-info");
     puzzleInfo.appendChild(timeInfo);
-    // 显示模式
+    // 显示模式 + 观察时间
     modeInfo = document.createElement("p");
-    modeInfo.textContent = score.gameMode + "-" + score.moveMode;
+    modeInfo.textContent = score.gameMode + "-" + score.moveMode + " (" + score.observeTime + "s)";
     modeInfo.classList.add("move-mode-info");
     puzzleInfo.appendChild(modeInfo);
     // 显示步数
