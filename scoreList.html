@@ -21,6 +21,7 @@
         </div>
         <div id="group" class="menu-button group" title="更改分组（ G、H ）">1</div>
     </div>
+
     <div class="main">
         <br>
         <table>
@@ -39,12 +40,24 @@
         </table>
     </div>
 
-    <div id="overlay" class="hidden" onclick="hideOverlay()">
+    <!-- 成绩详细弹框 -->
+    <div id="overlay" class="hidden">
         <div id="overlay-content">
             <div class="puzzle-container">
                 <div class="puzzle" id="puzzle"></div>
             </div>
             <div id="info-container"></div>
+        </div>
+        <div class="overlay-info-menu">
+            <div id="overlay-close-button" class="overlay-menu-button" title="关闭成绩详细（ esc ）" id="level-up">
+                <img src="image/back.png" alt="switch" width="44px" height="44px">
+            </div>
+            <div id="overlay-replay-button" class="overlay-menu-button" title="录像回放（ R ）" id="level-up">
+                <img src="image/replay.png" alt="switch" width="44px" height="44px">
+            </div>
+            <div id="overlay-delete-button" class="overlay-menu-button" title="删除本次成绩（ D ）" id="level-up">
+                <img src="image/delete.png" alt="switch" width="44px" height="44px">
+            </div>
         </div>
     </div>
 

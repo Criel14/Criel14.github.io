@@ -1,15 +1,27 @@
+// 从localStorage获取成绩列表
+const scores = JSON.parse(localStorage.getItem('scores')) || [];
+// 表格的阶数表头
 const sizeInfoElement = document.getElementById("size-info");
-const overlayElement = document.getElementById("overlay");
+// 打乱文本
 const scrambleTextElement = document.getElementById("scramble-text");
+// puzzle样式
 const puzzle = document.getElementById("puzzle");
+// 本次还原的信息
 const puzzleInfo = document.getElementById("info-container");
+// 表格
 const tableHead = document.getElementById("scores-head");
 const tbody = document.getElementById('scores-tbody');
-const scores = JSON.parse(localStorage.getItem('scores')) || [];
+// 表格上方的按钮
 const levelUpElement = document.getElementById("level-up");
 const levelDownElement = document.getElementById("level-down");
 const groupElement = document.getElementById("group");
 const backElement = document.getElementById("back-to-index");
+// 成绩详细页弹框
+const overlayElement = document.getElementById("overlay");
+// 成绩详细弹框的三个按钮
+const overlayCloseElement = document.getElementById("overlay-close-button");
+const overlayDeleteElement = document.getElementById("overlay-delete-button");
+const overlayReplayElement = document.getElementById("overlay-replay-button");
 
 // 当前显示阶数
 let currentSize = 3;
@@ -156,6 +168,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     // 返回按钮
     backElement.addEventListener("click", redirectToindex);
+    // 关闭弹框按钮
+    overlayCloseElement.addEventListener("click", hideOverlay);
 });
 
 // 显示打乱
