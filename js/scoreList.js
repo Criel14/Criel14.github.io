@@ -25,6 +25,8 @@ const overlayReplayElement = document.getElementById("overlay-replay-button");
 
 // 当前显示阶数
 let currentSize = 3;
+// 当前详细页序号
+let currentNumber = 1;
 // 游戏模式列表
 let gameModeList = ["normal", "blind"];
 // 游戏模式
@@ -48,7 +50,7 @@ function displayScores(size) {
     tbody.innerHTML = ''; // 清空现有内容
 
     // 确定列表需要：阶数、 游戏模式、分组
-    scores.filter(score => score.size == size && score.gameMode === gameMode && score.group == groupNum).reverse().forEach(score => {
+    scores.filter(score => score != null && score.size == size && score.gameMode === gameMode && score.group == groupNum).reverse().forEach(score => {
         let row = document.createElement('tr');
         let numberTd = document.createElement("td");
         let timeTd = document.createElement("td");
@@ -170,10 +172,13 @@ document.addEventListener("DOMContentLoaded", () => {
     backElement.addEventListener("click", redirectToindex);
     // 关闭弹框按钮
     overlayCloseElement.addEventListener("click", hideOverlay);
+    // 删除成绩按钮
+    overlayDeleteElement.addEventListener("click", deleteScore);
 });
 
 // 显示打乱
 function showScramble(size, number) {
+    currentNumber = number;
     const scores = JSON.parse(localStorage.getItem('scores')) || [];
     // 找到scores中对应的行
     const score = scores.find(s => s.size === size && s.number === number && s.gameMode === gameMode);
@@ -316,4 +321,43 @@ function switchGroup(next) {
 function redirectToindex() {
     const url = `index.html?size=${currentSize}&gameMode=${gameMode}&groupNum=${groupNum}`;
     window.location.href = url;
+}
+
+// 删除特定成绩并更新序号
+function deleteScore() {
+    // 获取特定成绩列表
+    let filteredScores = scores.filter(score => score != null && score.size === currentSize && score.gameMode === gameMode && score.group === groupNum);
+
+    // 找到需要删除的成绩索引
+    const index = filteredScores.findIndex(score => score != null && score.number === currentNumber);
+
+    if (index !== -1) {
+        // 删除特定成绩
+        filteredScores.splice(index, 1);
+
+        // 更新剩余成绩的序号
+        for (let i = index; i < filteredScores.length; i++) {
+            filteredScores[i].number = i + 1; // 序号从1开始
+        }
+
+        // 更新原始 scores 列表
+        const updatedScores = scores.map(score => {
+            if (score != null && score.size === currentSize && score.gameMode === gameMode && score.group === groupNum) {
+                return filteredScores.shift();
+            }
+            return score;
+        });
+
+        // 去除updatedScores里的null数据
+        updatedScores.forEach((score, index) => { if (score == null) updatedScores.splice(index, 1); });
+
+        // 保存更新后的成绩列表到 LocalStorage
+        localStorage.setItem('scores', JSON.stringify(updatedScores));
+
+        // 刷新页面
+        window.location.reload();
+        console.log('成绩删除并更新成功');
+    } else {
+        console.log('未找到指定的成绩');
+    }
 }
