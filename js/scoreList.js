@@ -323,7 +323,7 @@ function redirectToindex() {
     window.location.href = url;
 }
 
-// 删除特定成绩并更新序号
+// 删除当前指定成绩并更新序号
 function deleteScore() {
     // 获取特定成绩列表
     let filteredScores = scores.filter(score => score != null && score.size === currentSize && score.gameMode === gameMode && score.group === groupNum);
