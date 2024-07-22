@@ -11,7 +11,7 @@ body {
     padding: 20px;
 }
 
-.menu-button {
+.group {
     width: 70px;
     height: 60px;
     background-color: rgb(250, 250, 250);
@@ -24,18 +24,67 @@ body {
     cursor: pointer;
     user-select: none;
     margin-left: 20px;
-}
-
-.menu-button:hover {
-    background-color: rgb(244, 244, 244);
-    transition: 0.3s;
-}
-
-.group {
     font-size: 36px;
     font-weight: bold;
     text-align: center;
     color: #8a8a8a;
+}
+
+.group:hover {
+    background-color: rgb(244, 244, 244);
+    transition: 0.3s;
+}
+
+.menu-button-float {
+    width: 70px;
+    height: 60px;
+    background-color: rgb(250, 250, 250);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    margin-left: 20px;
+    position: relative;
+    float: left;
+}
+
+.menu-button-float::after {
+    content: attr(data-text);
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(250, 250, 250);
+    border-radius: 8px;
+    opacity: 0;
+    transform: translate(30%, 0);
+    transition: all 0.3s;
+    color: #808080; /* 提示文字颜色 */
+    font-size: 20px;
+}
+
+.menu-button-float span {
+    transition: all 0.3s;
+}
+
+.menu-button-float:hover::after {
+    opacity: 1;
+    transform: translate(0, 0);
+}
+
+.menu-button-float:hover span {
+    opacity: 0;
+}
+
+.menu-button-float.hidden {
+    display: none;
 }
 
 table {
