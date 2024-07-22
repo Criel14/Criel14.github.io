@@ -88,10 +88,57 @@ body {
     display: none;
 }
 
-.menu-big-button {
+.menu-big-button-float {
     width: 110px;
+    height: 60px;
+    background-color: rgb(250, 250, 250);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
     float: right;
     margin-right: 20px;
+}
+
+.menu-big-button-float::after {
+    content: attr(data-text);
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(250, 250, 250);
+    border-radius: 8px;
+    opacity: 0;
+    transform: translate(30%, 0);
+    transition: all 0.3s;
+    color: #808080;
+    /* 提示文字颜色 */
+    font-size: 20px;
+}
+
+.menu-big-button-float span {
+    transition: all 0.3s;
+}
+
+.menu-big-button-float:hover::after {
+    opacity: 1;
+    transform: translate(0, 0);
+}
+
+.menu-big-button-float:hover span {
+    opacity: 0;
+}
+
+.menu-big-button-float.hidden {
+    display: none;
 }
 
 table {
@@ -113,14 +160,9 @@ td {
 }
 
 th {
-    background-color: #121212;
+    background-color: #141845;
     font-weight: bold;
     color: white;
-}
-
-th:hover {
-    background-color: #353535;
-    transition: 0.3s;
 }
 
 tr:nth-child(even) {
@@ -281,4 +323,32 @@ tr:nth-child(odd):hover {
     line-height: 28px;
     margin-top: 20px;
     margin-bottom: 20px;
+}
+
+.game-mode {
+    width: 160px;
+    height: 60px;
+    background-color: rgb(250, 250, 250);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    margin-right: 20px;
+    position: relative;
+    float: right;
+    font-size: 24px;
+    text-align: center;
+    color: rgb(94, 94, 94);
+}
+
+.game-mode.hidden {
+    display: none;
+}
+
+.game-mode:hover {
+    background-color: rgb(244, 244, 244);
+    transition: 0.3s;
 }

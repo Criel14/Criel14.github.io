@@ -282,6 +282,11 @@ body {
     display: none;
 }
 
+.move-mode:hover {
+    background-color: rgb(244, 244, 244);
+    transition: 0.3s;
+}
+
 .game-mode {
     width: 160px;
     height: 60px;
@@ -302,12 +307,6 @@ body {
 
 .game-mode.hidden {
     display: none;
-}
-
-
-.move-mode:hover {
-    background-color: rgb(244, 244, 244);
-    transition: 0.3s;
 }
 
 .game-mode:hover {

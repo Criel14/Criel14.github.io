@@ -9,13 +9,13 @@ const puzzle = document.getElementById("puzzle");
 // 本次还原的信息
 const puzzleInfo = document.getElementById("info-container");
 // 表格
-const tableHead = document.getElementById("scores-head");
 const tbody = document.getElementById('scores-tbody');
 // 表格上方的按钮
 const levelUpElement = document.getElementById("level-up");
 const levelDownElement = document.getElementById("level-down");
 const groupElement = document.getElementById("group");
 const backElement = document.getElementById("back-to-index");
+const switchGameModeElement = document.getElementById("switch-game-mode");
 // 成绩详细页弹框
 const overlayElement = document.getElementById("overlay");
 // 成绩详细弹框的三个按钮
@@ -25,6 +25,8 @@ const overlayReplayElement = document.getElementById("overlay-replay-button");
 // 清空本组和清空全部的按钮
 const deleteGroupElement = document.getElementById("delete-group");
 const deleteAllElement = document.getElementById("delete-all");
+// 获取th元素
+const thElements = document.getElementsByTagName("th");
 
 // 当前显示阶数
 let currentSize = 3;
@@ -47,8 +49,7 @@ function displayScores(size) {
     }
 
     // 修改表头
-    sizeInfoElement.innerHTML = `${size}阶` + "-" + gameMode + "&nbsp;&nbsp;⇋";
-    tableHead.addEventListener("click", switchGameMode);
+    sizeInfoElement.innerHTML = `${size}阶`;
 
     tbody.innerHTML = ''; // 清空现有内容
 
@@ -147,14 +148,20 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
-
+// 加载完成后
 document.addEventListener("DOMContentLoaded", () => {
     // 获取url中传递的参数
     const urlParams = new URLSearchParams(window.location.search);
     currentSize = parseInt(urlParams.get('size'));
     gameMode = urlParams.get('gameMode');
     groupNum = parseInt(urlParams.get('groupNum'));
+    // 更新显示内容
     groupElement.textContent = "G" + groupNum;
+    switchGameModeElement.textContent = gameMode;
+    changeHeaderColor();
+    // 添加监听
+    // 切换游戏模式按钮
+    switchGameModeElement.addEventListener("click", switchGameMode);
     // 初始显示列表
     displayScores(currentSize);
     // 升阶和降阶按钮
@@ -240,8 +247,25 @@ function showInfo(size, score) {
 function switchGameMode() {
     let currentIndex = gameModeList.indexOf(gameMode);
     gameMode = gameModeList[(currentIndex + 1) % gameModeList.length];
+    switchGameModeElement.textContent = gameMode;
+    // 更改表头颜色
+    changeHeaderColor();
     // 重新渲染表格
     displayScores(currentSize);
+}
+
+// 根据游戏模式更改表头颜色
+function changeHeaderColor() {
+    if (gameMode == "normal") {
+        for (var i = 0; i < thElements.length; i++) {
+            thElements[i].style.backgroundColor = "#121212";
+        }
+    }
+    else if (gameMode == "blind") {
+        for (var i = 0; i < thElements.length; i++) {
+            thElements[i].style.backgroundColor = "#141845";
+        }
+    }
 }
 
 // 显示弹框
