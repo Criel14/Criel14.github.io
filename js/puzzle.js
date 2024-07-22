@@ -376,9 +376,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // 判断参数是否存在
     if (urlSize) {
         size = parseInt(urlSize);
+        levelShowElement.textContent = size + "×" + size;
     }
     if (urlGameMode) {
         gameMode = urlGameMode;
+        gameModeElement.textContent = gameMode;
     }
     if (urlGroupNum) {
         groupNum = parseInt(urlGroupNum);
