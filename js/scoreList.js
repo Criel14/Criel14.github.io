@@ -185,7 +185,7 @@ function showScramble(size, number) {
     currentNumber = number;
     const scores = JSON.parse(localStorage.getItem('scores')) || [];
     // 找到scores中对应的行
-    const score = scores.find(s => s.size === size && s.number === number && s.gameMode === gameMode);
+    const score = scores.find(s => s.size === size && s.number === number && s.gameMode === gameMode && s.group === groupNum);
     // 获取打乱数组
     const scrambleList = score.scramble.split(',');
     // 弹框中显示打乱
@@ -199,6 +199,7 @@ function showScramble(size, number) {
 
 // 显示当局信息
 function showInfo(size, score) {
+    console.log(score);
     // 清空容器
     puzzleInfo.innerHTML = '';
     // 设置高度
@@ -245,12 +246,16 @@ function switchGameMode() {
 
 // 显示弹框
 function showOverlay() {
+    overlayElement.classList.add('visible');
     overlayElement.classList.remove('hidden');
 }
 
 // 隐藏弹框
 function hideOverlay() {
-    overlayElement.classList.add('hidden');
+    overlayElement.classList.remove('visible');
+    setTimeout(() => {
+        overlayElement.classList.add('hidden');
+    }, 200); // Wait for the animation to finish
 }
 
 // 颜色字典，按层降阶，即从左上到右下
