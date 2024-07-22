@@ -45,6 +45,15 @@ let gameMode = "normal";
 // 当前分组
 let groupNum = 1;
 
+// 默认配置
+let defaultConfig = {
+    "size": 4,
+    "gameMode": "normal",
+    "moveMode": "slide",
+    "groupNumber": 1,
+    "isCustomCursor": false,
+}
+
 function displayScores(size) {
     // 修改背景颜色
     if (gameMode == "normal") {
@@ -102,6 +111,7 @@ function changeSize(direction) {
         currentSize = 10;
     }
     displayScores(currentSize);
+    saveConfig();
 }
 
 document.addEventListener('keydown', (event) => {
@@ -156,11 +166,16 @@ document.addEventListener('keydown', (event) => {
 
 // 加载完成后
 document.addEventListener("DOMContentLoaded", () => {
-    // 获取url中传递的参数
-    const urlParams = new URLSearchParams(window.location.search);
-    currentSize = parseInt(urlParams.get('size'));
-    gameMode = urlParams.get('gameMode');
-    groupNum = parseInt(urlParams.get('groupNum'));
+    // 获取localStorage中的配置文件
+    let config = JSON.parse(localStorage.getItem('config')) || [];
+    // 判断空值
+    if (config.length == 0) {
+        config = defaultConfig;
+    }
+    // 从配置赋值
+    gameMode = config.gameMode;
+    currentSize = config.size;
+    groupNum = config.groupNumber;
     // 更新显示内容
     groupNumberElement.textContent = "G" + groupNum;
     switchGameModeElement.textContent = gameMode;
@@ -261,6 +276,7 @@ function switchGameMode() {
     changeHeaderColor();
     // 重新渲染表格
     displayScores(currentSize);
+    saveConfig();
 }
 
 // 根据游戏模式更改表头颜色
@@ -357,11 +373,12 @@ function switchGroup(next) {
     groupNum = (groupNum - 1 + next + 10) % 10 + 1;
     groupNumberElement.textContent = "G" + groupNum;
     displayScores(currentSize);
+    saveConfig();
 }
 
 // 切换到index页
 function redirectToindex() {
-    const url = `index.html?size=${currentSize}&gameMode=${gameMode}&groupNum=${groupNum}`;
+    const url = `index.html`;
     window.location.href = url;
 }
 
@@ -423,4 +440,17 @@ function deleteGroupScores() {
 function deleteAllScores() {
     localStorage.removeItem('scores');
     window.location.reload();
+}
+
+// 保存配置信息
+// 在任意值被改变后调用
+function saveConfig() {
+    // 获取localStorage中的配置文件
+    let config = JSON.parse(localStorage.getItem('config')) || [];
+    // 保存当前阶数、游戏模式、移动模式、组号、当前鼠标样式
+    config.size = currentSize;
+    config.gameMode = gameMode;
+    config.groupNumber = groupNum;
+    // 保存到localStorage
+    localStorage.setItem("config", JSON.stringify(config));
 }

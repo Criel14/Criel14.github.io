@@ -64,7 +64,17 @@ let moveMode = "slide";
 let gameMode = "normal";
 // 当前组号
 let groupNum = 1;
+// 是否启用自定义光标样式
+let isCustomCursor = false;
 
+// 默认配置
+let defaultConfig = {
+    "size": 4,
+    "gameMode": "normal",
+    "moveMode": "slide",
+    "groupNumber": 1,
+    "isCustomCursor": false,
+}
 
 // 颜色字典，按层降阶，即从左上到右下
 const colorMap = {
@@ -373,24 +383,28 @@ function countInversions(originalArr) {
 
 // 当整个HTML文档加载完毕后执行以下代码
 document.addEventListener("DOMContentLoaded", () => {
-    // 获取url中传递的参数
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlSize = urlParams.get('size');
-    const urlGameMode = urlParams.get('gameMode');
-    const urlGroupNum = urlParams.get('groupNum');
-    // 判断参数是否存在
-    if (urlSize) {
-        size = parseInt(urlSize);
-        levelShowElement.textContent = size + "×" + size;
+    // 获取localStorage中的配置文件
+    let config = JSON.parse(localStorage.getItem('config')) || [];
+    // 判断空值
+    if (config.length == 0) {
+        config = defaultConfig;
+        // 保存到localStorage
+        localStorage.setItem("config", JSON.stringify(config));
     }
-    if (urlGameMode) {
-        gameMode = urlGameMode;
-        gameModeElement.textContent = gameMode;
-    }
-    if (urlGroupNum) {
-        groupNum = parseInt(urlGroupNum);
-    }
+    // 从配置赋值
+    gameMode = config.gameMode;
+    moveMode = config.moveMode;
+    size = config.size;
+    isCustomCursor = config.isCustomCursor;
+    groupNum = config.groupNumber;
+    saveConfig();
+    // 显示信息
+    gameModeElement.textContent = gameMode;
+    moveModeElement.textContent = moveMode;
+    levelShowElement.textContent = size + "×" + size;
     groupNumberElement.textContent = "G" + groupNum;
+    // 设置光标样式
+    setCursorStyle(isCustomCursor);
     // 为按钮添加点击事件监听器
     shuffleButton.addEventListener("click", createTiles);
     levelUpElement.addEventListener("click", increaseSize);
@@ -601,6 +615,7 @@ function increaseSize() {
         size++;
         levelShowElement.textContent = size + "×" + size;
         createTiles();
+        saveConfig();
     }
 }
 
@@ -611,6 +626,7 @@ function decreaseSize() {
         size--;
         levelShowElement.textContent = size + "×" + size;
         createTiles();
+        saveConfig();
     }
 }
 
@@ -673,6 +689,7 @@ function switchMoveMode() {
     moveModeElement.textContent = moveMode;
     // 重新生成打乱
     createTiles();
+    saveConfig();
 }
 
 // 切换游戏模式
@@ -683,33 +700,73 @@ function switchGameMode() {
     gameModeElement.textContent = gameMode;
     // 重新生成打乱
     createTiles();
+    saveConfig();
 }
 
 // 调整鼠标样式
 function switchCursorStyle() {
-    console.log("切换样式");
-    // 切换样式
-    document.body.classList.toggle("custom-cursor");
-    moveModeElement.classList.toggle("custom-pointer");
-    gameModeElement.classList.toggle("custom-pointer");
-    levelUpElement.classList.toggle("custom-pointer");
-    levelDownElement.classList.toggle("custom-pointer");
-    shuffleButton.classList.toggle("custom-pointer");
-    switchDataElement.classList.toggle("custom-pointer");
-    scoreListElement.classList.toggle("custom-pointer");
-    cursorModeElement.classList.toggle("custom-pointer");
-    aboutElement.classList.toggle("custom-pointer");
-    groupElement.classList.toggle("custom-pointer");
+    isCustomCursor = !isCustomCursor;
+    setCursorStyle(isCustomCursor);
+    saveConfig();
+}
+
+// 设置光标样式
+function setCursorStyle(isCustomCursor) {
+    // 显示自定义样式
+    if (isCustomCursor) {
+        // 添加样式
+        document.body.classList.add("custom-cursor");
+        moveModeElement.classList.add("custom-pointer");
+        gameModeElement.classList.add("custom-pointer");
+        levelUpElement.classList.add("custom-pointer");
+        levelDownElement.classList.add("custom-pointer");
+        shuffleButton.classList.add("custom-pointer");
+        switchDataElement.classList.add("custom-pointer");
+        scoreListElement.classList.add("custom-pointer");
+        cursorModeElement.classList.add("custom-pointer");
+        aboutElement.classList.add("custom-pointer");
+        groupElement.classList.add("custom-pointer");
+    }
+    else {
+        // 去除样式
+        document.body.classList.remove("custom-cursor");
+        moveModeElement.classList.remove("custom-pointer");
+        gameModeElement.classList.remove("custom-pointer");
+        levelUpElement.classList.remove("custom-pointer");
+        levelDownElement.classList.remove("custom-pointer");
+        shuffleButton.classList.remove("custom-pointer");
+        switchDataElement.classList.remove("custom-pointer");
+        scoreListElement.classList.remove("custom-pointer");
+        cursorModeElement.classList.remove("custom-pointer");
+        aboutElement.classList.remove("custom-pointer");
+        groupElement.classList.remove("custom-pointer");
+    }
 }
 
 // 切换分组：next取1或-1
 function switchGroup(next) {
     groupNum = (groupNum - 1 + next + 10) % 10 + 1;
     groupNumberElement.textContent = "G" + groupNum;
+    saveConfig();
 }
 
 // 切换到成绩列表页
 function redirectToScoreList() {
-    const url = `scoreList.html?size=${size}&gameMode=${gameMode}&groupNum=${groupNum}`;
+    const url = `scoreList.html`;
     window.location.href = url;
+}
+
+// 保存配置信息
+// 在任意值被改变后调用
+function saveConfig() {
+    // 获取localStorage中的配置文件
+    let config = JSON.parse(localStorage.getItem('config')) || [];
+    // 保存当前阶数、游戏模式、移动模式、组号、当前鼠标样式
+    config.size = size;
+    config.gameMode = gameMode;
+    config.moveMode = moveMode;
+    config.groupNumber = groupNum;
+    config.isCustomCursor = isCustomCursor;
+    // 保存到localStorage
+    localStorage.setItem("config", JSON.stringify(config));
 }
