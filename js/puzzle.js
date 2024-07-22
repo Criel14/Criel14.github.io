@@ -24,6 +24,11 @@ const cursorModeElement = document.getElementById("cursor-mode");
 // 引用成绩列表
 const scoreListElement = document.getElementById("score-list");
 // 引用换组按钮
+const groupLastElement = document.getElementById("group-last");
+const groupNextElement = document.getElementById("group-next");
+// 显示组号
+const groupNumberElement = document.getElementById("group-number");
+// 整个组号大div，用于隐藏显示
 const groupElement = document.getElementById("group");
 // 引用关于按钮
 const aboutElement = document.getElementById("about");
@@ -385,7 +390,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (urlGroupNum) {
         groupNum = parseInt(urlGroupNum);
     }
-    groupElement.textContent = "G" + groupNum;
+    groupNumberElement.textContent = "G" + groupNum;
     // 为按钮添加点击事件监听器
     shuffleButton.addEventListener("click", createTiles);
     levelUpElement.addEventListener("click", increaseSize);
@@ -394,7 +399,10 @@ document.addEventListener("DOMContentLoaded", () => {
     moveModeElement.addEventListener("click", switchMoveMode);
     gameModeElement.addEventListener("click", switchGameMode);
     cursorModeElement.addEventListener("click", switchCursorStyle);
-    groupElement.addEventListener("click", () => {
+    groupLastElement.addEventListener("click", () => {
+        switchGroup(-1);
+    });
+    groupNextElement.addEventListener("click", () => {
         switchGroup(1);
     });
     scoreListElement.addEventListener("click", redirectToScoreList);
@@ -697,7 +705,7 @@ function switchCursorStyle() {
 // 切换分组：next取1或-1
 function switchGroup(next) {
     groupNum = (groupNum - 1 + next + 10) % 10 + 1;
-    groupElement.textContent = "G" + groupNum;
+    groupNumberElement.textContent = "G" + groupNum;
 }
 
 // 切换到成绩列表页

@@ -13,9 +13,15 @@ const tbody = document.getElementById('scores-tbody');
 // 表格上方的按钮
 const levelUpElement = document.getElementById("level-up");
 const levelDownElement = document.getElementById("level-down");
-const groupElement = document.getElementById("group");
 const backElement = document.getElementById("back-to-index");
 const switchGameModeElement = document.getElementById("switch-game-mode");
+// 引用换组按钮
+const groupLastElement = document.getElementById("group-last");
+const groupNextElement = document.getElementById("group-next");
+// 显示组号
+const groupNumberElement = document.getElementById("group-number");
+// 整个组号大div，用于隐藏显示
+const groupElement = document.getElementById("group");
 // 成绩详细页弹框
 const overlayElement = document.getElementById("overlay");
 // 成绩详细弹框的三个按钮
@@ -156,7 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
     gameMode = urlParams.get('gameMode');
     groupNum = parseInt(urlParams.get('groupNum'));
     // 更新显示内容
-    groupElement.textContent = "G" + groupNum;
+    groupNumberElement.textContent = "G" + groupNum;
     switchGameModeElement.textContent = gameMode;
     changeHeaderColor();
     // 添加监听
@@ -172,7 +178,10 @@ document.addEventListener("DOMContentLoaded", () => {
         changeSize(-1);
     })
     // 换组按钮
-    groupElement.addEventListener("click", () => {
+    groupLastElement.addEventListener("click", () => {
+        switchGroup(-1);
+    });
+    groupNextElement.addEventListener("click", () => {
         switchGroup(1);
     });
     // 返回按钮
@@ -346,7 +355,7 @@ function renderTiles(size, puzzleList) {
 // 切换分组：next取1或-1
 function switchGroup(next) {
     groupNum = (groupNum - 1 + next + 10) % 10 + 1;
-    groupElement.textContent = "G" + groupNum;
+    groupNumberElement.textContent = "G" + groupNum;
     displayScores(currentSize);
 }
 

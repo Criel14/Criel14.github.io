@@ -146,7 +146,8 @@ body {
     opacity: 0;
     transform: translate(30%, 0);
     transition: all 0.3s;
-    color: #808080; /* 提示文字颜色 */
+    color: #808080;
+    /* 提示文字颜色 */
     font-size: 20px;
 }
 
@@ -168,7 +169,7 @@ body {
 }
 
 .group {
-    width: 70px;
+    width: 140px;
     height: 60px;
     background-color: rgb(250, 250, 250);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
@@ -176,7 +177,6 @@ body {
     display: flex;
     float: left;
     justify-content: center;
-    align-items: center;
     cursor: pointer;
     user-select: none;
     margin-top: 20px;
@@ -191,10 +191,28 @@ body {
     display: none;
 }
 
-.group:hover {
-    background-color: rgb(244, 244, 244);
+.group #group-number {
+    height: 100%;
+    width: 48%;
+    float: left;
+    line-height: 60px;
+}
+
+.group #group-last,
+.group #group-next {
+    height: 100%;
+    width: 26%;
+    float: left;
+    border-radius: 8px;
+    padding-top: 13px;
+}
+
+.group #group-last:hover,
+.group #group-next:hover {
+    background-color: #f0f0f0;
     transition: 0.3s;
 }
+
 
 .menu-button-flex {
     width: 70px;
@@ -227,7 +245,8 @@ body {
     opacity: 0;
     transform: translate(30%, 0);
     transition: all 0.3s;
-    color: #808080; /* 提示文字颜色 */
+    color: #808080;
+    /* 提示文字颜色 */
     font-size: 20px;
 }
 
