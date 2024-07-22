@@ -22,6 +22,9 @@ const overlayElement = document.getElementById("overlay");
 const overlayCloseElement = document.getElementById("overlay-close-button");
 const overlayDeleteElement = document.getElementById("overlay-delete-button");
 const overlayReplayElement = document.getElementById("overlay-replay-button");
+// 清空本组和清空全部的按钮
+const deleteGroupElement = document.getElementById("delete-group");
+const deleteAllElement = document.getElementById("delete-all");
 
 // 当前显示阶数
 let currentSize = 3;
@@ -98,6 +101,8 @@ document.addEventListener('keydown', (event) => {
     switch (event.key) {
         case ',':
         case '<':
+        case 'S':
+        case 's':
             // 显示低一阶成绩
             changeSize(-1);
             // 隐藏弹框
@@ -105,6 +110,8 @@ document.addEventListener('keydown', (event) => {
             break;
         case '.':
         case '>':
+        case 'W':
+        case 'w':
             // 显示高一阶成绩
             changeSize(1);
             // 隐藏弹框
@@ -116,13 +123,6 @@ document.addEventListener('keydown', (event) => {
             // 隐藏弹框
             hideOverlay();
             break;
-        case 'C':
-        case 'c':
-            // 清空成绩
-            localStorage.removeItem("scores");
-            // 刷新页面
-            location.reload();
-            break;
         case 'L':
         case 'l':
             // 返回index页
@@ -132,13 +132,13 @@ document.addEventListener('keydown', (event) => {
             // 隐藏弹框
             hideOverlay();
             break;
-        case "g":
-        case "G":
+        case "a":
+        case "A":
             // 切换上一组
             switchGroup(-1);
             break;
-        case "h":
-        case "H":
+        case "d":
+        case "D":
             // 切换下一组
             switchGroup(1);
             break;
@@ -172,8 +172,12 @@ document.addEventListener("DOMContentLoaded", () => {
     backElement.addEventListener("click", redirectToindex);
     // 关闭弹框按钮
     overlayCloseElement.addEventListener("click", hideOverlay);
-    // 删除成绩按钮
+    // 删除单次成绩按钮
     overlayDeleteElement.addEventListener("click", deleteScore);
+    // 删除本组按钮
+    deleteGroupElement.addEventListener("click", deleteGroupScores);
+    // 删除所有成绩
+    deleteAllElement.addEventListener("click", deleteAllScores);
 });
 
 // 显示打乱
@@ -360,4 +364,25 @@ function deleteScore() {
     } else {
         console.log('未找到指定的成绩');
     }
+}
+
+// 删除当前指定组的所有成绩
+function deleteGroupScores() {
+    // 过滤出不属于当前组的成绩
+    const updatedScores = scores.filter(score => {
+        return !(score != null && score.size === currentSize && score.gameMode === gameMode && score.group === groupNum);
+    });
+
+    // 保存更新后的成绩列表到 LocalStorage
+    localStorage.setItem('scores', JSON.stringify(updatedScores));
+
+    // 刷新页面
+    window.location.reload();
+    console.log('当前组的成绩删除并更新成功');
+}
+
+// 清空所有成绩
+function deleteAllScores() {
+    localStorage.removeItem('scores');
+    window.location.reload();
 }
