@@ -238,6 +238,8 @@ document.addEventListener("DOMContentLoaded", () => {
     groupNumberElement.textContent = "G" + groupNum;
     switchGameModeElement.textContent = gameMode;
     changeHeaderColor();
+    // 显示图表
+    renderChart();
     // 添加监听
     // 切换游戏模式按钮
     switchGameModeElement.addEventListener("click", switchGameMode);
