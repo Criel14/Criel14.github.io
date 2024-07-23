@@ -127,7 +127,7 @@ function getColor(number) {
 function createTiles() {
     // 修改背景颜色
     if (gameMode == "normal") {
-        document.body.style.backgroundColor = "#f0f0f0";
+        document.body.style.backgroundColor = "#f0ede9";
     }
     else if (gameMode == "blind") {
         document.body.style.backgroundColor = "#e6e9f1";
@@ -403,6 +403,13 @@ document.addEventListener("DOMContentLoaded", () => {
     moveModeElement.textContent = moveMode;
     levelShowElement.textContent = size + "×" + size;
     groupNumberElement.textContent = "G" + groupNum;
+    // 设置level文本颜色
+    if (gameMode == "normal") {
+        levelShowElement.style.color = "#482b16";
+    }
+    else if (gameMode == "blind") {
+        levelShowElement.style.color = "##161b48";
+    }
     // 设置光标样式
     setCursorStyle(isCustomCursor);
     // 为按钮添加点击事件监听器
@@ -698,6 +705,13 @@ function switchGameMode() {
     gameMode = gameModeList[(currentIndex + 1) % gameModeList.length];
     // 显示模式
     gameModeElement.textContent = gameMode;
+    // 设置level文本颜色
+    if (gameMode == "normal") {
+        levelShowElement.style.color = "#482b16";
+    }
+    else if (gameMode == "blind") {
+        levelShowElement.style.color = "#161b48";
+    }
     // 重新生成打乱
     createTiles();
     saveConfig();

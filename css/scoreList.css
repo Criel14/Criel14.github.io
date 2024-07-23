@@ -19,7 +19,7 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    color: #daa034;
+    color: #f0ede9;
 }
 
 .chart {
@@ -259,7 +259,7 @@ tr:nth-child(odd):hover {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.1);
     display: flex;
     justify-content: center;
     align-items: center;
