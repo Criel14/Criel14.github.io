@@ -17,11 +17,17 @@ function renderChart() {
     let stepList = [];
     let tpsList = [];
     let numberList = [];
+    let currentScoreSize = 0;
+    let currentScoreGameMode = "empty";
+    let currentScoreGroupNumber = 0;
     if (currentScoreList != null) {
         timeList = currentScoreList.map(item => parseFloat(item.time));
         stepList = currentScoreList.map(item => item.step);
         tpsList = currentScoreList.map(item => parseFloat(item.tps));
         numberList = currentScoreList.map(item => item.number);
+        currentScoreSize = currentScoreList[0].size;
+        currentScoreGameMode = currentScoreList[0].gameMode;
+        currentScoreGroupNumber = currentScoreList[0].group;
     }
     console.log(timeList, stepList, tpsList, numberList);
 
@@ -40,7 +46,7 @@ function renderChart() {
         children: stepList
     }
     ]
-    let colorArr = ["70, 112, 236", "68, 202, 166", "253, 148, 67"]
+    let colorArr = ["70, 112, 236", "241, 182, 73"]
     list.forEach((val, index) => {
         seriesArr.push({
             name: val.name,
@@ -76,6 +82,16 @@ function renderChart() {
     })
     option = {
         backgroundColor: "#fff",
+        title: {
+            text:  `${currentScoreSize}×${currentScoreSize} ${currentScoreGameMode} Group${currentScoreGroupNumber}`,
+            left: 'center',
+            top: '2%',
+            textStyle: {
+                color: '#000',
+                fontSize: 20,
+                fontWeight: 600
+            }
+        },
         tooltip: {
             trigger: 'axis',
             axisPointer: {
@@ -92,9 +108,9 @@ function renderChart() {
         },
         legend: {
             right: "center",
-            top: "6%",
+            top: "12%",
             textStyle: {
-                color: '#000',
+                color: '#242424',
                 fontSize: 16,
                 fontWeight: 600
             },
@@ -106,7 +122,7 @@ function renderChart() {
             left: '2%',
             right: '5%',
             bottom: '6%',
-            top: '18%',
+            top: '22%',
             containLabel: true
         },
         xAxis: {
@@ -185,13 +201,13 @@ function renderChart() {
                     show: true,
                     lineStyle: {
                         fontSize: 12,
-                        color: '#44caa6',
+                        color: '#f1b649',
                     }
                 },
                 axisLabel: {
                     textStyle: {
                         fontSize: 12,
-                        color: "#44caa6",
+                        color: "#f1b649",
                         fontWeight: 600
                     }
                 },
