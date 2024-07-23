@@ -243,10 +243,10 @@ function showData(timeList, stepList, tpsList) {
 }
 
 
-// 加载完成后，在scoreList.js中，加载完表格后调用
-// document.addEventListener("DOMContentLoaded", () => {
-//     renderChart();
-// });
+// 加载完成后
+window.onload = function () {
+    renderChart();
+}
 
 // 计算一个列表的去尾平均
 function averageOfList(originalList) {

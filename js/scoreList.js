@@ -477,6 +477,7 @@ function deleteScore() {
 
         // 刷新页面
         window.location.reload();
+        renderChart();
         console.log('成绩删除并更新成功');
     } else {
         console.log('未找到指定的成绩');
@@ -493,6 +494,7 @@ function deleteGroupScores() {
     // 保存更新后的成绩列表到 LocalStorage
     localStorage.setItem('scores', JSON.stringify(updatedScores));
 
+    renderChart();
     // 刷新页面
     window.location.reload();
     console.log('当前组的成绩删除并更新成功');
@@ -501,6 +503,7 @@ function deleteGroupScores() {
 // 清空所有成绩
 function deleteAllScores() {
     localStorage.removeItem('scores');
+    renderChart();
     window.location.reload();
 }
 
