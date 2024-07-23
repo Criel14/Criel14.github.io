@@ -69,32 +69,38 @@ function displayScores(size) {
     tbody.innerHTML = ''; // 清空现有内容
 
     // 确定列表需要：阶数、 游戏模式、分组
-    scores.filter(score => score != null && score.size == size && score.gameMode === gameMode && score.group == groupNum).reverse().forEach(score => {
-        let row = document.createElement('tr');
-        let numberTd = document.createElement("td");
-        let timeTd = document.createElement("td");
-        let stepTd = document.createElement("td");
-        let tpsTd = document.createElement("td");
-        let ao5Td = document.createElement("td");
-        let ao12Td = document.createElement("td");
-        numberTd.textContent = score.number;
-        timeTd.textContent = score.time;
-        stepTd.textContent = score.step;
-        tpsTd.textContent = score.tps;
-        ao5Td.textContent = score.ao5;
-        ao12Td.textContent = score.ao12;
-        row.appendChild(numberTd);
-        row.appendChild(timeTd);
-        row.appendChild(stepTd);
-        row.appendChild(tpsTd);
-        row.appendChild(ao5Td);
-        row.appendChild(ao12Td);
-        tbody.appendChild(row);
-        // 添加鼠标监听
-        row.addEventListener("click", function () {
-            showScramble(size, score.number);
+    let currentScoreList = scores.filter(score => score != null && score.size == size && score.gameMode === gameMode && score.group == groupNum);
+    if (currentScoreList != null) {
+        currentScoreList.slice().reverse().forEach(score => {
+            let row = document.createElement('tr');
+            let numberTd = document.createElement("td");
+            let timeTd = document.createElement("td");
+            let stepTd = document.createElement("td");
+            let tpsTd = document.createElement("td");
+            let ao5Td = document.createElement("td");
+            let ao12Td = document.createElement("td");
+            numberTd.textContent = score.number;
+            timeTd.textContent = score.time;
+            stepTd.textContent = score.step;
+            tpsTd.textContent = score.tps;
+            ao5Td.textContent = score.ao5;
+            ao12Td.textContent = score.ao12;
+            row.appendChild(numberTd);
+            row.appendChild(timeTd);
+            row.appendChild(stepTd);
+            row.appendChild(tpsTd);
+            row.appendChild(ao5Td);
+            row.appendChild(ao12Td);
+            tbody.appendChild(row);
+            // 添加鼠标监听
+            row.addEventListener("click", function () {
+                showScramble(size, score.number);
+            });
         });
-    });
+    }
+    // 保存当前列表，用于绘制图表
+    localStorage.setItem("currentScoreList", JSON.stringify(currentScoreList));
+    // 末尾行
     let endRow = document.createElement('tr');
     let tip = document.createElement("td");
     tip.colSpan = document.querySelectorAll('thead th').length;; // 设置单元格跨越的列数
@@ -112,6 +118,7 @@ function changeSize(direction) {
     }
     displayScores(currentSize);
     saveConfig();
+    renderChart();
 }
 
 document.addEventListener('keydown', (event) => {
@@ -277,6 +284,7 @@ function switchGameMode() {
     // 重新渲染表格
     displayScores(currentSize);
     saveConfig();
+    renderChart();
 }
 
 // 根据游戏模式更改表头颜色
@@ -374,6 +382,7 @@ function switchGroup(next) {
     groupNumberElement.textContent = "G" + groupNum;
     displayScores(currentSize);
     saveConfig();
+    renderChart();
 }
 
 // 切换到index页

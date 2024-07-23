@@ -29,7 +29,6 @@
             </div>
         </div>
 
-
         <div class="menu-big-button-float" data-text="清空全部" id="delete-all">
             <img src="image/clear.png" alt="switch" width="44px" height="44px">
         </div>
@@ -39,8 +38,12 @@
         <div class="game-mode" title="切换游戏模式（ N ）" id="switch-game-mode">normal</div>
     </div>
 
+    <div class="chart-container">
+        <div id="chart" class="chart"></div>
+        <div id="chart-info" class="chart-info"></div>
+    </div>
+
     <div class="main">
-        <br>
         <table>
             <thead>
                 <tr>
@@ -78,7 +81,11 @@
         </div>
     </div>
 
+    <script type="text/javascript" src="https://fastly.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+    <script src="js/scoreListChart.js"></script>
     <script src="js/scoreList.js"></script>
+
 </body>
 
 </html>
