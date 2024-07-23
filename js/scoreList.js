@@ -70,7 +70,20 @@ function displayScores(size) {
 
     // 确定列表需要：阶数、 游戏模式、分组
     let currentScoreList = scores.filter(score => score != null && score.size == size && score.gameMode === gameMode && score.group == groupNum);
+
     if (currentScoreList != null) {
+        // 找出最大最小值
+        let maxTime = Math.max(...currentScoreList.map(score => score.time));
+        let minTime = Math.min(...currentScoreList.map(score => score.time));
+        let maxStep = Math.max(...currentScoreList.map(score => score.step));
+        let minStep = Math.min(...currentScoreList.map(score => score.step));
+        let maxTps = Math.max(...currentScoreList.map(score => score.tps));
+        let minTps = Math.min(...currentScoreList.map(score => score.tps));
+        let maxAo5 = Math.max(...(currentScoreList.map(score => score.ao5)).filter(item => item != "--"));
+        let minAo5 = Math.min(...(currentScoreList.map(score => score.ao5)).filter(item => item != "--"));
+        let maxAo12 = Math.max(...(currentScoreList.map(score => score.ao12)).filter(item => item != "--"));
+        let minAo12 = Math.min(...(currentScoreList.map(score => score.ao12)).filter(item => item != "--"));
+        // 在html绘制表格
         currentScoreList.slice().reverse().forEach(score => {
             let row = document.createElement('tr');
             let numberTd = document.createElement("td");
@@ -85,6 +98,44 @@ function displayScores(size) {
             tpsTd.textContent = score.tps;
             ao5Td.textContent = score.ao5;
             ao12Td.textContent = score.ao12;
+            // 判断最值并修改颜色
+            if (score.time == minTime) {
+                timeTd.style.color = "#11a711";
+                timeTd.style.fontWeight = "bold";
+            } else if (score.time == maxTime) {
+                timeTd.style.color = "#daa034";
+                timeTd.style.fontWeight = "bold";
+            }
+            if (score.step == minStep) {
+                stepTd.style.color = "#11a711";
+                stepTd.style.fontWeight = "bold";
+            } else if (score.step == maxStep) {
+                stepTd.style.color = "#daa034";
+                stepTd.style.fontWeight = "bold";
+            }
+            if (score.tps == maxTps) {
+                tpsTd.style.color = "#11a711";
+                tpsTd.style.fontWeight = "bold";
+            } else if (score.tps == minTps) {
+                tpsTd.style.color = "#daa034";
+                tpsTd.style.fontWeight = "bold";
+            }
+            if (score.ao5 == minAo5) {
+                ao5Td.style.color = "#11a711";
+                ao5Td.style.fontWeight = "bold";
+            } else if (score.ao5 == maxAo5) {
+                ao5Td.style.color = "#daa034";
+                ao5Td.style.fontWeight = "bold";
+            }
+            if (score.ao12 == minAo12) {
+                ao12Td.style.color = "#11a711";
+                ao12Td.style.fontWeight = "bold";
+            } else if (score.ao12 == maxAo12) {
+                ao12Td.style.color = "#daa034";
+                ao12Td.style.fontWeight = "bold";
+            }
+
+            // 加入子元素
             row.appendChild(numberTd);
             row.appendChild(timeTd);
             row.appendChild(stepTd);
