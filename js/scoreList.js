@@ -57,7 +57,7 @@ let defaultConfig = {
 function displayScores(size) {
     // 修改背景颜色
     if (gameMode == "normal") {
-        document.body.style.backgroundColor = "#f0ede9";
+        document.body.style.backgroundColor = "#e6f1eb";
     }
     else if (gameMode == "blind") {
         document.body.style.backgroundColor = "#e6e9f1";
@@ -344,7 +344,7 @@ function switchGameMode() {
 function changeHeaderColor() {
     if (gameMode == "normal") {
         for (var i = 0; i < thElements.length; i++) {
-            thElements[i].style.backgroundColor = "#121212";
+            thElements[i].style.backgroundColor = "#103816";
         }
     }
     else if (gameMode == "blind") {

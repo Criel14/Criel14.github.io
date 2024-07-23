@@ -127,7 +127,7 @@ function getColor(number) {
 function createTiles() {
     // 修改背景颜色
     if (gameMode == "normal") {
-        document.body.style.backgroundColor = "#f0ede9";
+        document.body.style.backgroundColor = "#e6f1eb";
     }
     else if (gameMode == "blind") {
         document.body.style.backgroundColor = "#e6e9f1";
