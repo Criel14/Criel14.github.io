@@ -1,5 +1,12 @@
-// 引用div
+// 引用图表div
 const dom = document.getElementById('chart');
+// 引用数据显示div
+const bestTimeElement = document.getElementById('best-time');
+const bestStepElement = document.getElementById('best-step');
+const bestTpsElement = document.getElementById('best-tps');
+const avgTimeElement = document.getElementById('avg-time');
+const avgStepElement = document.getElementById('avg-step');
+const avgTpsElement = document.getElementById('avg-tps');
 
 // 渲染图表
 function renderChart() {
@@ -8,13 +15,15 @@ function renderChart() {
     // 提取出对应的表
     let timeList = [];
     let stepList = [];
+    let tpsList = [];
     let numberList = [];
     if (currentScoreList != null) {
-        timeList = currentScoreList.map(item => item.time);
+        timeList = currentScoreList.map(item => parseFloat(item.time));
         stepList = currentScoreList.map(item => item.step);
-        tpsList = currentScoreList.map(item => item.tps);
+        tpsList = currentScoreList.map(item => parseFloat(item.tps));
         numberList = currentScoreList.map(item => item.number);
     }
+    console.log(timeList, stepList, tpsList, numberList);
 
     // 绘制图表
     var myChart = echarts.init(dom);
@@ -31,7 +40,7 @@ function renderChart() {
         children: stepList
     }
     ]
-    let colorArr = ["0, 62, 246", "0, 193, 142", "253, 148, 67"]
+    let colorArr = ["70, 112, 236", "68, 202, 166", "253, 148, 67"]
     list.forEach((val, index) => {
         seriesArr.push({
             name: val.name,
@@ -65,9 +74,6 @@ function renderChart() {
             yAxisIndex: index
         })
     })
-
-    console.log(JSON.stringify(seriesArr));
-
     option = {
         backgroundColor: "#fff",
         tooltip: {
@@ -149,13 +155,13 @@ function renderChart() {
                     show: true,
                     lineStyle: {
                         fontSize: 12,
-                        color: '#003ef6',
+                        color: '#466fec',
                     }
                 },
                 axisLabel: {
                     textStyle: {
                         fontSize: 12,
-                        color: "#003ef6",
+                        color: "#466fec",
                         fontWeight: 600
                     }
                 },
@@ -179,13 +185,13 @@ function renderChart() {
                     show: true,
                     lineStyle: {
                         fontSize: 12,
-                        color: '#00c18e',
+                        color: '#44caa6',
                     }
                 },
                 axisLabel: {
                     textStyle: {
                         fontSize: 12,
-                        color: "#00c18e",
+                        color: "#44caa6",
                         fontWeight: 600
                     }
                 },
@@ -200,14 +206,39 @@ function renderChart() {
         // 应用配置项
         myChart.setOption(option);
     }
+
+    // 实时调整图表大小
+    window.addEventListener('resize', function () {
+        myChart.resize();
+    });
+
+    // 更新显示数据
+    showData(timeList, stepList, tpsList);
 }
 
-// 实时调整图表大小
-window.addEventListener('resize', function () {
-    myChart.resize();
-});
+// 显示数据
+function showData(timeList, stepList, tpsList) {
+    bestTimeElement.textContent = Math.min(...timeList).toFixed(2);
+    bestStepElement.textContent = Math.min(...stepList);
+    bestTpsElement.textContent = Math.max(...tpsList).toFixed(2);
+    avgTimeElement.textContent = averageOfList(timeList);
+    avgStepElement.textContent = averageOfList(stepList);
+    avgTpsElement.textContent = averageOfList(tpsList);
+}
+
 
 // 加载完成后
 document.addEventListener("DOMContentLoaded", () => {
     renderChart();
 });
+
+// 计算一个列表的去尾平均
+function averageOfList(originalList) {
+    let list = [...originalList]; // 创建一个原始列表的副本
+    list.sort();
+    let sum = 0
+    for (i = 1; i <= list.length - 2; i++) {
+        sum += list[i];
+    }
+    return (sum / (list.length - 2)).toFixed(2);
+}
