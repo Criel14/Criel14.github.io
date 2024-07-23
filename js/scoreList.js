@@ -201,7 +201,7 @@ document.addEventListener('keydown', (event) => {
         case 'L':
         case 'l':
             // 返回index页
-            window.location.href = "index.html";
+            window.location.href = "puzzle.html";
             break;
         case 'Escape':
             // 隐藏弹框
@@ -438,9 +438,9 @@ function switchGroup(next) {
     renderChart();
 }
 
-// 切换到index页
+// 切换到puzzle页
 function redirectToindex() {
-    const url = `index.html`;
+    const url = `puzzle.html`;
     window.location.href = url;
 }
 
