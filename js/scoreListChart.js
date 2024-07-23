@@ -20,7 +20,7 @@ function renderChart() {
     let currentScoreSize = 0;
     let currentScoreGameMode = "empty";
     let currentScoreGroupNumber = 0;
-    if (currentScoreList != null) {
+    if (currentScoreList != null && currentScoreList.length > 0) {
         timeList = currentScoreList.map(item => parseFloat(item.time));
         stepList = currentScoreList.map(item => item.step);
         tpsList = currentScoreList.map(item => parseFloat(item.tps));
