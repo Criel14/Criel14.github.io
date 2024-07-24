@@ -69,24 +69,15 @@ let groupNum = 1;
 // 是否启用自定义光标样式
 let isCustomCursor = false;
 
-// 默认配置
-let defaultConfig = {
-    "size": 4,
-    "gameMode": "normal",
-    "moveMode": "slide",
-    "groupNumber": 1,
-    "isCustomCursor": false,
-}
-
 // 颜色字典，按层降阶，即从左上到右下
-const colorMap = {
-    0: "#f0f0f0", // 同网页背景色
-    1: "#e74c3c", // 红色
-    2: "#e67e22", // 橙色
-    3: "#f1c40f", // 黄色
-    4: "#2ecc71", // 绿色
-    5: "#1abc9c", // 青色
-    6: "#3498db", // 蓝色
+const colorConfig = {
+    0: "#f0f0f0",
+    1: "#e74c3c",
+    2: "#e67e22",
+    3: "#f1c40f",
+    4: "#2ecc71",
+    5: "#1abc9c",
+    6: "#3498db",
     7: "#6810fa",
     8: "#8a5201",
     9: "#767676",
@@ -99,6 +90,16 @@ const colorMap = {
     16: "#c4925f",
     17: "#dc98ff"
 };
+
+// 默认配置
+let defaultConfig = {
+    "size": 4,
+    "gameMode": "normal",
+    "moveMode": "slide",
+    "groupNumber": 1,
+    "isCustomCursor": false,
+    "colorConfig": colorConfig,
+}
 
 // 移动模式列表
 let moveModeList = ["click", "slide", "keyboard"];
@@ -117,11 +118,11 @@ function getColor(number) {
     // 以左上到右下的对角线分为上三角和下三角
     // 上三角或对角线
     if (line >= row) {
-        return colorMap[2 * row + 1] || "#66ccff";
+        return colorConfig[2 * row + 1] || "#66ccff";
     }
     // 下三角
     else {
-        return colorMap[(line + 1) * 2] || "#66ccff";
+        return colorConfig[(line + 1) * 2] || "#66ccff";
     }
 }
 
@@ -385,21 +386,8 @@ function countInversions(originalArr) {
 
 // 当整个HTML文档加载完毕后执行以下代码
 document.addEventListener("DOMContentLoaded", () => {
-    // 获取localStorage中的配置文件
-    let config = JSON.parse(localStorage.getItem('config')) || [];
-    // 判断空值
-    if (config.length == 0) {
-        config = defaultConfig;
-        // 保存到localStorage
-        localStorage.setItem("config", JSON.stringify(config));
-    }
-    // 从配置赋值
-    gameMode = config.gameMode;
-    moveMode = config.moveMode;
-    size = config.size;
-    isCustomCursor = config.isCustomCursor;
-    groupNum = config.groupNumber;
-    saveConfig();
+    // 读取配置文件
+    loadConfig();
     // 显示信息
     gameModeElement.textContent = gameMode;
     moveModeElement.textContent = moveMode;
@@ -407,7 +395,7 @@ document.addEventListener("DOMContentLoaded", () => {
     groupNumberElement.textContent = "G" + groupNum;
     // 设置level文本颜色
     if (gameMode == "normal") {
-        levelShowElement.style.color = "#482b16";
+        levelShowElement.style.color = "#093009";
     }
     else if (gameMode == "blind") {
         levelShowElement.style.color = "##161b48";
@@ -787,4 +775,22 @@ function saveConfig() {
     config.isCustomCursor = isCustomCursor;
     // 保存到localStorage
     localStorage.setItem("config", JSON.stringify(config));
+}
+
+function loadConfig() {
+    // 获取localStorage中的配置文件
+    let config = JSON.parse(localStorage.getItem('config')) || [];
+    // 判断空值
+    if (config.length == 0) {
+        config = defaultConfig;
+        // 保存到localStorage
+        localStorage.setItem("config", JSON.stringify(config));
+    }
+    // 从配置赋值
+    gameMode = config.gameMode;
+    moveMode = config.moveMode;
+    size = config.size;
+    isCustomCursor = config.isCustomCursor;
+    groupNum = config.groupNumber;
+    saveConfig();
 }
