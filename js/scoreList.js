@@ -314,6 +314,7 @@ function showScramble(size, number) {
 
 // 显示当局信息
 function showInfo(size, score) {
+    console.log("当前查看：" + JSON.stringify(score));
     // 清空容器
     puzzleInfo.innerHTML = '';
     // 设置高度
@@ -325,7 +326,7 @@ function showInfo(size, score) {
     puzzleInfo.appendChild(timeInfo);
     // 显示模式 + 观察时间
     modeInfo = document.createElement("p");
-    modeInfo.textContent = score.gameMode + "-" + score.moveMode + " (" + score.observeTime + "s)";
+    modeInfo.textContent = score.gameMode + "-" + score.moveMode + " (" + timeFormat(score.observeTime) + "s)";
     modeInfo.classList.add("move-mode-info");
     puzzleInfo.appendChild(modeInfo);
     // 显示步数
@@ -541,4 +542,11 @@ function saveConfig() {
     config.groupNumber = groupNum;
     // 保存到localStorage
     localStorage.setItem("config", JSON.stringify(config));
+}
+
+// 格式化时间，保留2位小数，参数是毫秒
+function timeFormat(originalTime) {
+    const seconds = Math.floor(originalTime / 1000);
+    const milliseconds = originalTime % 1000;
+    return parseFloat(`${seconds}.${milliseconds}`).toFixed(2);
 }

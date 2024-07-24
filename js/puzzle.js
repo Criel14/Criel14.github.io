@@ -83,6 +83,8 @@ let groupNum = 1;
 let isCustomCursor = false;
 // 是否允许操作，用于启用或禁用操作
 let isAllowOperate = true;
+// 移动序列，记录本次还原的操作
+let moveSequence = [];
 
 // 默认颜色配置：预设1
 let defaultColorConfig1 = {
@@ -180,6 +182,7 @@ function createTiles() {
     isFinish = false;
     isStart = false;
     isMoving = false;
+    moveSequence = [];
     // 启用操作
     isAllowOperate = true;
     // 重置步数
@@ -271,7 +274,7 @@ function moveTileMouse(index) {
     const [line0, row0] = [zeroIndex % size, Math.floor(zeroIndex / size)]; // 计算空白块的坐标
 
     // 移动整行或整列，flag为移动一块后，空白快位置的偏移量
-    function move(flag) {
+    function move(flag, direction) {
         while (index != zeroIndex) {
             const newIndex = zeroIndex + flag;
             // 检查新的索引是否在范围内
@@ -282,17 +285,19 @@ function moveTileMouse(index) {
             [tiles[zeroIndex], tiles[newIndex]] = [tiles[newIndex], tiles[zeroIndex]];
             step++;
             zeroIndex = newIndex;
+            // 记录移动方向和时间节点
+            moveSequence.push({ direction, time: timeEclapsed });
         }
     }
 
     // 当前块与空白块在同一行
     if (row1 == row0 && line1 != line0) {
-        move(line1 < line0 ? -1 : 1); // 左为-1，右为1
+        move(line1 < line0 ? -1 : 1, line1 < line0 ? 'R' : 'L'); // 左为-1，右为1
         isMoving = true;
     }
     // 当前块与空白块在同一列
     else if (line1 == line0 && row1 != row0) {
-        move(row1 < row0 ? -size : size); // 上为-size，下为size
+        move(row1 < row0 ? -size : size, row1 < row0 ? 'D' : 'U'); // 上为-size，下为size
         isMoving = true;
     }
 
@@ -318,6 +323,7 @@ function moveTileKeyboard(direction) {
                 [tiles[zeroIndex], tiles[zeroIndex + size]] = [tiles[zeroIndex + size], tiles[zeroIndex]];
                 step++;
                 isMoving = true;
+                moveSequence.push("U"); // 记录移动方向
             }
             break;
         case "down":
@@ -325,6 +331,7 @@ function moveTileKeyboard(direction) {
                 [tiles[zeroIndex], tiles[zeroIndex - size]] = [tiles[zeroIndex - size], tiles[zeroIndex]];
                 step++;
                 isMoving = true;
+                moveSequence.push("D"); // 记录移动方向
             }
             break;
         case "left":
@@ -332,6 +339,7 @@ function moveTileKeyboard(direction) {
                 [tiles[zeroIndex], tiles[zeroIndex + 1]] = [tiles[zeroIndex + 1], tiles[zeroIndex]];
                 step++;
                 isMoving = true;
+                moveSequence.push("L"); // 记录移动方向
             }
             break;
         case "right":
@@ -339,6 +347,7 @@ function moveTileKeyboard(direction) {
                 [tiles[zeroIndex], tiles[zeroIndex - 1]] = [tiles[zeroIndex - 1], tiles[zeroIndex]];
                 step++;
                 isMoving = true;
+                moveSequence.push("R"); // 记录移动方向
             }
             break;
         default:
@@ -369,8 +378,9 @@ function checkWin() {
                 scramble: scrambleTiles.toString(),
                 moveMode: moveMode,
                 gameMode: gameMode,
-                observeTime: timeFormat(observeTime),
+                observeTime: observeTime,
                 group: groupNum,
+                moveSequence: moveSequence
             };
             saveScore(score);
             // 标记完成
@@ -378,6 +388,8 @@ function checkWin() {
         }
         // 重新渲染拼图块
         renderTiles(puzzle, tiles, 500, size);
+        
+        console.log(moveSequence);
     }
 }
 
