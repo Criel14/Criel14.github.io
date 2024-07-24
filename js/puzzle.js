@@ -802,6 +802,8 @@ function setCursorStyle(isCustomCursor) {
         colorModeElement.classList.add("custom-pointer");
         colorConfigCloseElement.classList.add("custom-pointer");
         colorConfigSaveElement.classList.add("custom-pointer");
+        colorConfigReset1Element.classList.add("custom-pointer");
+        colorConfigReset2Element.classList.add("custom-pointer");
     }
     else {
         // 去除样式
@@ -819,6 +821,8 @@ function setCursorStyle(isCustomCursor) {
         colorModeElement.classList.remove("custom-pointer");
         colorConfigCloseElement.classList.remove("custom-pointer");
         colorConfigSaveElement.classList.remove("custom-pointer");
+        colorConfigReset1Element.classList.remove("custom-pointer");
+        colorConfigReset2Element.classList.remove("custom-pointer");
     }
 }
 
