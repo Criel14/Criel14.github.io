@@ -35,13 +35,18 @@ const aboutElement = document.getElementById("about");
 // 调色按钮
 const colorModeElement = document.getElementById("color-mode");
 // 引用设置弹框
-const configOverlayElement = document.getElementById("config-overlay");
+const colorConfigOverlayElement = document.getElementById("config-overlay");
 // 关闭设置弹框按钮
-const configCloseElement = document.getElementById("config-overlay-close-button");
+const colorConfigCloseElement = document.getElementById("config-overlay-close-button");
 // 保存配置按钮
-const configSaveElement = document.getElementById("config-overlay-save-button");
+const colorConfigSaveElement = document.getElementById("config-overlay-save-button");
 // 改色界面的预览puzzle
 const previewPuzzle = document.getElementById("preview-puzzle");
+// 引用所有class为color-input的元素
+const colorInputs = document.getElementsByClassName("color-input");
+// 引用切换颜色预设按钮
+const colorConfigReset1Element = document.getElementById("config-overlay-reset1-button");
+const colorConfigReset2Element = document.getElementById("config-overlay-reset2-button");
 
 // 定义拼图的阶数（边长）
 let size = 4;
@@ -76,9 +81,11 @@ let gameMode = "normal";
 let groupNum = 1;
 // 是否启用自定义光标样式
 let isCustomCursor = false;
+// 是否允许操作，用于启用或禁用操作
+let isAllowOperate = true;
 
-// 颜色字典，按层降阶，即从左上到右下
-let colorConfig = {
+// 默认颜色配置：预设1
+let defaultColorConfig1 = {
     0: "#f0f0f0",
     1: "#e74c3c",
     2: "#e67e22",
@@ -94,9 +101,33 @@ let colorConfig = {
     12: "#ffc586",
     13: "#fcf080",
     14: "#c5ff98",
-    15: "#93d3ff",
-    16: "#c4925f",
-    17: "#dc98ff"
+    15: "#90fdde",
+    16: "#93d3ff",
+    17: "#c4925f",
+    18: "#dc98ff",
+};
+
+// 默认颜色配置：预设2
+let defaultColorConfig2 = {
+    0: "#f0f0f0",
+    1: "#fde5ff",
+    2: "#ffceee",
+    3: "#ffe1c9",
+    4: "#fdcda9",
+    5: "#98ffe1",
+    6: "#81ffd0",
+    7: "#a5e2ff",
+    8: "#81cdfe",
+    9: "#cfd0fe",
+    10: "#bdbcfe",
+    11: "#ff9798",
+    12: "#ff494d",
+    13: "#b0ffb0",
+    14: "#81fd81",
+    15: "#95a403",
+    16: "#6d7600",
+    17: "#ffd2cf",
+    18: "#fdb7b6"
 };
 
 // 默认配置
@@ -106,8 +137,11 @@ let defaultConfig = {
     "moveMode": "slide",
     "groupNumber": 1,
     "isCustomCursor": false,
-    "colorConfig": colorConfig,
+    "colorConfig": defaultColorConfig1,
 }
+
+// 颜色配置
+let colorConfig = defaultColorConfig1;
 
 // 移动模式列表
 let moveModeList = ["click", "slide", "keyboard"];
@@ -117,7 +151,7 @@ let gameModeList = ["normal", "blind"];
 
 
 // 根据数字返回对应的颜色，默认为66ccff
-// number为0-15，0为空白格，number和显示出来的数字是一样的
+// number为0至size*size -1，0为空白格，number和显示出来的数字是一样的
 function getColor(number, size) {
     number--;
     // 获取行列号（从0开始）
@@ -126,11 +160,11 @@ function getColor(number, size) {
     // 以左上到右下的对角线分为上三角和下三角
     // 上三角或对角线
     if (line >= row) {
-        return colorConfig[2 * row + 1] || "#66ccff";
+        return colorConfig[2 * row + 1] || "#ffffff";
     }
     // 下三角
     else {
-        return colorConfig[(line + 1) * 2] || "#66ccff";
+        return colorConfig[(line + 1) * 2] || "#ffffff";
     }
 }
 
@@ -146,6 +180,8 @@ function createTiles() {
     isFinish = false;
     isStart = false;
     isMoving = false;
+    // 启用操作
+    isAllowOperate = true;
     // 重置步数
     step = 0;
     // 清除计时
@@ -192,9 +228,6 @@ function renderTiles(puzzle, tiles, edgeLength, size) {
     tiles.forEach((tile, index) => {
         const tileElement = document.createElement("div"); // 创建一个新的div元素
         tileElement.classList.add("tile"); // 添加样式类
-        if (isFinish == true) {
-            tileElement.style.boxShadow = "0 0 80px #ffff0046";
-        }
         tileElement.style.width = edgeLength / size + "px";
         tileElement.style.height = edgeLength / size + "px";
         tileElement.style.fontSize = edgeLength / 2 / size + "px";
@@ -215,12 +248,24 @@ function renderTiles(puzzle, tiles, edgeLength, size) {
                 tileElement.addEventListener("mouseover", () => moveTileMouse(index));
             }
         }
+        // 添加胜利效果
+        if (isFinish == true) {
+            // tileElement.style.filter = "saturate(70%)";
+            // tileElement.style.backgroundColor = "#66ccff";
+            // 发光一定时间
+            tileElement.style.boxShadow = "0 0 100px #ffff5d7a";
+            setTimeout(() => { tileElement.style.boxShadow = "none"; }, 500);
+
+        }
         puzzle.appendChild(tileElement); // 将拼图块添加到拼图容器中
     });
 }
 
 // 鼠标移动方法
 function moveTileMouse(index) {
+    if (!isAllowOperate) {
+        return;
+    }
     let zeroIndex = tiles.indexOf(0); // 找到空白块的位置
     const [line1, row1] = [index % size, Math.floor(index / size)]; // 计算当前拼图块的坐标
     const [line0, row0] = [zeroIndex % size, Math.floor(zeroIndex / size)]; // 计算空白块的坐标
@@ -254,7 +299,7 @@ function moveTileMouse(index) {
 // 键盘移动方法
 // 传入参数：up、down、left、right
 function moveTileKeyboard(direction) {
-    if (moveMode != "keyboard") {
+    if (!isAllowOperate || moveMode != "keyboard") {
         return;
     }
     // 获取空白快的坐标
@@ -410,6 +455,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     // 设置光标样式
     setCursorStyle(isCustomCursor);
+    // 启用操作
+    isAllowOperate = true;
     // 为按钮添加点击事件监听器
     shuffleButton.addEventListener("click", createTiles);
     levelUpElement.addEventListener("click", increaseSize);
@@ -418,15 +465,25 @@ document.addEventListener("DOMContentLoaded", () => {
     moveModeElement.addEventListener("click", switchMoveMode);
     gameModeElement.addEventListener("click", switchGameMode);
     cursorModeElement.addEventListener("click", switchCursorStyle);
+    scoreListElement.addEventListener("click", redirectToScoreList);
+    colorConfigCloseElement.addEventListener("click", hideOverlay);
+    colorModeElement.addEventListener("click", showOverlay);
     groupLastElement.addEventListener("click", () => {
         switchGroup(-1);
     });
     groupNextElement.addEventListener("click", () => {
         switchGroup(1);
     });
-    scoreListElement.addEventListener("click", redirectToScoreList);
-    configCloseElement.addEventListener("click", hideOverlay);
-    colorModeElement.addEventListener("click", showOverlay);
+    colorConfigSaveElement.addEventListener("click", () => {
+        saveColorConfig();
+        hideOverlay();
+    });
+    colorConfigReset1Element.addEventListener("click", () => {
+        resetColorConfig(defaultColorConfig1);
+    });
+    colorConfigReset2Element.addEventListener("click", () => {
+        resetColorConfig(defaultColorConfig2);
+    })
     // 初始化拼图
     createTiles();
 });
@@ -743,8 +800,8 @@ function setCursorStyle(isCustomCursor) {
         aboutElement.classList.add("custom-pointer");
         groupElement.classList.add("custom-pointer");
         colorModeElement.classList.add("custom-pointer");
-        configCloseElement.classList.add("custom-pointer");
-        configSaveElement.classList.add("custom-pointer");
+        colorConfigCloseElement.classList.add("custom-pointer");
+        colorConfigSaveElement.classList.add("custom-pointer");
     }
     else {
         // 去除样式
@@ -760,8 +817,8 @@ function setCursorStyle(isCustomCursor) {
         aboutElement.classList.remove("custom-pointer");
         groupElement.classList.remove("custom-pointer");
         colorModeElement.classList.remove("custom-pointer");
-        configCloseElement.classList.remove("custom-pointer");
-        configSaveElement.classList.remove("custom-pointer");
+        colorConfigCloseElement.classList.remove("custom-pointer");
+        colorConfigSaveElement.classList.remove("custom-pointer");
     }
 }
 
@@ -814,19 +871,71 @@ function loadConfig() {
 
 // 显示弹框
 function showOverlay() {
-    configOverlayElement.classList.add('visible');
-    configOverlayElement.classList.remove('hidden');
+    colorConfigOverlayElement.classList.add('visible');
+    colorConfigOverlayElement.classList.remove('hidden');
+    // 暂时禁用操作
+    isAllowOperate = false;
+    // 禁用胜利的效果
+    isFinish = false;
     let tempList = Array.from({ length: 100 }, (_, i) => i + 1);
     renderTiles(previewPuzzle, tempList, 400, 10);
+    // 颜色选择器初始化
+    setColorPickerValue();
 }
 
 // 隐藏弹框
 function hideOverlay() {
-    configOverlayElement.classList.remove('visible');
+    colorConfigOverlayElement.classList.remove('visible');
     setTimeout(() => {
-        configOverlayElement.classList.add('hidden');
+        colorConfigOverlayElement.classList.add('hidden');
     }, 200); // Wait for the animation to finish
     // 重新加载配置和渲染拼图快
     loadConfig();
     createTiles();
+}
+
+// 设置颜色选择器样式
+jscolor.presets.default = {
+    previewSize: 30,
+    sliderSize: 10,
+    shadow: false,
+    borderRadius: 4,
+};
+
+// 颜色选择器初始化
+function setColorPickerValue() {
+    // 遍历colorInputs
+    for (let index = 0; index < colorInputs.length; index++) {
+        let colorInput = colorInputs[index];
+        // 设置初始值
+        colorInput.jscolor.fromString(colorConfig[index + 1]);
+        // 添加事件监听器
+        colorInput.addEventListener("change", function () {
+            // 获取输入框的值
+            const value = colorInput.value;
+            // 将值赋给colorConfig对象
+            colorConfig[index + 1] = value;
+            // 重新绘制preview-puzzle
+            let tempList = Array.from({ length: 100 }, (_, i) => i + 1);
+            renderTiles(previewPuzzle, tempList, 400, 10);
+        });
+    }
+}
+
+// 保存颜色配置
+function saveColorConfig() {
+    console.log("保存颜色配置");
+    let config = JSON.parse(localStorage.getItem('config')) || [];
+    config.colorConfig = colorConfig;
+    localStorage.setItem("config", JSON.stringify(config));
+}
+
+// 重设颜色
+function resetColorConfig(defaultColorConfig) {
+    colorConfig = defaultColorConfig;
+    // 重新绘制preview-puzzle
+    let tempList = Array.from({ length: 100 }, (_, i) => i + 1);
+    renderTiles(previewPuzzle, tempList, 400, 10);
+    // 更新颜色选择器
+    setColorPickerValue();
 }

@@ -46,7 +46,7 @@ let gameMode = "normal";
 let groupNum = 1;
 
 // 颜色字典，按层降阶，即从左上到右下
-let colorConfig = {
+let defaultColorConfig = {
     0: "#f0f0f0",
     1: "#e74c3c",
     2: "#e67e22",
@@ -62,9 +62,10 @@ let colorConfig = {
     12: "#ffc586",
     13: "#fcf080",
     14: "#c5ff98",
-    15: "#93d3ff",
-    16: "#c4925f",
-    17: "#dc98ff"
+    15: "#90fdde",
+    16: "#93d3ff",
+    17: "#c4925f",
+    18: "#dc98ff",
 };
 
 // 默认配置
@@ -74,7 +75,7 @@ let defaultConfig = {
     "moveMode": "slide",
     "groupNumber": 1,
     "isCustomCursor": false,
-    "colorConfig": colorConfig,
+    "colorConfig": defaultColorConfig,
 }
 
 function displayScores(size) {
