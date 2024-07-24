@@ -29,7 +29,7 @@ function renderChart() {
         currentScoreGameMode = currentScoreList[0].gameMode;
         currentScoreGroupNumber = currentScoreList[0].group;
     }
-    console.log(timeList, stepList, tpsList, numberList);
+    // console.log(timeList, stepList, tpsList, numberList);
 
     // 绘制图表
     var myChart = echarts.init(dom);

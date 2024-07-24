@@ -189,7 +189,6 @@ function createTiles() {
     // 生成数组并打乱
     scramble();
     // 渲染拼图块
-    console.log("初始化拼图时：" + tiles);
     renderTiles(puzzle, tiles, 500, size);
     // 开始计时
     startTimer();
@@ -298,7 +297,6 @@ function moveTileMouse(index) {
     }
 
     // 重新渲染拼图块
-    console.log("鼠标移动后：" + tiles);
     renderTiles(puzzle, tiles, 500, size);
     // 检查是否拼图成功
     checkWin();
@@ -379,7 +377,6 @@ function checkWin() {
             isFinish = true;
         }
         // 重新渲染拼图块
-        console.log("拼图成功后：" + tiles);
         renderTiles(puzzle, tiles, 500, size);
     }
 }
@@ -687,7 +684,6 @@ function switswitchDataView() {
 // 增加阶数
 function increaseSize() {
     if (size < 10) {
-        console.log("阶数增加");
         size++;
         levelShowElement.textContent = size + "×" + size;
         createTiles();
@@ -698,7 +694,6 @@ function increaseSize() {
 // 减少阶数
 function decreaseSize() {
     if (size > 2) {
-        console.log("阶数减少");
         size--;
         levelShowElement.textContent = size + "×" + size;
         createTiles();
@@ -898,7 +893,6 @@ function showOverlay() {
     // 禁用胜利的效果
     isFinish = false;
     let tempList = Array.from({ length: 100 }, (_, i) => i + 1);
-    console.log("显示弹框：" + tempList);
     renderTiles(previewPuzzle, tempList, 400, 10);
     // 颜色选择器初始化
     setColorPickerValue();
@@ -938,7 +932,6 @@ function setColorPickerValue() {
             colorConfig[index + 1] = value;
             // 重新绘制preview-puzzle
             let tempList = Array.from({ length: 100 }, (_, i) => i + 1);
-            console.log("颜色改变后重新绘制previe-puzzle：" + tempList);
             renderTiles(previewPuzzle, tempList, 400, 10);
         });
     }
@@ -946,7 +939,6 @@ function setColorPickerValue() {
 
 // 保存颜色配置
 function saveColorConfig() {
-    console.log("保存颜色配置");
     let config = JSON.parse(localStorage.getItem('config')) || [];
     config.colorConfig = colorConfig;
     localStorage.setItem("config", JSON.stringify(config));
@@ -957,7 +949,6 @@ function resetColorConfig(defaultColorConfig) {
     colorConfig = defaultColorConfig;
     // 重新绘制preview-puzzle
     let tempList = Array.from({ length: 100 }, (_, i) => i + 1);
-    console.log("重设颜色后重新绘制previe-puzzle：" + tempList);
     renderTiles(previewPuzzle, tempList, 400, 10);
     // 更新颜色选择器
     setColorPickerValue();

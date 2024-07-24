@@ -314,7 +314,6 @@ function showScramble(size, number) {
 
 // 显示当局信息
 function showInfo(size, score) {
-    console.log(score);
     // 清空容器
     puzzleInfo.innerHTML = '';
     // 设置高度
