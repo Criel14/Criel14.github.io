@@ -10,3 +10,7 @@ body {
 .custom-pointer {
     cursor: url(../cur/link.png), auto;
 }
+
+.custom-text {
+    cursor: url(../cur/text.png), auto;
+}
