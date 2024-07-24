@@ -34,6 +34,12 @@ const groupElement = document.getElementById("group");
 const aboutElement = document.getElementById("about");
 // 调色按钮
 const colorModeElement = document.getElementById("color-mode");
+// 引用设置弹框
+const configOverlayElement = document.getElementById("config-overlay");
+// 关闭设置弹框按钮
+const configCloseElement = document.getElementById("config-overlay-close-button");
+// 保存配置按钮
+const configSaveElement = document.getElementById("config-overlay-save-button");
 
 // 定义拼图的阶数（边长）
 let size = 4;
@@ -70,7 +76,7 @@ let groupNum = 1;
 let isCustomCursor = false;
 
 // 颜色字典，按层降阶，即从左上到右下
-const colorConfig = {
+let colorConfig = {
     0: "#f0f0f0",
     1: "#e74c3c",
     2: "#e67e22",
@@ -417,6 +423,8 @@ document.addEventListener("DOMContentLoaded", () => {
         switchGroup(1);
     });
     scoreListElement.addEventListener("click", redirectToScoreList);
+    configCloseElement.addEventListener("click", hideOverlay);
+    colorModeElement.addEventListener("click", showOverlay);
     // 初始化拼图
     createTiles();
 });
@@ -732,6 +740,9 @@ function setCursorStyle(isCustomCursor) {
         cursorModeElement.classList.add("custom-pointer");
         aboutElement.classList.add("custom-pointer");
         groupElement.classList.add("custom-pointer");
+        colorModeElement.classList.add("custom-pointer");
+        configCloseElement.classList.add("custom-pointer");
+        configSaveElement.classList.add("custom-pointer");
     }
     else {
         // 去除样式
@@ -746,6 +757,9 @@ function setCursorStyle(isCustomCursor) {
         cursorModeElement.classList.remove("custom-pointer");
         aboutElement.classList.remove("custom-pointer");
         groupElement.classList.remove("custom-pointer");
+        colorModeElement.classList.remove("custom-pointer");
+        configCloseElement.classList.remove("custom-pointer");
+        configSaveElement.classList.remove("custom-pointer");
     }
 }
 
@@ -792,5 +806,20 @@ function loadConfig() {
     size = config.size;
     isCustomCursor = config.isCustomCursor;
     groupNum = config.groupNumber;
+    colorConfig = config.colorConfig;
     saveConfig();
+}
+
+// 显示弹框
+function showOverlay() {
+    configOverlayElement.classList.add('visible');
+    configOverlayElement.classList.remove('hidden');
+}
+
+// 隐藏弹框
+function hideOverlay() {
+    configOverlayElement.classList.remove('visible');
+    setTimeout(() => {
+        configOverlayElement.classList.add('hidden');
+    }, 200); // Wait for the animation to finish
 }
