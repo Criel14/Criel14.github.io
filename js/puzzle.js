@@ -32,6 +32,8 @@ const groupNumberElement = document.getElementById("group-number");
 const groupElement = document.getElementById("group");
 // 引用关于按钮
 const aboutElement = document.getElementById("about");
+// 调色按钮
+const colorModeElement = document.getElementById("color-mode");
 
 // 定义拼图的阶数（边长）
 let size = 4;
@@ -599,6 +601,7 @@ function switswitchDataView() {
         aboutElement.classList.add("hidden");
         levelShowElement.classList.add("hidden");
         groupElement.classList.add("hidden");
+        colorModeElement.classList.add("hidden");
     }
     else {
         showTip = true;
@@ -611,6 +614,7 @@ function switswitchDataView() {
         aboutElement.classList.remove("hidden");
         levelShowElement.classList.remove("hidden");
         groupElement.classList.remove("hidden");
+        colorModeElement.classList.remove("hidden");
     }
     updateTimerAndStep();
 }
