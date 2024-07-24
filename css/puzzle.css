@@ -351,13 +351,13 @@ body {
 }
 
 #config-overlay-content {
-    width: 500px;
-    height: 400px;
+    width: 700px;
+    height: 420px;
     background: white;
-    padding: 50px 60px 50px 60px;
+    padding: 50px 60px 60px 60px;
     border-radius: 8px;
     text-align: center;
-    transform: translateY(40%);
+    transform: translateX(40%);
     transition: transform 0.2s ease;
 }
 
@@ -367,7 +367,7 @@ body {
 }
 
 #config-overlay.visible #config-overlay-content {
-    transform: translateY(0);
+    transform: translateX(0);
 }
 
 .config-overlay-menu {
@@ -399,4 +399,19 @@ body {
 .config-overlay-menu-button:hover {
     background-color: rgb(247, 247, 247);
     transition: 0.3s;
+}
+
+.preview-puzzle-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    float: left;
+}
+
+.preview-puzzle {
+    width: 400px;
+    height: 400px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
 }

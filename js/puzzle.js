@@ -40,6 +40,8 @@ const configOverlayElement = document.getElementById("config-overlay");
 const configCloseElement = document.getElementById("config-overlay-close-button");
 // 保存配置按钮
 const configSaveElement = document.getElementById("config-overlay-save-button");
+// 改色界面的预览puzzle
+const previewPuzzle = document.getElementById("preview-puzzle");
 
 // 定义拼图的阶数（边长）
 let size = 4;
@@ -116,7 +118,7 @@ let gameModeList = ["normal", "blind"];
 
 // 根据数字返回对应的颜色，默认为66ccff
 // number为0-15，0为空白格，number和显示出来的数字是一样的
-function getColor(number) {
+function getColor(number, size) {
     number--;
     // 获取行列号（从0开始）
     row = Math.floor(number / size);
@@ -151,7 +153,7 @@ function createTiles() {
     // 生成数组并打乱
     scramble();
     // 渲染拼图块
-    renderTiles();
+    renderTiles(puzzle, tiles, 500, size);
     // 开始计时
     startTimer();
 
@@ -183,9 +185,9 @@ function scramble() {
 
 
 // 渲染拼图块
-function renderTiles() {
+function renderTiles(puzzle, tiles, edgeLength, size) {
     puzzle.innerHTML = ''; // 清空拼图容器
-    puzzle.style.gridTemplateColumns = "repeat(" + size + ", 1fr)"
+    puzzle.style.gridTemplateColumns = "repeat(" + size + ", 1fr)";
     // 遍历每个拼图块
     tiles.forEach((tile, index) => {
         const tileElement = document.createElement("div"); // 创建一个新的div元素
@@ -193,9 +195,9 @@ function renderTiles() {
         if (isFinish == true) {
             tileElement.style.boxShadow = "0 0 80px #ffff0046";
         }
-        tileElement.style.width = 500 / size + "px";
-        tileElement.style.height = 500 / size + "px";
-        tileElement.style.fontSize = 250 / size + "px";
+        tileElement.style.width = edgeLength / size + "px";
+        tileElement.style.height = edgeLength / size + "px";
+        tileElement.style.fontSize = edgeLength / 2 / size + "px";
 
         if (tile !== 0) { // 如果拼图块不是空白块
             if (gameMode == "blind" && isStart == true && isFinish == false) {
@@ -203,7 +205,7 @@ function renderTiles() {
             }
             else {
                 tileElement.textContent = tile; // 设置拼图块的文本
-                tileElement.style.backgroundColor = getColor(tile); // 设置拼图块的背景颜色
+                tileElement.style.backgroundColor = getColor(tile, size); // 设置拼图块的背景颜色
             }
             // 为拼图块添加事件监听器
             if (moveMode == "click") {
@@ -244,7 +246,7 @@ function moveTileMouse(index) {
     }
 
     // 重新渲染拼图块
-    renderTiles();
+    renderTiles(puzzle, tiles, 500, size);
     // 检查是否拼图成功
     checkWin();
 }
@@ -291,7 +293,7 @@ function moveTileKeyboard(direction) {
             break;
     }
     // 重新渲染拼图块
-    renderTiles();
+    renderTiles(puzzle, tiles, 500, size);
     // 检查是否拼图成功
     checkWin();
 }
@@ -323,7 +325,7 @@ function checkWin() {
             isFinish = true;
         }
         // 重新渲染拼图块
-        renderTiles();
+        renderTiles(puzzle, tiles, 500, size);
     }
 }
 
@@ -814,6 +816,8 @@ function loadConfig() {
 function showOverlay() {
     configOverlayElement.classList.add('visible');
     configOverlayElement.classList.remove('hidden');
+    let tempList = Array.from({ length: 100 }, (_, i) => i + 1);
+    renderTiles(previewPuzzle, tempList, 400, 10);
 }
 
 // 隐藏弹框
@@ -822,4 +826,7 @@ function hideOverlay() {
     setTimeout(() => {
         configOverlayElement.classList.add('hidden');
     }, 200); // Wait for the animation to finish
+    // 重新加载配置和渲染拼图快
+    loadConfig();
+    createTiles();
 }
