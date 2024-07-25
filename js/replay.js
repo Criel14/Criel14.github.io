@@ -200,7 +200,9 @@ function playReplay(cases, startStep) {
 
     function playNextStep() {
         if (isPaused) {
-            return; // 如果暂停，什么也不做
+            // 暂停则直接停止计时
+            clearInterval(replayInterval); 
+            return; 
         }
 
         if (currentIndex >= cases.length) {
