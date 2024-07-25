@@ -296,26 +296,54 @@ tr:nth-child(odd):hover {
 .overlay-menu-button {
     width: 80px;
     height: 70px;
-    background-color: white;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.overlay-114);
+    background-color: rgb(255, 255, 255);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
     border-radius: 8px;
     display: flex;
-    float: left;
     justify-content: center;
     align-items: center;
     cursor: pointer;
     user-select: none;
-    margin-left: 20px;
     margin-top: 20px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.137);
-    color: #6d6d6d;
-    font-size: 24px;
-    font-weight: bold;
+    margin-left: 20px;
+    position: relative;
 }
 
-.overlay-menu-button:hover {
-    background-color: rgb(247, 247, 247);
-    transition: 0.3s;
+.overlay-menu-button::after {
+    content: attr(data-text);
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(250, 250, 250);
+    border-radius: 8px;
+    opacity: 0;
+    transform: translate(30%, 0);
+    transition: all 0.3s;
+    color: #808080;
+    /* 提示文字颜色 */
+    font-size: 20px;
+}
+
+.overlay-menu-button span {
+    transition: all 0.3s;
+}
+
+.overlay-menu-button:hover::after {
+    opacity: 1;
+    transform: translate(0, 0);
+}
+
+.overlay-menu-button:hover span {
+    opacity: 0;
+}
+
+.overlay-menu-button.hidden {
+    display: none;
 }
 
 #info-container {
