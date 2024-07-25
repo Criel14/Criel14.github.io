@@ -8,6 +8,9 @@ const stepElement = document.getElementById("step");
 const progressBar = document.getElementById("progress-bar-input");
 // 播放暂停按钮
 const playPauseButton = document.getElementById("play-pause-button");
+// 上一步下一步按钮
+const lastStepButton = document.getElementById("last-step");
+const nextStepButton = document.getElementById("next-step");
 
 // 定义拼图的阶数（边长）
 let size = 4;
@@ -29,6 +32,10 @@ let gameMode = "normal";
 let isPaused = true;
 // 当前播放到第几步
 let currentStep = 0;
+// 区分手动拖动和程序更新进度条
+let isSeeking = false;
+// 状态列表
+let cases;
 
 // 样式配置
 // 颜色配置
@@ -95,6 +102,33 @@ function renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRat
     });
 }
 
+// 恢复播放
+function resumeReplay(cases) {
+    console.log(`从第${currentStep}步开始播放`);
+    playReplay(cases, currentStep);
+    isPaused = false;
+    // 改变图片
+    playPauseButton.querySelector("img").src = "image/pause.png";
+}
+
+// 暂停
+function pauseReplay() {
+    isPaused = true;
+    playPauseButton.querySelector("img").src = "image/play.png";
+}
+
+// 上一步或下一步
+function changeStep(direction) {
+    pauseReplay();
+    currentStep = Math.max(0, currentStep + direction);
+    // 渲染拼图快
+    renderTiles(puzzle, cases[currentStep].caseList, 500, size, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
+    // 显示数据
+    timerElement.textContent = "Time: " + timeFormat(cases[currentStep].time - (gameMode == "normal" ? observeTime : 0));
+    stepElement.textContent = "Step: " + cases[currentStep].step;
+    progressBar.value = currentStep;
+}
+
 // 页面加载后
 window.onload = function () {
     // 读取当局信息
@@ -112,31 +146,47 @@ window.onload = function () {
         borderRadiusRatio = config.styleConfig.borderRadiusRatio;
         gapWidthRatio = config.styleConfig.gapWidthRatio;
         size = currentScore.size;
+        step = currentScore.step;
         tiles = currentScore.scramble.split(',').map(Number);
         scrambleTiles = currentScore.scramble.split(',').map(Number);
         moveSequence = currentScore.moveSequence;
         observeTime = currentScore.observeTime;
         gameMode = currentScore.gameMode;
         // 设置进度条最大值
-        progressBar.max = currentScore.step;
+        progressBar.max = step;
     }
 
     // 初始化拼图快
     createTiles();
     // 获取状态列表
-    let cases = getCases();
+    cases = getCases();
 
     // 添加监听
     playPauseButton.addEventListener("click", () => {
         if (isPaused) {
-            console.log(`从第${currentStep}步开始播放`);
-            playReplay(cases, currentStep);
-            isPaused = false;
-            // 改变图片
-            playPauseButton.querySelector("img").src = "image/pause.png";
+            resumeReplay(cases);
         } else {
+            pauseReplay();
+        }
+    });
+    lastStepButton.addEventListener("click", () => {
+        changeStep(-1);
+    })
+    nextStepButton.addEventListener("click", () => {
+        changeStep(1);
+    })
+    // 处理进度条拖动
+    progressBar.addEventListener('input', () => {
+        if (!isSeeking) {
+            console.log("手动调整进度条");
             isPaused = true;
             playPauseButton.querySelector("img").src = "image/play.png";
+            currentStep = progressBar.value;
+            // 渲染拼图快
+            renderTiles(puzzle, cases[currentStep].caseList, 500, size, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
+            // 显示数据
+            timerElement.textContent = "Time: " + timeFormat(cases[currentStep].time - (gameMode == "normal" ? observeTime : 0));
+            stepElement.textContent = "Step: " + cases[currentStep].step;
         }
     });
 };
@@ -199,14 +249,18 @@ function playReplay(cases, startStep) {
     let startTime = Date.now() - (cases[startStep].time - (gameMode == "normal" ? observeTime : 0));
 
     function playNextStep() {
-        if (isPaused) {
-            // 暂停则直接停止计时
-            clearInterval(replayInterval); 
-            return; 
+        // 暂停或手动拖动进度条
+        if (isPaused || isSeeking) {
+            clearInterval(replayInterval);
+            return;
         }
 
+        // 回放完成
         if (currentIndex >= cases.length) {
-            clearInterval(replayInterval); // 回放完成，停止计时器
+            isPaused = true;
+            currentStep = 0;
+            playPauseButton.querySelector("img").src = "image/play.png";
+            clearInterval(replayInterval);
             return;
         }
 
@@ -218,12 +272,14 @@ function playReplay(cases, startStep) {
             renderTiles(puzzle, currentData.caseList, 500, size, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
             currentIndex++;
             currentStep = currentIndex;
-            // 显示数据
-            timerElement.textContent = timeFormat(elapsedTime);
-            stepElement.textContent = currentData.step;
             // 改变进度条
+            isSeeking = true;
             progressBar.value = currentData.step;
+            isSeeking = false;
         }
+        // 显示数据
+        timerElement.textContent = "Time: " + timeFormat(elapsedTime);
+        stepElement.textContent = "Step: " + currentData.step;
     }
 
     let replayInterval = setInterval(playNextStep, 10); // 每10毫秒检查一次
@@ -236,3 +292,25 @@ function timeFormat(originalTime) {
     const milliseconds = originalTime % 1000;
     return parseFloat(`${seconds}.${milliseconds}`).toFixed(2);
 }
+
+// 为页面添加按键监听
+document.addEventListener('keydown', function (event) {
+    switch (event.key) {
+        case " ":
+            if (isPaused) {
+                resumeReplay(cases);
+            } else {
+                pauseReplay();
+            }
+            break;
+        case "ArrowLeft":
+            changeStep(-1);
+            break;
+        case "ArrowRight":
+            changeStep(1);
+            break;
+        default:
+            break;
+    }
+}
+);
