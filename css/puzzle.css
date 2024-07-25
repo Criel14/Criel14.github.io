@@ -450,7 +450,7 @@ body {
     width: 150px;
     height: 18px;
     border-radius: 6px;
-    border: rgb(205, 205, 205) 1px solid;
+    border: #e1e1e1 1px solid;
 }
 
 .color-tip {

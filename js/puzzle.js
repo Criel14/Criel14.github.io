@@ -81,7 +81,7 @@ let gameMode = "normal";
 let groupNum = 1;
 // 是否启用自定义光标样式
 let isCustomCursor = false;
-// 是否允许操作，用于启用或禁用操作
+// 是否允许操作，用于启用或禁用操作，在设置界面使用
 let isAllowOperate = true;
 // 移动序列，记录本次还原的操作
 let moveSequence = [];
@@ -155,6 +155,11 @@ let gameModeList = ["normal", "blind"];
 // 根据数字返回对应的颜色，默认为66ccff
 // number为0至size*size -1，0为空白格，number和显示出来的数字是一样的
 function getColor(number, size) {
+    return colorConfig[getLayer(number, size)] || "#ffffff";
+}
+
+// 返回层数，一行一列这样，在颜色里使用
+function getLayer(number, size) {
     number--;
     // 获取行列号（从0开始）
     row = Math.floor(number / size);
@@ -162,11 +167,11 @@ function getColor(number, size) {
     // 以左上到右下的对角线分为上三角和下三角
     // 上三角或对角线
     if (line >= row) {
-        return colorConfig[2 * row + 1] || "#ffffff";
+        return 2 * row + 1;
     }
     // 下三角
     else {
-        return colorConfig[(line + 1) * 2] || "#ffffff";
+        return (line + 1) * 2;
     }
 }
 
@@ -249,6 +254,20 @@ function renderTiles(puzzle, tiles, edgeLength, size) {
             }
             else if (moveMode == "slide") {
                 tileElement.addEventListener("mouseover", () => moveTileMouse(index));
+            }
+            // 设置界面添加监听事件
+            // 鼠标放在某一行/列，这一行的颜色调整input就突出显示
+            // 点击则实现显示颜色选择器
+            if (!isAllowOperate) {
+                tileElement.addEventListener("mouseenter", () => {
+                    colorInputs[getLayer(tile, size) - 1].style.borderColor = "#000000";
+                });
+                tileElement.addEventListener("mouseleave", () => {
+                    colorInputs[getLayer(tile, size) - 1].style.borderColor = "#e1e1e1";
+                });
+                tileElement.addEventListener("click", () => {
+                    colorInputs[getLayer(tile, size) - 1].jscolor.show();
+                });
             }
         }
         // 添加胜利效果
@@ -388,7 +407,7 @@ function checkWin() {
         }
         // 重新渲染拼图块
         renderTiles(puzzle, tiles, 500, size);
-        
+
         console.log(moveSequence);
     }
 }
