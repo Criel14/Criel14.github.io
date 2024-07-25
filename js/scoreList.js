@@ -421,13 +421,8 @@ function renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRat
         tileElement.style.borderRadius = tileLength * borderRadiusRatio + "px";
 
         if (tile !== 0) { // 如果拼图块不是空白块
-            if (gameMode == "blind" && isStart == true && isFinish == false) {
-                tileElement.style.backgroundColor = "#66ccff"; // 设置拼图块的背景颜色
-            }
-            else {
-                tileElement.textContent = tile; // 设置拼图块的文本
-                tileElement.style.backgroundColor = getColor(tile, size); // 设置拼图块的背景颜色
-            }
+            tileElement.textContent = tile; // 设置拼图块的文本
+            tileElement.style.backgroundColor = getColor(tile, size); // 设置拼图块的背景颜色
         }
         puzzle.appendChild(tileElement); // 将拼图块添加到拼图容器中
     });
