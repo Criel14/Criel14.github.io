@@ -11,6 +11,8 @@ const playPauseButton = document.getElementById("play-pause-button");
 // 上一步下一步按钮
 const lastStepButton = document.getElementById("last-step");
 const nextStepButton = document.getElementById("next-step");
+// 倍速播放按钮
+const playBackSpeedButton = document.getElementById("play-back-speed");
 
 // 定义拼图的阶数（边长）
 let size = 4;
@@ -36,6 +38,10 @@ let currentStep = 0;
 let isSeeking = false;
 // 状态列表
 let cases;
+// 播放速度
+let playBackSpeed = 1;
+// 播放速度可选列表
+let playBackSpeedList = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4, 5, 10];
 
 // 样式配置
 // 颜色配置
