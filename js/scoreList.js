@@ -275,14 +275,20 @@ document.addEventListener("DOMContentLoaded", () => {
     deleteGroupElement.addEventListener("click", deleteGroupScores);
     // 删除所有成绩
     deleteAllElement.addEventListener("click", deleteAllScores);
+    // 打开录像回放
+    overlayReplayElement.addEventListener("click", () => {
+        window.location.href = "replay.html";
+    });
 });
 
-// 显示打乱
+// 显示本局信息
 function showScramble(size, number) {
     currentNumber = number;
     const scores = JSON.parse(localStorage.getItem('scores')) || [];
     // 找到scores中对应的行
     const score = scores.find(s => s.size === size && s.number === number && s.gameMode === gameMode && s.group === groupNum);
+    // 存储当前查看的score
+    localStorage.setItem('currentScore', JSON.stringify(score));
     // 获取打乱数组
     const scrambleList = score.scramble.split(',');
     // 弹框中显示打乱

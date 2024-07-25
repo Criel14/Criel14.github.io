@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Replay</title>
+    <link rel="stylesheet" href="css/replay.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="main">
+            <div class="puzzle-container">
+                <div class="puzzle" id="puzzle"></div>
+            </div>
+        </div>
+
+        <div class="menu">
+            <div class="main-info">
+                <span id="timer">0.000</span>
+                <span id="step">0</span>
+            </div>
+            <div class="replay-menu">
+                <div id="play-pause-button" class="menu-button-float" title="播放/暂停 play/pause （空格）">
+                    <img src="image/play.png" alt="increase" width="40px" height="40px">
+                </div>
+                <div class="progress-bar">
+                    <input type="range" id="progress-bar-input" min="0" step="1">
+                </div>
+                <div style="clear: both;"></div>
+
+                <div id="" class="menu-button-float" title="倍速 playback speed">
+                    <span>1.0</span>
+                </div>
+                <div id="" class="menu-button-float" title="上一步 last step（ ← ）">
+                    <img src="image/last.png" alt="increase" width="44px" height="44px">
+                </div>
+                <div id="" class="menu-button-float" title="下一步 next step （ → ）">
+                    <img src="image/next.png" alt="increase" width="44px" height="44px">
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="js/defaultConfig.js"></script>
+    <script src="js/replay.js"></script>
+</body>
+
+</html>

@@ -64,7 +64,7 @@ let timeEclapsed = 0;
 let formattedTime = "0.00";
 // 当前模式纪录的时间（需要显示的时间）
 let displayTime = 0;
-// 纪录盲拧模式下的观察时间
+// 纪录观察时间
 let observeTime = 0;
 // 是否开始游戏
 let isStart = false;
@@ -91,6 +91,8 @@ let isAllowOperate = true;
 let moveSequence = [];
 
 // 样式配置
+// 颜色配置
+let colorConfig = defaultColorConfig1;
 // 字体比例（取值范围0 - 1.0）：字体大小 = 滑块的边长 * fontSizeRatio
 let fontSizeRatio = defaultFontSizeRatio1;
 // 间隙大小（取值范围0 - 0.1）
@@ -98,8 +100,6 @@ let gapWidthRatio = defaultGapWidthRatio1;
 // 圆角大小系数（取值范围0 - 0.5），：圆角大小 = 滑块的边长 * borderRadiusRatio
 let borderRadiusRatio = defaultBorderRadiusRatio1;
 
-// 颜色配置
-let colorConfig = defaultColorConfig1;
 
 // 移动模式列表
 let moveModeList = ["click", "slide", "keyboard"];

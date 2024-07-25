@@ -1,0 +1,147 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+    font-family: Arial, sans-serif;
+}
+
+.hidden {
+    display: none;
+}
+
+.container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+}
+
+.main {
+    width: 64%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.menu {
+    width: 35%;
+    height: 100%;
+}
+
+.puzzle-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 40px;
+}
+
+.puzzle {
+    width: 500px;
+    height: 500px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+}
+
+.tile {
+    width: 120px;
+    height: 120px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+    color: white;
+    font-weight: bold;
+    font-size: 56px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+    transition: box-shadow 0.5s ease-in-out;
+}
+
+.main-info {
+    width: 100%;
+    height: 200px;
+    margin-top: 34%;
+    /* background-color: #ffbdbd; */
+}
+
+.replay-menu {
+    width: 100%;
+    height: 280px;
+    margin-top: 4%;
+    /* background-color: #d6ffd9; */
+}
+
+#timer {
+    font-size: 64px;
+    font-weight: bold;
+    display: block;
+    margin-left: 5%;
+}
+
+#step {
+    font-size: 64px;
+    font-weight: bold;
+    display: block;
+    margin-top: 30px;
+    margin-left: 5%;
+}
+
+#tps {
+    font-size: 64px;
+    font-weight: bold;
+    display: block;
+    margin-top: 30px;
+    margin-left: 5%;
+    margin-bottom: 10px;
+}
+
+.menu-button-float {
+    width: 70px;
+    height: 60px;
+    background-color: rgb(250, 250, 250);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
+    border-radius: 8px;
+    display: flex;
+    float: left;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    margin-top: 20px;
+    margin-right: 20px;
+    position: relative;
+    font-size: 36px;
+    font-weight: bold;
+    text-align: center;
+    color: #8a8a8a;
+}
+
+.menu-button-float:hover {
+    background-color: #f0f0f0;
+    transition: 0.3s;
+}
+
+
+.progress-bar {
+    float: left;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+    width: 400px;
+    height: 60px;
+    background-color: rgb(250, 250, 250);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+}
+
+.progress-bar input {
+    width: 90%;
+    height: 40px;
+}
