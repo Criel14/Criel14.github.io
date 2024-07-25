@@ -46,24 +46,27 @@ let defaultColorConfig2 = {
 
 // 样式配置
 // 字体比例（取值范围0 - 1.0）：字体大小 = 滑块的边长 * fontSizeRatio
-let defaultFontSizeRatio = 0.5;
+let defaultFontSizeRatio1 = 0.5;
+let defaultFontSizeRatio2 = 0.5;
 // 间隙大小（取值范围0 - 0.1）
-let defaultGapWidthRatio = 0.03;
+let defaultGapWidthRatio1 = 0.03;
+let defaultGapWidthRatio2 = 0;
 // 圆角大小系数（取值范围0 - 0.5），：圆角大小 = 滑块的边长 * borderRadiusRatio
-let defaultBorderRadiusRatio = 0.04;
+let defaultBorderRadiusRatio1 = 0.04;
+let defaultBorderRadiusRatio2 = 0.01;
 
 let defaultStyleConfig1 = {
     "colorConfig": defaultColorConfig1,
-    "fontSizeRatio": defaultFontSizeRatio,
-    "gapWidthRatio": defaultGapWidthRatio,
-    "borderRadiusRatio": defaultBorderRadiusRatio,
+    "fontSizeRatio": defaultFontSizeRatio1,
+    "gapWidthRatio": defaultGapWidthRatio1,
+    "borderRadiusRatio": defaultBorderRadiusRatio1,
 };
 
 let defaultStyleConfig2 = {
     "colorConfig": defaultColorConfig2,
-    "fontSizeRatio": defaultFontSizeRatio,
-    "gapWidthRatio": defaultGapWidthRatio,
-    "borderRadiusRatio": defaultBorderRadiusRatio,
+    "fontSizeRatio": defaultFontSizeRatio2,
+    "gapWidthRatio": defaultGapWidthRatio2,
+    "borderRadiusRatio": defaultBorderRadiusRatio2,
 };
 
 // 默认配置
@@ -74,7 +77,4 @@ let defaultConfig = {
     "groupNumber": 1,
     "isCustomCursor": false,
     "styleConfig": defaultStyleConfig1,
-    "fontSizeRatio": defaultFontSizeRatio,
-    "gapWidthRatio": defaultGapWidthRatio,
-    "borderRadiusRatio": defaultBorderRadiusRatio,
 }

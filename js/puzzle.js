@@ -937,6 +937,8 @@ function showOverlay() {
     renderTiles(previewPuzzle, tempList, 400, 10, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
     // 颜色选择器初始化
     setColorPickerValue();
+    // 滑块初始化
+    setSizeSliderValue();
 }
 
 // 隐藏弹框
