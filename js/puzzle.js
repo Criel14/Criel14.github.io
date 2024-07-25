@@ -92,11 +92,11 @@ let moveSequence = [];
 
 // 样式配置
 // 字体比例（取值范围0 - 1.0）：字体大小 = 滑块的边长 * fontSizeRatio
-let fontSizeRatio = 0.5;
+let fontSizeRatio = defaultFontSizeRatio1;
 // 间隙大小（取值范围0 - 0.1）
-let gapWidthRatio = 0.03;
+let gapWidthRatio = defaultGapWidthRatio1;
 // 圆角大小系数（取值范围0 - 0.5），：圆角大小 = 滑块的边长 * borderRadiusRatio
-let borderRadiusRatio = 0.04;
+let borderRadiusRatio = defaultBorderRadiusRatio1;
 
 // 颜色配置
 let colorConfig = defaultColorConfig1;

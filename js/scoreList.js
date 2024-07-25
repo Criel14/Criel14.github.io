@@ -45,6 +45,16 @@ let gameMode = "normal";
 // 当前分组
 let groupNum = 1;
 
+// 样式配置
+// 颜色配置
+let colorConfig = defaultColorConfig1;
+// 字体比例（取值范围0 - 1.0）：字体大小 = 滑块的边长 * fontSizeRatio
+let fontSizeRatio = defaultFontSizeRatio1;
+// 间隙大小（取值范围0 - 0.1）
+let gapWidthRatio = defaultGapWidthRatio1;
+// 圆角大小系数（取值范围0 - 0.5），：圆角大小 = 滑块的边长 * borderRadiusRatio
+let borderRadiusRatio = defaultBorderRadiusRatio1;
+
 function displayScores(size) {
     // 修改背景颜色
     if (gameMode == "normal") {
@@ -163,6 +173,7 @@ function changeSize(direction) {
     renderChart();
 }
 
+// 快捷键
 document.addEventListener('keydown', (event) => {
     switch (event.key) {
         case ',':
@@ -225,6 +236,10 @@ document.addEventListener("DOMContentLoaded", () => {
     gameMode = config.gameMode;
     currentSize = config.size;
     groupNum = config.groupNumber;
+    colorConfig = config.styleConfig.colorConfig;
+    fontSizeRatio = config.styleConfig.fontSizeRatio;
+    borderRadiusRatio = config.styleConfig.borderRadiusRatio;
+    gapWidthRatio = config.styleConfig.gapWidthRatio;
     // 更新显示内容
     groupNumberElement.textContent = "G" + groupNum;
     switchGameModeElement.textContent = gameMode;
@@ -271,7 +286,7 @@ function showScramble(size, number) {
     // 获取打乱数组
     const scrambleList = score.scramble.split(',');
     // 弹框中显示打乱
-    renderTiles(size, scrambleList);
+    renderTiles(puzzle, scrambleList, 300, currentSize, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
     // 弹框中显示当局信息
     showInfo(size, score);
     // 显示弹框
@@ -359,31 +374,14 @@ function hideOverlay() {
     }, 200); // Wait for the animation to finish
 }
 
-// 颜色字典，按层降阶，即从左上到右下
-const colorMap = {
-    0: "#f0f0f0", // 同网页背景色
-    1: "#e74c3c", // 红色
-    2: "#e67e22", // 橙色
-    3: "#f1c40f", // 黄色
-    4: "#2ecc71", // 绿色
-    5: "#1abc9c", // 青色
-    6: "#3498db", // 蓝色
-    7: "#6810fa",
-    8: "#8a5201",
-    9: "#767676",
-    10: "#5b2789",
-    11: "#ff8685",
-    12: "#ffc586",
-    13: "#fcf080",
-    14: "#c5ff98",
-    15: "#93d3ff",
-    16: "#c4925f",
-    17: "#dc98ff"
-};
-
 // 根据数字返回对应的颜色，默认为66ccff
-// number为0-15，0为空白格，number和显示出来的数字是一样的
-function getColor(size, number) {
+// number为0至size*size -1，0为空白格，number和显示出来的数字是一样的
+function getColor(number, size) {
+    return colorConfig[getLayer(number, size)] || "#ffffff";
+}
+
+// 返回层数，一行一列这样，在颜色里使用
+function getLayer(number, size) {
     number--;
     // 获取行列号（从0开始）
     row = Math.floor(number / size);
@@ -391,30 +389,39 @@ function getColor(size, number) {
     // 以左上到右下的对角线分为上三角和下三角
     // 上三角或对角线
     if (line >= row) {
-        return colorMap[2 * row + 1] || "white";
+        return 2 * row + 1;
     }
     // 下三角
     else {
-        return colorMap[(line + 1) * 2] || "white";
+        return (line + 1) * 2;
     }
 }
 
 // 渲染拼图块
-// 参数：阶数，打乱序列
-function renderTiles(size, puzzleList) {
-    puzzle.innerHTML = ''; // 清空拼图容器
-    puzzle.style.gridTemplateColumns = "repeat(" + size + ", 1fr)"
+function renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRatio, borderRadiusRatio) {
+    // 计算滑块边长
+    let tileLength = edgeLength / size;
+    // 清空拼图容器
+    puzzle.innerHTML = '';
+    puzzle.style.gridTemplateColumns = "repeat(" + size + ", 1fr)";
+    puzzle.style.gap = tileLength * gapWidthRatio + "px";
     // 遍历每个拼图块
-    puzzleList.forEach((tile) => {
+    tiles.forEach((tile, index) => {
         const tileElement = document.createElement("div"); // 创建一个新的div元素
         tileElement.classList.add("tile"); // 添加样式类
-        tileElement.style.width = 300 / size + "px";
-        tileElement.style.height = 300 / size + "px";
-        tileElement.style.fontSize = 150 / size + "px";
+        tileElement.style.width = tileLength + "px";
+        tileElement.style.height = tileLength + "px";
+        tileElement.style.fontSize = tileLength * fontSizeRatio + "px";
+        tileElement.style.borderRadius = tileLength * borderRadiusRatio + "px";
 
         if (tile !== 0) { // 如果拼图块不是空白块
-            tileElement.textContent = tile; // 设置拼图块的文本
-            tileElement.style.backgroundColor = getColor(size, tile); // 设置拼图块的背景颜色
+            if (gameMode == "blind" && isStart == true && isFinish == false) {
+                tileElement.style.backgroundColor = "#66ccff"; // 设置拼图块的背景颜色
+            }
+            else {
+                tileElement.textContent = tile; // 设置拼图块的文本
+                tileElement.style.backgroundColor = getColor(tile, size); // 设置拼图块的背景颜色
+            }
         }
         puzzle.appendChild(tileElement); // 将拼图块添加到拼图容器中
     });
