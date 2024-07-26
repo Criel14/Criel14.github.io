@@ -202,7 +202,7 @@ window.onload = function () {
 function getCases() {
     let cases = [{
         "caseList": scrambleTiles,
-        "time": observeTime,
+        "time": gameMode == "normal" ? observeTime : 0,
         "step": 0,
     }];
     // 遍历每一步
