@@ -184,6 +184,10 @@ function scramble() {
     while (true) {
         // 随机打乱
         tiles = Array.from({ length: size * size }, (_, i) => i).sort(() => Math.random() - 0.5);
+        // 如果随机后直接就是完成了的
+        if (tiles.slice(0, -1).every((tile, i) => tile === i + 1)) {
+            continue;
+        }
         // 计算0的行号和列号
         zeroIndex = tiles.indexOf(0);
         // 判断（总逆序数 + 0的行号 + 0的列号）与 N 是否不同奇偶 => 奇偶相加必为奇
