@@ -175,12 +175,23 @@ window.onload = function () {
         progressBar.max = step;
     }
 
+    // 修改背景颜色
+    if (gameMode == "normal") {
+        document.body.style.backgroundColor = "#e6f1eb";
+    }
+    else if (gameMode == "blind") {
+        document.body.style.backgroundColor = "#e6e9f1";
+    }
+
     // 初始化拼图快
     createTiles();
     // 获取状态列表
     cases = getCases();
 
     // 添加监听
+    document.getElementById("retry").addEventListener("click", () => {
+        window.location.href = "puzzle.html?isRetry=true";
+    });
     playPauseButton.addEventListener("click", () => {
         if (isPaused) {
             resumeReplay(cases);

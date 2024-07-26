@@ -89,6 +89,8 @@ let isCustomCursor = false;
 let isAllowOperate = true;
 // 移动序列，记录本次还原的操作
 let moveSequence = [];
+// 是否的重玩模式
+let isRetry = false;
 
 // 样式配置
 // 颜色配置
@@ -171,6 +173,13 @@ function createTiles() {
 // 数字华容道NxN数字随机排列的阵列有解的充要条件是：（行号列号从0开始）
 // （总逆序数 + 0的行号 + 0的列号）与 N 不同奇偶
 function scramble() {
+    // 重玩模式下，打乱永远不变
+    if (isRetry == true) {
+        scrambleTiles = Array.from(JSON.parse(localStorage.getItem("currentScore")).scramble.split(",")).map(Number);
+        tiles = Array.from(scrambleTiles);
+        return;
+    }
+
     // 当打乱符合条件的时候再退出循环
     while (true) {
         // 随机打乱
@@ -364,7 +373,10 @@ function checkWin() {
                 moveSequence: moveSequence,
                 dateTime: new Date().toLocaleString(),
             };
-            saveScore(score);
+            // 重玩模式下不保存成绩
+            if (!isRetry) {
+                saveScore(score);
+            }
             // 标记完成
             isFinish = true;
         }
@@ -440,12 +452,24 @@ function countInversions(originalArr) {
 
 // 当整个HTML文档加载完毕后执行以下代码
 document.addEventListener("DOMContentLoaded", () => {
+    // 获取url中的isRetry参数
+    const isRetryParam = new URLSearchParams(window.location.search).get("isRetry");
+    // 判断是否获取到参数
+    if (isRetryParam === null || isRetryParam === undefined) {
+        isRetry = false;
+    } else {
+        isRetry = (isRetryParam === "true");
+    }
+
     // 读取配置文件
     loadConfig();
     // 显示信息
     gameModeElement.textContent = gameMode;
     moveModeElement.textContent = moveMode;
     levelShowElement.textContent = size + "×" + size;
+    if (isRetry == true) {
+        levelShowElement.textContent += "Re";
+    }
     groupNumberElement.textContent = "G" + groupNum;
     // 更新滑块信息
     setSizeSliderValue();
@@ -705,6 +729,10 @@ function switswitchDataView() {
 
 // 增加阶数
 function increaseSize() {
+    // 试玩模式下不可调整
+    if (isRetry) {
+        return;
+    }
     if (size < 10) {
         size++;
         levelShowElement.textContent = size + "×" + size;
@@ -715,6 +743,10 @@ function increaseSize() {
 
 // 减少阶数
 function decreaseSize() {
+    // 试玩模式下不可调整
+    if (isRetry) {
+        return;
+    }
     if (size > 2) {
         size--;
         levelShowElement.textContent = size + "×" + size;
@@ -787,6 +819,10 @@ function switchMoveMode() {
 
 // 切换游戏模式
 function switchGameMode() {
+    // 试玩模式下不可调整
+    if (isRetry) {
+        return;
+    }
     let currentIndex = gameModeList.indexOf(gameMode);
     gameMode = gameModeList[(currentIndex + 1) % gameModeList.length];
     // 显示模式
