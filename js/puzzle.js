@@ -358,7 +358,8 @@ function checkWin() {
                 gameMode: gameMode,
                 observeTime: observeTime,
                 group: groupNum,
-                moveSequence: moveSequence
+                moveSequence: moveSequence,
+                dateTime: new Date().toLocaleString(),
             };
             saveScore(score);
             // 标记完成

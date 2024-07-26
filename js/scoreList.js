@@ -294,49 +294,23 @@ function showScramble(size, number) {
     // 弹框中显示打乱
     renderTiles(puzzle, scrambleList, 300, currentSize, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
     // 弹框中显示当局信息
-    showInfo(size, score);
+    showInfo(score);
     // 显示弹框
     showOverlay();
 }
 
 
 // 显示当局信息
-function showInfo(size, score) {
-    console.log("当前查看：" + JSON.stringify(score));
-    // 清空容器
-    puzzleInfo.innerHTML = '';
-    // 设置高度
-    puzzleInfo.style.height = 300 + 5 * (size - 1) + "px";
-    // 显示时间
-    timeInfo = document.createElement("p");
-    timeInfo.textContent = score.time + "s";
-    timeInfo.classList.add("time-info");
-    puzzleInfo.appendChild(timeInfo);
-    // 显示模式 + 观察时间
-    modeInfo = document.createElement("p");
-    modeInfo.textContent = score.gameMode + "-" + score.moveMode + " (" + timeFormat(score.observeTime) + "s)";
-    modeInfo.classList.add("move-mode-info");
-    puzzleInfo.appendChild(modeInfo);
-    // 显示步数
-    stepInfo = document.createElement("p");
-    stepInfo.textContent = "Step: " + score.step;
-    stepInfo.classList.add("other-info");
-    puzzleInfo.appendChild(stepInfo);
-    // 显示TPS
-    tpsInfo = document.createElement("p");
-    tpsInfo.textContent = "TPS: " + score.tps;
-    tpsInfo.classList.add("other-info");
-    puzzleInfo.appendChild(tpsInfo);
-    // 显示ao5
-    ao5Info = document.createElement("p");
-    ao5Info.textContent = "ao5: " + score.ao5;
-    ao5Info.classList.add("ao-info");
-    puzzleInfo.appendChild(ao5Info);
-    // 显示ao12
-    ao12Info = document.createElement("p");
-    ao12Info.textContent = "ao12: " + score.ao12;
-    ao12Info.classList.add("ao-info");
-    puzzleInfo.appendChild(ao12Info);
+function showInfo(score) {
+    document.getElementById("time-info").textContent = score.time + "s";
+    document.getElementById("date-info").textContent = score.dateTime;
+    document.getElementById("observe-time-info").textContent = timeFormat(score.observeTime) + "s";
+    document.getElementById("game-mode-info").textContent = score.gameMode;
+    document.getElementById("move-mode-info").textContent = score.moveMode;
+    document.getElementById("step-info").textContent = score.step;
+    document.getElementById("TPS-info").textContent = score.tps;
+    document.getElementById("ao5-info").textContent = score.ao5 == "--" ? "--" : score.ao5 + "s";
+    document.getElementById("ao12-info").textContent = score.ao12 == "--" ? "--" : score.ao12 + "s";
 }
 
 // 切换游戏模式
