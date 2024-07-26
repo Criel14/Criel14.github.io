@@ -11,8 +11,11 @@ const playPauseButton = document.getElementById("play-pause-button");
 // 上一步下一步按钮
 const lastStepButton = document.getElementById("last-step");
 const nextStepButton = document.getElementById("next-step");
-// 倍速播放按钮
-const playBackSpeedButton = document.getElementById("play-back-speed");
+// 倍速播放元素
+const speedUpButton = document.getElementById("speed-up");
+const speedDownButton = document.getElementById("speed-down");
+const speedInfoElement = document.getElementById("playback-speed-info");
+
 
 // 定义拼图的阶数（边长）
 let size = 4;
@@ -26,6 +29,7 @@ let moveSequence = [];
 let displayTime = 0;
 // 基本数据
 let step = 0;
+let time = "0.00";
 // 观察时间
 let observeTime = 0;
 // 游戏模式
@@ -39,9 +43,9 @@ let isSeeking = false;
 // 状态列表
 let cases;
 // 播放速度
-let playBackSpeed = 1;
+let playbackSpeed = 1;
 // 播放速度可选列表
-let playBackSpeedList = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4, 5, 10];
+let playbackSpeedList = [0.125, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4, 5, 10];
 
 // 样式配置
 // 颜色配置
@@ -161,6 +165,7 @@ window.onload = function () {
         gapWidthRatio = config.styleConfig.gapWidthRatio;
         size = currentScore.size;
         step = currentScore.step;
+        time = currentScore.time;
         tiles = currentScore.scramble.split(',').map(Number);
         scrambleTiles = currentScore.scramble.split(',').map(Number);
         moveSequence = currentScore.moveSequence;
@@ -188,6 +193,12 @@ window.onload = function () {
     })
     nextStepButton.addEventListener("click", () => {
         changeStep(1);
+    })
+    speedUpButton.addEventListener("click", () => {
+        changeSpeed(1);
+    })
+    speedDownButton.addEventListener("click", () => {
+        changeSpeed(-1);
     })
     // 处理进度条拖动
     progressBar.addEventListener('input', () => {
@@ -273,12 +284,14 @@ function playReplay(cases, startStep) {
         if (currentIndex >= cases.length) {
             isPaused = true;
             playPauseButton.querySelector("img").src = "image/play.png";
+            // 修正时间显示
+            timerElement.textContent = "Time: " + time;
             clearInterval(replayInterval);
             return;
         }
 
         let currentData = cases[currentIndex];
-        let elapsedTime = Date.now() - startTime;
+        let elapsedTime = (Date.now() - startTime) * playbackSpeed;
 
         if (elapsedTime >= currentData.time - (gameMode == "normal" ? observeTime : 0)) {
             // 渲染当前状态
@@ -325,5 +338,11 @@ document.addEventListener('keydown', function (event) {
         default:
             break;
     }
+});
+
+// 改变速度
+function changeSpeed(direction) {
+    let index = playbackSpeedList.indexOf(playbackSpeed);
+    playbackSpeed = playbackSpeedList[(index + direction + playbackSpeedList.length) % playbackSpeedList.length];
+    speedInfoElement.textContent = playbackSpeed;
 }
-);

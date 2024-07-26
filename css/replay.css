@@ -145,3 +145,44 @@ body {
     width: 90%;
     height: 40px;
 }
+
+.playback-speed {
+    width: 180px;
+    height: 60px;
+    background-color: rgb(250, 250, 250);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
+    border-radius: 8px;
+    display: flex;
+    float: left;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+    margin-top: 20px;
+    margin-right: 20px;
+    font-size: 36px;
+    font-weight: bold;
+    text-align: center;
+    color: #8a8a8a;
+}
+
+.playback-speed #playback-speed-info {
+    height: 100%;
+    width: 48%;
+    float: left;
+    line-height: 60px;
+}
+
+.playback-speed #speed-down,
+.playback-speed #speed-up {
+    height: 100%;
+    width: 26%;
+    float: left;
+    border-radius: 8px;
+    padding-top: 13px;
+}
+
+.playback-speed #speed-down:hover,
+.playback-speed #speed-up:hover {
+    background-color: #f0f0f0;
+    transition: 0.3s;
+}
