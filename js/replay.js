@@ -110,7 +110,11 @@ function renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRat
 
 // 恢复播放
 function resumeReplay(cases) {
-    console.log(`从第${currentStep}步开始播放`);
+    // 播放完后，再次点击播放则从头开始播放
+    if (currentStep >= step) {
+        currentStep = 0;
+    }
+
     playReplay(cases, currentStep);
     isPaused = false;
     // 改变图片
@@ -126,7 +130,11 @@ function pauseReplay() {
 // 上一步或下一步
 function changeStep(direction) {
     pauseReplay();
-    currentStep = Math.max(0, currentStep + direction);
+    if (direction == 1) {
+        currentStep = Math.min(step, currentStep + direction);
+    } else if (direction == -1) {
+        currentStep = Math.max(0, currentStep + direction);
+    }
     // 渲染拼图快
     renderTiles(puzzle, cases[currentStep].caseList, 500, size, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
     // 显示数据
@@ -264,7 +272,6 @@ function playReplay(cases, startStep) {
         // 回放完成
         if (currentIndex >= cases.length) {
             isPaused = true;
-            currentStep = 0;
             playPauseButton.querySelector("img").src = "image/play.png";
             clearInterval(replayInterval);
             return;
