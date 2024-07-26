@@ -99,6 +99,8 @@ let fontSizeRatio = defaultFontSizeRatio1;
 let gapWidthRatio = defaultGapWidthRatio1;
 // 圆角大小系数（取值范围0 - 0.5），：圆角大小 = 滑块的边长 * borderRadiusRatio
 let borderRadiusRatio = defaultBorderRadiusRatio1;
+// 游玩时候的拼图快总边长
+let edgeLength = 500;
 
 
 // 移动模式列表
@@ -153,7 +155,7 @@ function createTiles() {
     // 生成数组并打乱
     scramble();
     // 渲染拼图块
-    renderTiles(puzzle, tiles, 500, size, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
+    renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
     // 开始计时
     startTimer();
 
@@ -202,7 +204,8 @@ function renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRat
         tileElement.style.borderRadius = tileLength * borderRadiusRatio + "px";
 
         if (tile !== 0) { // 如果拼图块不是空白块
-            if (gameMode == "blind" && isStart == true && isFinish == false) {
+            // 盲玩模式，开始移动，未完成，不是在配置状态，则渲染为蓝色
+            if (gameMode == "blind" && isStart == true && isFinish == false && isAllowOperate == true) {
                 tileElement.style.backgroundColor = "#66ccff"; // 设置拼图块的背景颜色
             }
             else {
@@ -280,7 +283,7 @@ function moveTileMouse(index) {
     }
 
     // 重新渲染拼图块
-    renderTiles(puzzle, tiles, 500, size, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
+    renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
     // 检查是否拼图成功
     checkWin();
 }
@@ -332,7 +335,7 @@ function moveTileKeyboard(direction) {
             break;
     }
     // 重新渲染拼图块
-    renderTiles(puzzle, tiles, 500, size, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
+    renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
     // 检查是否拼图成功
     checkWin();
 }
@@ -366,7 +369,7 @@ function checkWin() {
             isFinish = true;
         }
         // 重新渲染拼图块
-        renderTiles(puzzle, tiles, 500, size, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
+        renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
 
         console.log(moveSequence);
     }
