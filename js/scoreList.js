@@ -305,6 +305,7 @@ function showInfo(score) {
     document.getElementById("time-info").textContent = score.time + "s";
     document.getElementById("date-info").textContent = score.dateTime;
     document.getElementById("observe-time-info").textContent = timeFormat(score.observeTime) + "s";
+    document.getElementById("manhattan-distance-info").textContent = score.manhattanDistance;
     document.getElementById("game-mode-info").textContent = score.gameMode;
     document.getElementById("move-mode-info").textContent = score.moveMode;
     document.getElementById("step-info").textContent = score.step;

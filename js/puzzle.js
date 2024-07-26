@@ -103,6 +103,8 @@ let gapWidthRatio = defaultGapWidthRatio1;
 let borderRadiusRatio = defaultBorderRadiusRatio1;
 // 游玩时候的拼图快总边长
 let edgeLength = 500;
+// 曼哈顿距离
+let manhattanDistance = 0
 
 
 // 移动模式列表
@@ -183,9 +185,15 @@ function scramble() {
     // 当打乱符合条件的时候再退出循环
     while (true) {
         // 随机打乱
-        tiles = Array.from({ length: size * size }, (_, i) => i).sort(() => Math.random() - 0.5);
-        // 如果随机后直接就是完成了的
-        if (tiles.slice(0, -1).every((tile, i) => tile === i + 1)) {
+        tiles = Array.from({ length: size * size }, (_, i) => i);
+        for (let i = tiles.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+        }
+
+        // 如果曼哈顿距离小于size * size就重新打乱
+        manhattanDistance = calculateManhattanDistance(tiles, size);
+        if (manhattanDistance < size * size) {
             continue;
         }
         // 计算0的行号和列号
@@ -376,6 +384,7 @@ function checkWin() {
                 group: groupNum,
                 moveSequence: moveSequence,
                 dateTime: new Date().toLocaleString(),
+                manhattanDistance: manhattanDistance,
             };
             // 重玩模式下不保存成绩
             if (!isRetry) {
@@ -386,8 +395,6 @@ function checkWin() {
         }
         // 重新渲染拼图块
         renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
-
-        console.log(moveSequence);
     }
 }
 
@@ -1048,4 +1055,29 @@ function setSizeSliderValue() {
         // 赋值给文本
         sizeInfoElements[index].textContent = sizeInput.value + "×";
     }
+}
+
+// 计算曼哈顿距离
+function calculateManhattanDistance(scrambleArray, size) {
+    // 生成目标序列，例如 size 为 3 时是 [1, 2, 3, 4, 5, 6, 7, 8, 0]
+    let goal = Array.from({ length: size * size }, (_, i) => (i + 1) % (size * size));
+
+    // 创建目标位置的字典，键为拼图块值，值为目标位置坐标
+    let goalPositions = {};
+    goal.forEach((value, index) => {
+        goalPositions[value] = [Math.floor(index / size), index % size];
+    });
+
+    // 计算总曼哈顿距离
+    let totalManhattanDistance = 0;
+    scrambleArray.forEach((value, index) => {
+        if (value !== 0) {  // 忽略空白块
+            let currentPos = [Math.floor(index / size), index % size];
+            let goalPos = goalPositions[value];
+            let manhattanDistance = Math.abs(currentPos[0] - goalPos[0]) + Math.abs(currentPos[1] - goalPos[1]);
+            totalManhattanDistance += manhattanDistance;
+        }
+    });
+
+    return totalManhattanDistance;
 }
