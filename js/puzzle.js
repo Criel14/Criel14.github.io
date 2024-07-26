@@ -620,7 +620,9 @@ document.addEventListener('keydown', function (event) {
             // 切换下一组
             switchGroup(1);
             break;
-
+        case "Escape":
+            hideOverlay();
+            break;
         default:
             break;
     }
