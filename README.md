@@ -1,5 +1,7 @@
-# 网页数字华容道 15 Puzzle Game
-
+<div align="center">
+	<h1>Online JS 15 Puzzle Game</h1>
+	<img src="READMEresource/cover.png"></img>
+</div>
 
 
 ## 简介
@@ -115,7 +117,7 @@ tip: 二者内容相同，都能在国内访问；前者速度较慢，若没有
 - **打乱过于简单**
 
   - 如果全随机，虽然几率很小，但是可能遇到一步还原，或者打乱结果就是已经还原的情况
-  - 这里通过计算**总曼哈顿距离**来判定，设定n×n数字华容道的总曼哈顿距离不小于n×n
+  - 这里通过计算**总曼哈顿距离**来判定，约定n×n数字华容道的总曼哈顿距离不小于n×n
 
 ```javascript
 // 当打乱符合条件的时候再退出循环
@@ -132,6 +134,7 @@ while (true) {
     if (manhattanDistance < size * size) {
         continue;
     }
+    
     // 计算0的行号和列号
     zeroIndex = tiles.indexOf(0);
     // 判断（总逆序数 + 0的行号 + 0的列号）与 N 是否不同奇偶 => 奇偶相加必为奇
@@ -149,4 +152,148 @@ while (true) {
 - **countInversions(tiles)** 用于计算总逆序数，使用归并排序的方法；
 - **calculateManhattanDistance(tiles, size)** 用于计算总曼哈顿距离；
 - 判断是否不同奇偶，可以用“奇偶相加必为奇”的原理；
-- 要重新打乱的次数基本在1次到5次，这样子并不会消耗过多时间；应该有更好的方法，但是我只想道这个 :）
+- 要重新打乱的次数基本在1次到5次，这样子并不会消耗过多时间；应该有更好的方法，但是我只想到这个 :）
+
+
+
+### 关于颜色主题
+
+为了方便，本网页只提供了最常用的**按层降阶**方式配色的主题，也就是如下图所示，一种颜色就是一个区域，一共18个区域 + 数字0（空白格）共 **19种颜色**。
+
+![](READMEresource/color.png)
+
+代码中定义了一个颜色配置字典，格式如下：
+
+```javascript
+let colorConfig = {
+    0: "#f0f0f0",
+    1: "#fde5ff",
+	...
+    // 从0到18
+};
+```
+
+通过每个块的序号 ，计算出其坐标，从而得到其层数
+
+```javascript
+// 返回层数，一行一列这样，在颜色里使用
+function getLayer(number, size) {
+    number--;
+    // 获取行列号（从0开始）
+    row = Math.floor(number / size);
+    line = number % size;
+    // 以左上到右下的对角线分为上三角和下三角
+    // 上三角或对角线
+    if (line >= row) {
+        return 2 * row + 1;
+    }
+    // 下三角
+    else {
+        return (line + 1) * 2;
+    }
+}
+```
+
+再通过层数从颜色字典里获取颜色，在绘制的时候设置style即可
+
+```javascript
+// 根据数字返回对应的颜色，默认为#ffffff
+// number为0至size*size -1，0为空白格，number和显示出来的数字是一样的
+function getColor(number, size) {
+    return colorConfig[getLayer(number, size)] || "#ffffff";
+}
+```
+
+
+
+### 关于数据存储
+
+由于本网页没有后端的数据库，所有数据都存储在浏览器的Local Storage中；
+
+tip: 也因此并不具备防作弊功能，当然因为没有排行一类的功能，作不作弊其实没什么所谓 :)
+
+```javascript
+// 从localStorage中获取数据
+let config = JSON.parse(localStorage.getItem('config')) || [];
+
+// 将数据保存到localStorage
+localStorage.setItem("config", JSON.stringify(config));
+```
+
+一共存储了4项数据，具体内容如下：
+
+- **config**  配置信息
+
+  - **gameMode**  当前游戏模式
+
+  - **groupNumber**  当前选择组号
+
+  - **isCustomCursor**  是否启用自定义鼠标指针
+
+  - **moveMode**  当前移动模式
+
+  - **size**  当前游玩阶数
+
+  - **styleConfig**  个性化设置
+
+  - - **borderRadiusRatio**  圆角半径比例（圆角半径 = 拼图快边长 * 圆角半径比例）
+    - **colorConfig**  颜色配置，同“颜色主题”部分中的颜色配置
+    - **fontSizeRatio**  字体大小比例（字体大小 = 拼图快边长 * 字体大小比例）
+    - **gapWidthRatio** 拼图快间隙比例（拼图快间隙 = 拼图快边长 * 拼图快间隙比例）
+
+- **scores** 所有成绩的总列表，每一项为**score**，存储每一把的详细成绩信息，**score**中的内容如下：
+
+  - **size**  阶数
+  - **gameMode**  游戏模式
+  - **group**  所属组号
+  - **number** 在所属组中的序号
+  - **step**  步数
+  - **time**  完成时间
+  - **tps**  每秒移动次数
+  - **ao5**  当前成绩与前4把成绩的5次去尾平均
+  - **ao12**  当前成绩与前11把成绩的12次去尾平均
+  - **dateTime**  完成时的系统时间
+  - **manhattanDistance**  曼哈顿距离
+  - **moveMode**  移动/操作模式
+  - **observeTime**  观察时间
+  - **scramble**  存储打乱序列的数组
+  - **moveSequence**  移动序列，在录像回放功能中使用，每一项包含2个属性：
+    - direction：本次移动的方向，有4中情况：'R', 'L', 'U', 'D'
+    - time：本次移动的时间节点
+
+- **currentScore**  当前正在被查看详细成绩的成绩信息，用于同步至录像回放页，保存的数据项同scores中的score
+
+- **currentScoreList**  从scores中根据size, gameMode, group这三个属性筛选出子的成绩列表，用于生成图表、统计本组总体成绩
+
+
+
+## 日志
+
+- 2024.7.16
+  - 正式开始制作，初步实现游戏基本操作
+- 2024.7.17
+  - 规划完善主界面UI布局
+- 2024.7.18
+  - 初步实现成绩列表功能
+- 2024.7.19
+  - 添加更多游戏模式、移动/操作模式
+- 2024.7.20
+  - 添加自定义光标功能
+- 2024.7.21-22
+  - 实现用户对数据的基本管理
+- 2024.7.23
+  - 初步实现成绩列表页的统计图表功能
+- 2024.7.24
+  - 初步实现个性化调节功能
+- 2024.7.25
+  - 完善个性化调节功能
+  - 初步实现录像回放功能
+- 2024.7.26
+  - 完善录像回放功能，修复优化项目的各个部分
+  - 确定**网页数字华容道v1.0**内容
+
+
+
+## 反馈
+
+如有疑问或建议，请联系chencriel@qq.com

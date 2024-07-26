@@ -114,7 +114,7 @@ let moveModeList = ["click", "slide", "keyboard"];
 let gameModeList = ["normal", "blind"];
 
 
-// 根据数字返回对应的颜色，默认为66ccff
+// 根据数字返回对应的颜色，默认为#ffffff
 // number为0至size*size -1，0为空白格，number和显示出来的数字是一样的
 function getColor(number, size) {
     return colorConfig[getLayer(number, size)] || "#ffffff";
