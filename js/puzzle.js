@@ -239,6 +239,7 @@ function renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRat
             }
             else if (moveMode == "slide") {
                 tileElement.addEventListener("mouseover", () => moveTileMouse(index));
+                tileElement.addEventListener("touchstart", () => moveTileMouse(index));
             }
             // 设置界面添加监听事件
             // 鼠标放在某一行/列，这一行的颜色调整input就突出显示
