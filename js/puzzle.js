@@ -274,11 +274,10 @@ function renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRat
 
 // 触摸屏移动方法
 function touchMove(e) {
-    console.log("touch");
     e.preventDefault();
     let touch = e.touches[0];
     let elementUnderFinger = document.elementFromPoint(touch.clientX, touch.clientY);
-    if (elementUnderFinger.dataset.index != null) {
+    if (elementUnderFinger.dataset != null) {
         moveTileMouse(e, elementUnderFinger.dataset.index);
     }
 }
