@@ -215,6 +215,8 @@ function renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRat
     puzzle.innerHTML = '';
     puzzle.style.gridTemplateColumns = "repeat(" + size + ", 1fr)";
     puzzle.style.gap = tileLength * gapWidthRatio + "px";
+    // puzzle.addEventListener("touchmove", touchMove, false);
+    puzzle.addEventListener("touchstart", touchMove, false);
     // 遍历每个拼图块
     tiles.forEach((tile, index) => {
         const tileElement = document.createElement("div"); // 创建一个新的div元素
@@ -240,7 +242,6 @@ function renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRat
             }
             else if (moveMode == "slide") {
                 tileElement.addEventListener("mouseover", (e) => moveTileMouse(e, index));
-                tileElement.addEventListener("touchmove", touchMove, false);
             }
             // 设置界面添加监听事件
             // 鼠标放在某一行/列，这一行的颜色调整input就突出显示
@@ -257,12 +258,15 @@ function renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRat
                 });
             }
         }
+        // 所有块包括0，都要添加上这个监听
+        if (moveMode == "slide") {
+            tileElement.addEventListener("touchmove", touchMove, false);
+        }
         // 添加胜利效果
         if (isFinish == true) {
             // 发光一定时间
             tileElement.style.boxShadow = "0 0 100px #ffff5d7a";
             setTimeout(() => { tileElement.style.boxShadow = "none"; }, 500);
-
         }
         puzzle.appendChild(tileElement); // 将拼图块添加到拼图容器中
     });
@@ -270,6 +274,7 @@ function renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRat
 
 // 触摸屏移动方法
 function touchMove(e) {
+    console.log("touch");
     e.preventDefault();
     let touch = e.touches[0];
     let elementUnderFinger = document.elementFromPoint(touch.clientX, touch.clientY);
