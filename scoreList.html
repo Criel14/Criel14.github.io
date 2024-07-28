@@ -55,6 +55,15 @@
             <div class="chart-info-item info-data" id="avg-step"></div>
             <div class="chart-info-item info-tag">平均TPS</div>
             <div class="chart-info-item info-data" id="avg-tps"></div>
+            <div style="clear: both;"></div>
+
+            <div class="chart-info-item info-tag">最佳ao5</div>
+            <div class="chart-info-item info-data" id="best-ao5"></div>
+            <div class="chart-info-item info-tag">最佳ao12</div>
+            <div class="chart-info-item info-data" id="best-ao12"></div>
+            <div class="chart-info-item info-tag">平均观察时间</div>
+            <div class="chart-info-item info-data" id="avg-observe-time"></div>
+
         </div>
     </div>
 
@@ -62,12 +71,12 @@
         <table>
             <thead>
                 <tr>
-                    <th id="size-info">3阶</th>
-                    <th>时间 (秒)</th>
-                    <th>步数</th>
-                    <th>TPS</th>
-                    <th>ao5 (秒)</th>
-                    <th>ao12 (秒)</th>
+                    <th id="size-info" title="puzzle size">3阶</th>
+                    <th title="time(second)">时间 (秒)</th>
+                    <th title="step">步数</th>
+                    <th title="每秒移动次数 number of steps moved in one second">TPS</th>
+                    <th title="5次平均 average of 5">ao5 (秒)</th>
+                    <th title="12次平均 average of 12">ao12 (秒)</th>
                 </tr>
             </thead>
             <tbody id="scores-tbody">

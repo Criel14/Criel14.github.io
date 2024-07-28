@@ -836,13 +836,23 @@ function saveScore(score) {
 }
 
 // 计算一个列表的去尾平均
-function averageOfList(list) {
-    list.sort();
-    let sum = 0
-    for (i = 1; i <= list.length - 2; i++) {
-        sum += list[i];
+function averageOfList(originalList) {
+    let list = [...originalList]; // 创建一个原始列表的副本
+    list.sort(function (a, b) {
+        return a - b;
+    });
+    let sum = 0;
+    if (list.length > 2) {
+        for (i = 1; i <= list.length - 2; i++) {
+            sum += list[i];
+        }
+        return (sum / (list.length - 2)).toFixed(2);
+    } else {
+        for (i = 0; i < list.length; i++) {
+            sum += list[i];
+        }
+        return (sum / list.length).toFixed(2);
     }
-    return (sum / (list.length - 2)).toFixed(2);
 }
 
 // 切换移动模式

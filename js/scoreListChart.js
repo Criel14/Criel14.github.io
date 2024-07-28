@@ -7,6 +7,9 @@ const bestTpsElement = document.getElementById('best-tps');
 const avgTimeElement = document.getElementById('avg-time');
 const avgStepElement = document.getElementById('avg-step');
 const avgTpsElement = document.getElementById('avg-tps');
+const avgObserveTimeElement = document.getElementById('avg-observe-time');
+const bestAo5Element = document.getElementById('best-ao5');
+const bestAo12Element = document.getElementById('best-ao12');
 
 // 默认字体大小
 const defaultFontSize = window.innerWidth / 112.5;
@@ -20,6 +23,9 @@ function renderChart() {
     let stepList = [];
     let tpsList = [];
     let numberList = [];
+    let observeTimeList = [];
+    let ao5List = [];
+    let ao12List = [];
     let currentScoreSize = 0;
     let currentScoreGameMode = "empty";
     let currentScoreGroupNumber = 0;
@@ -28,6 +34,9 @@ function renderChart() {
         stepList = currentScoreList.map(item => item.step);
         tpsList = currentScoreList.map(item => parseFloat(item.tps));
         numberList = currentScoreList.map(item => item.number);
+        observeTimeList = currentScoreList.map(item => item.observeTime);
+        ao5List = currentScoreList.map(item => item.ao5).filter(item => item != "--").map(Number);
+        ao12List = currentScoreList.map(item => item.ao12).filter(item => item != "--").map(Number);
         currentScoreSize = currentScoreList[0].size;
         currentScoreGameMode = currentScoreList[0].gameMode;
         currentScoreGroupNumber = currentScoreList[0].group;
@@ -54,7 +63,7 @@ function renderChart() {
         seriesArr.push({
             name: val.name,
             type: 'line',
-            symbolSize: 1,
+            symbolSize: 0,
             data: val.children,
             areaStyle: {
                 normal: {
@@ -86,7 +95,7 @@ function renderChart() {
     option = {
         backgroundColor: "#fff",
         title: {
-            text:  `${currentScoreSize}×${currentScoreSize} ${currentScoreGameMode} Group${currentScoreGroupNumber}`,
+            text: `${currentScoreSize}×${currentScoreSize} ${currentScoreGameMode} Group${currentScoreGroupNumber}`,
             left: 'center',
             top: '2%',
             textStyle: {
@@ -232,17 +241,20 @@ function renderChart() {
     });
 
     // 更新显示数据
-    showData(timeList, stepList, tpsList);
+    showData(timeList, stepList, tpsList, observeTimeList, ao5List, ao12List);
 }
 
 // 显示数据
-function showData(timeList, stepList, tpsList) {
-    bestTimeElement.textContent = Math.min(...timeList).toFixed(2);
+function showData(timeList, stepList, tpsList, observeTimeList, ao5List, ao12List) {
+    bestTimeElement.textContent = Math.min(...timeList).toFixed(2) + "s";
     bestStepElement.textContent = Math.min(...stepList);
     bestTpsElement.textContent = Math.max(...tpsList).toFixed(2);
-    avgTimeElement.textContent = averageOfList(timeList);
+    bestAo5Element.textContent = Math.min(...ao5List).toFixed(2) + "s";
+    bestAo12Element.textContent = Math.min(...ao12List).toFixed(2) + "s";
+    avgTimeElement.textContent = averageOfList(timeList) + "s";
     avgStepElement.textContent = averageOfList(stepList);
     avgTpsElement.textContent = averageOfList(tpsList);
+    avgObserveTimeElement.textContent = timeFormat(averageOfList(observeTimeList)) + "s";
 }
 
 
@@ -254,10 +266,26 @@ window.onload = function () {
 // 计算一个列表的去尾平均
 function averageOfList(originalList) {
     let list = [...originalList]; // 创建一个原始列表的副本
-    list.sort();
-    let sum = 0
-    for (i = 1; i <= list.length - 2; i++) {
-        sum += list[i];
+    list.sort(function (a, b) {
+        return a - b;
+    });
+    let sum = 0;
+    if (list.length > 2) {
+        for (i = 1; i <= list.length - 2; i++) {
+            sum += list[i];
+        }
+        return (sum / (list.length - 2)).toFixed(2);
+    } else {
+        for (i = 0; i < list.length; i++) {
+            sum += list[i];
+        }
+        return (sum / list.length).toFixed(2);
     }
-    return (sum / (list.length - 2)).toFixed(2);
+}
+
+// 格式化时间，保留2位小数，参数是毫秒
+function timeFormat(originalTime) {
+    const seconds = Math.floor(originalTime / 1000);
+    const milliseconds = originalTime % 1000;
+    return parseFloat(`${seconds}.${milliseconds}`).toFixed(2);
 }
