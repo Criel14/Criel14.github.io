@@ -806,26 +806,71 @@ function saveScore(score) {
     } else {
         score.number = currentSizeScores[currentSizeScores.length - 1].number + 1;
     }
+
+    // 计算平均
+    let ao5Legal = true; // 计算得到的成绩是否合法（游玩间隔大于5分钟）
+    let ao12Legal = true; // 计算得到的成绩是否合法（游玩间隔大于5分钟）
     // 计算5次平均
     if (currentSizeScores.length >= 4) {
         let tempList = [parseFloat(score.time)];
+        // 判断 当前这把的游玩时间 与 列表最后一把的完成时间 的间隔是否大于5分钟
+        let scoreDatetime = new Date(score.dateTime);
+        let scoreGametime = parseFloat(score.time);
+        let listLastDatetime = new Date(currentSizeScores[currentSizeScores.length - 1].dateTime);
+        if (Math.abs((scoreDatetime - 1000 * scoreGametime) - listLastDatetime) > 300000) {
+            ao5Legal = false;
+        }
+        // 加上最后4把
         for (i = 1; i <= 4; i++) {
             tempList.push(parseFloat(currentSizeScores[currentSizeScores.length - i].time));
-            score.ao5 = averageOfList(tempList);
+            if (i >= 2) {
+                // 判断间隔
+                let thisDateTime = new Date(currentSizeScores[currentSizeScores.length - i].dateTime);
+                let nextDateTime = new Date(currentSizeScores[currentSizeScores.length - i + 1].dateTime);
+                let nextGameTime = parseFloat(currentSizeScores[currentSizeScores.length - i + 1].time);
+                if (Math.abs((nextDateTime - 1000 * nextGameTime) - thisDateTime) > 300000) {
+                    ao5Legal = false;
+                }
+            }
         }
+        score.ao5 = averageOfList(tempList);
     }
     else {
         score.ao5 = "--";
     }
+    if (!ao5Legal) {
+        score.ao5 = "--";
+    }
+
     // 计算12次平均
     if (currentSizeScores.length >= 11) {
         let tempList = [parseFloat(score.time)];
+        // 判断 当前这把的游玩时间 与 列表最后一把的完成时间 的间隔是否大于5分钟
+        let scoreDatetime = new Date(score.dateTime);
+        let scoreGametime = parseFloat(score.time);
+        let listLastDatetime = new Date(currentSizeScores[currentSizeScores.length - 1].dateTime);
+        if (Math.abs((scoreDatetime - 1000 * scoreGametime) - listLastDatetime) > 300000) {
+            ao12Legal = false;
+        }
+        // 加上最后11把
         for (i = 1; i <= 11; i++) {
             tempList.push(parseFloat(currentSizeScores[currentSizeScores.length - i].time));
-            score.ao12 = averageOfList(tempList);
+            if (i >= 2) {
+                // 判断间隔
+                let thisDateTime = new Date(currentSizeScores[currentSizeScores.length - i].dateTime);
+                let nextDateTime = new Date(currentSizeScores[currentSizeScores.length - i + 1].dateTime);
+                let nextGameTime = parseFloat(currentSizeScores[currentSizeScores.length - i + 1].time);
+                if (Math.abs((nextDateTime - 1000 * nextGameTime) - thisDateTime) > 300000) {
+                    ao12Legal = false;
+                }
+            }
         }
+        score.ao12 = averageOfList(tempList);
     }
     else {
+        score.ao12 = "--";
+    }
+    if (!ao12Legal) {
         score.ao12 = "--";
     }
 
