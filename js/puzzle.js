@@ -218,6 +218,7 @@ function renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRat
     // 遍历每个拼图块
     tiles.forEach((tile, index) => {
         const tileElement = document.createElement("div"); // 创建一个新的div元素
+        tileElement.dataset.index = index; // 添加自定义属性，用于存储索引值
         tileElement.classList.add("tile"); // 添加样式类
         tileElement.style.width = tileLength + "px";
         tileElement.style.height = tileLength + "px";
@@ -235,11 +236,11 @@ function renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRat
             }
             // 为拼图块添加事件监听器
             if (moveMode == "click") {
-                tileElement.addEventListener("click", () => moveTileMouse(index));
+                tileElement.addEventListener("click", (e) => moveTileMouse(e, index));
             }
             else if (moveMode == "slide") {
-                tileElement.addEventListener("mouseover", () => moveTileMouse(index));
-                tileElement.addEventListener("touchmove", () => moveTileMouse(index));
+                tileElement.addEventListener("mouseover", (e) => moveTileMouse(e, index));
+                tileElement.addEventListener("touchmove", touchMove, false);
             }
             // 设置界面添加监听事件
             // 鼠标放在某一行/列，这一行的颜色调整input就突出显示
@@ -267,11 +268,25 @@ function renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRat
     });
 }
 
+// 触摸屏移动方法
+function touchMove(e) {
+    e.preventDefault();
+    let touch = e.touches[0];
+    let elementUnderFinger = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (elementUnderFinger.dataset.index != null) {
+        moveTileMouse(e, elementUnderFinger.dataset.index);
+    }
+}
+
 // 鼠标移动方法
-function moveTileMouse(index) {
+function moveTileMouse(e, index) {
     if (!isAllowOperate) {
         return;
     }
+    // 阻止事件的默认行为和事件的冒泡 => 事件不会触发任何默认的浏览器行为，也不会向上冒泡到父元素
+    e.preventDefault();
+    e.stopPropagation();
+
     let zeroIndex = tiles.indexOf(0); // 找到空白块的位置
     const [line1, row1] = [index % size, Math.floor(index / size)]; // 计算当前拼图块的坐标
     const [line0, row0] = [zeroIndex % size, Math.floor(zeroIndex / size)]; // 计算空白块的坐标
