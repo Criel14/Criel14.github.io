@@ -405,6 +405,7 @@ function checkWin() {
                 moveSequence: moveSequence,
                 dateTime: new Date().toLocaleString(),
                 manhattanDistance: manhattanDistance,
+                device: getDeviceType(),
             };
             // 重玩模式下不保存成绩
             if (!isRetry) {
@@ -1105,4 +1106,15 @@ function calculateManhattanDistance(scrambleArray, size) {
     });
 
     return totalManhattanDistance;
+}
+
+// 获取用户设备信息
+function getDeviceType() {
+    var userAgent = navigator.userAgent;
+
+    if (/tablet|ipad|playbook|silk|mobile/i.test(userAgent)) {
+        return 'mobile';
+    } else {
+        return 'desktop';
+    }
 }

@@ -83,7 +83,7 @@ function getLayer(number, size) {
 // 创建并初始化拼图块
 function createTiles() {
     // 渲染拼图块
-    renderTiles(puzzle, tiles, 500, size, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
+    renderTiles(puzzle, tiles, 30, size, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
 }
 
 // 渲染拼图块
@@ -93,21 +93,21 @@ function renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRat
     // 清空拼图容器
     puzzle.innerHTML = '';
     puzzle.style.gridTemplateColumns = "repeat(" + size + ", 1fr)";
-    puzzle.style.gap = tileLength * gapWidthRatio + "px";
+    puzzle.style.gap = tileLength * gapWidthRatio + "vw";
     // 遍历每个拼图块
     tiles.forEach((tile, index) => {
         const tileElement = document.createElement("div"); // 创建一个新的div元素
+        tileElement.dataset.index = index; // 添加自定义属性，用于存储索引值
         tileElement.classList.add("tile"); // 添加样式类
-        tileElement.style.width = tileLength + "px";
-        tileElement.style.height = tileLength + "px";
-        tileElement.style.fontSize = tileLength * fontSizeRatio + "px";
-        tileElement.style.borderRadius = tileLength * borderRadiusRatio + "px";
+        tileElement.style.width = "100%";
+        tileElement.style.height = "100%";
+        tileElement.style.fontSize = tileLength * fontSizeRatio + "vw";
+        tileElement.style.borderRadius = tileLength * borderRadiusRatio + "vw";
 
         if (tile !== 0) { // 如果拼图块不是空白块
             tileElement.textContent = tile; // 设置拼图块的文本
             tileElement.style.backgroundColor = getColor(tile, size); // 设置拼图块的背景颜色
         }
-
         puzzle.appendChild(tileElement); // 将拼图块添加到拼图容器中
     });
 }
@@ -140,7 +140,7 @@ function changeStep(direction) {
         currentStep = Math.max(0, currentStep + direction);
     }
     // 渲染拼图快
-    renderTiles(puzzle, cases[currentStep].caseList, 500, size, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
+    renderTiles(puzzle, cases[currentStep].caseList, 30, size, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
     // 显示数据
     timerElement.textContent = "Time: " + timeFormat(cases[currentStep].time - (gameMode == "normal" ? observeTime : 0));
     stepElement.textContent = "Step: " + cases[currentStep].step;
@@ -219,7 +219,7 @@ window.onload = function () {
             playPauseButton.querySelector("img").src = "image/play.png";
             currentStep = progressBar.value;
             // 渲染拼图快
-            renderTiles(puzzle, cases[currentStep].caseList, 500, size, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
+            renderTiles(puzzle, cases[currentStep].caseList, 30, size, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
             // 显示数据
             timerElement.textContent = "Time: " + timeFormat(cases[currentStep].time - (gameMode == "normal" ? observeTime : 0));
             stepElement.textContent = "Step: " + cases[currentStep].step;
@@ -306,7 +306,7 @@ function playReplay(cases, startStep) {
 
         if (elapsedTime >= currentData.time - (gameMode == "normal" ? observeTime : 0)) {
             // 渲染当前状态
-            renderTiles(puzzle, currentData.caseList, 500, size, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
+            renderTiles(puzzle, currentData.caseList, 30, size, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
             currentIndex++;
             currentStep = currentIndex;
             // 改变进度条
@@ -357,3 +357,9 @@ function changeSpeed(direction) {
     playbackSpeed = playbackSpeedList[(index + direction + playbackSpeedList.length) % playbackSpeedList.length];
     speedInfoElement.textContent = playbackSpeed;
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+    // 设置整体字体大小和行高
+    document.documentElement.style.fontSize = window.innerWidth / 112.5 + "px";
+    document.documentElement.style.lineHeight = window.innerHeight / 112.5 + "px";
+});
