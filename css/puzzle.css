@@ -21,6 +21,13 @@ body {
 .menu {
     width: 29%;
     height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.menu-container {
+    height: auto;
+    width: 100%;
 }
 
 .main {
@@ -35,6 +42,13 @@ body {
 .data {
     width: 29%;
     height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.data-container {
+    height: auto;
+    width: 100%;
 }
 
 .foot-info {
@@ -70,8 +84,8 @@ body {
 
 .shuffleButton {
     margin-top: 40px;
-    width: 40px;
-    height: 40px;
+    width: 2.5vw;
+    height: 2.5vw;
 }
 
 .tile {
@@ -107,26 +121,28 @@ body {
 }
 
 #timer {
-    font-size: 64px;
+    font-size: 3.8vw;
+    line-height: 4vw;
     font-weight: bold;
     display: block;
-    margin-top: 40%;
     margin-left: 5%;
 }
 
 #step {
-    font-size: 64px;
+    font-size: 3.8vw;
+    line-height: 4vw;
     font-weight: bold;
     display: block;
-    margin-top: 30px;
+    margin-top: 1.8vw;
     margin-left: 5%;
 }
 
 #tps {
-    font-size: 64px;
+    font-size: 3.8vw;
+    line-height: 4vw;
     font-weight: bold;
     display: block;
-    margin-top: 30px;
+    margin-top: 1.8vw;
     margin-left: 5%;
     margin-bottom: 10px;
 }
@@ -284,9 +300,9 @@ body {
 
 #level {
     font-size: 5vw;
+    line-height: 5vw;
     font-weight: bold;
     display: block;
-    margin-top: 40%;
     margin-left: 50%;
     color: #482b16;
 }
@@ -366,10 +382,10 @@ body {
 }
 
 #config-overlay-content {
-    width: 850px;
-    height: 420px;
+    width: 52vw;
+    height: 25vw;
     background: white;
-    padding: 50px 60px 60px 60px;
+    padding: 2.4% 3% 2.4% 3%;
     border-radius: 8px;
     text-align: center;
     transform: translateX(40%);
@@ -386,14 +402,14 @@ body {
 }
 
 .config-overlay-menu {
-    padding: 30px 0px 50px 0px;
+    padding: 1% 0% 1% 0.4%;
     display: flex;
     flex-direction: column;
 }
 
 .config-overlay-menu-button {
-    width: 80px;
-    height: 70px;
+    width: 4.4vw;
+    height: 4vw;
     background-color: rgb(255, 255, 255);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
     border-radius: 8px;
@@ -459,39 +475,34 @@ body {
 }
 
 .color-menu {
-    width: 180px;
+    width: 8vw;
     height: 100%;
     float: left;
-    margin-left: 60px;
+    margin-left: 4%;
     display: flex;
     flex-direction: column;
     /* background-color: #ff808033; */
 }
 
 .color-menu-item {
-    margin-top: 2px;
+    width: 100%;
+    height: 1vw;
+    margin-top: 0.35vw;
 }
 
 .color-input {
-    width: 100px;
-    height: 18px;
+    font-size: 90%;
+    width: 6vw;
+    height: 1vw;
     border-radius: 6px;
     border: #e1e1e1 1px solid;
 }
 
-.color-tip {
-    font-size: 18px;
-    line-height: 18px;
-    font-weight: bold;
-    color: #5b5b5b;
-    font-family: Arial;
-}
-
 .size-menu {
-    width: 180px;
+    width: 12vw;
     height: 100%;
     float: left;
-    margin-left: 30px;
+    margin-left: 6%;
     display: flex;
     flex-direction: column;
     /* background-color: #00ff1a2d; */
@@ -499,11 +510,11 @@ body {
 
 .size-menu-item {
     width: 100%;
-    height: 90px;
+    height: 24%;
     padding-top: 10px;
     background-color: #f6f6f6;
     border-radius: 6px;
-    margin-top: 30px;
+    margin-top: 10%;
 }
 
 .size-menu-item:hover {
@@ -513,15 +524,20 @@ body {
 
 .size-tip {
     text-align: center;
-    font-size: 16px;
-    line-height: 24px;
+    font-size: 100%;
+    line-height: 150%;
     color: #727272;
 }
 
 .size-info {
     text-align: center;
-    font-size: 18px;
-    line-height: 32px;
+    font-size: 140%;
+    line-height: 240%;
     font-weight: bold;
     color: #000000;
+}
+
+.size-input {
+    width: 80%;
+    height: 0.4vw;
 }

@@ -483,6 +483,10 @@ function countInversions(originalArr) {
 
 // 当整个HTML文档加载完毕后执行以下代码
 document.addEventListener("DOMContentLoaded", () => {
+    // 设置整体字体大小和行高
+    document.documentElement.style.fontSize = window.innerWidth / 112.5 + "px";
+    document.documentElement.style.lineHeight = window.innerHeight / 112.5 + "px";
+
     // 获取url中的isRetry参数
     const isRetryParam = new URLSearchParams(window.location.search).get("isRetry");
     // 判断是否获取到参数

@@ -3,11 +3,7 @@ const puzzleGameTitle = document.getElementById('puzzle-game-title');
 window.onload = function () {
     puzzleGameTitle.addEventListener('click', () => window.location.href = 'puzzle.html');
     puzzleGameTitle.addEventListener('click', function () {
-        if (isMobileDevice()) {
-            window.location.href = 'puzzleMobile.html';
-        } else {
-            window.location.href = 'puzzle.html';
-        }
+        window.location.href = 'puzzle.html';
     });
 }
 
