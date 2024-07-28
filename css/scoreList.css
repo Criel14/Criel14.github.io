@@ -22,6 +22,10 @@ body {
     color: #f0ede9;
 }
 
+.chart-container.hidden {
+    display: none;
+}
+
 .chart {
     width: 100%;
     height: 18vw;

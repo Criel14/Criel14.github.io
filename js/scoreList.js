@@ -156,7 +156,15 @@ function displayScores(size) {
     let endRow = document.createElement('tr');
     let tip = document.createElement("td");
     tip.colSpan = document.querySelectorAll('thead th').length;; // 设置单元格跨越的列数
-    tip.textContent = "下面没有了╮(╯▽╰)╭"
+
+    // currentScoreList不会为null，至少有[]
+    if (currentScoreList.length > 0) {
+        tip.textContent = "下面没有了╮(╯▽╰)╭";
+        tip.title = "No more down here ¯_(ツ)_/¯";
+    } else {
+        tip.textContent = "还没有成绩哦(｡•́︿•̀｡)";
+        tip.title = "No scores yet (｡•́︿•̀｡)";
+    }
     endRow.appendChild(tip);
     tbody.appendChild(endRow);
 }

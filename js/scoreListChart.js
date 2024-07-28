@@ -1,4 +1,5 @@
 // 引用图表div
+const chartContainer = document.getElementById('chart-container');
 const dom = document.getElementById('chart');
 // 引用数据显示div
 const bestTimeElement = document.getElementById('best-time');
@@ -18,6 +19,13 @@ const defaultFontSize = window.innerWidth / 112.5;
 function renderChart() {
     // 获取当前成绩列表
     const currentScoreList = JSON.parse(localStorage.getItem('currentScoreList'));
+    // 空表或只有1个元素则直接隐藏图表
+    if (currentScoreList == null || currentScoreList.length < 2) {
+        chartContainer.classList.add('hidden');
+        return;
+    } else {
+        chartContainer.classList.remove('hidden');
+    }
     // 提取出对应的表
     let timeList = [];
     let stepList = [];
@@ -249,12 +257,23 @@ function showData(timeList, stepList, tpsList, observeTimeList, ao5List, ao12Lis
     bestTimeElement.textContent = Math.min(...timeList).toFixed(2) + "s";
     bestStepElement.textContent = Math.min(...stepList);
     bestTpsElement.textContent = Math.max(...tpsList).toFixed(2);
-    bestAo5Element.textContent = Math.min(...ao5List).toFixed(2) + "s";
-    bestAo12Element.textContent = Math.min(...ao12List).toFixed(2) + "s";
     avgTimeElement.textContent = averageOfList(timeList) + "s";
     avgStepElement.textContent = averageOfList(stepList);
     avgTpsElement.textContent = averageOfList(tpsList);
     avgObserveTimeElement.textContent = timeFormat(averageOfList(observeTimeList)) + "s";
+
+    let minAo5 = Math.min(...ao5List);
+    let minAo12 = Math.min(...ao12List);
+    if (isFinite(minAo5)) {
+        bestAo5Element.textContent = minAo5.toFixed(2) + "s";
+    } else {
+        bestAo5Element.textContent = "--";
+    }
+    if (isFinite(minAo12)) {
+        bestAo12Element.textContent = minAo12.toFixed(2) + "s";
+    } else {
+        bestAo12Element.textContent = "--";
+    }
 }
 
 
