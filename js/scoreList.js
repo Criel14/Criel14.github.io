@@ -226,6 +226,10 @@ document.addEventListener('keydown', (event) => {
 
 // 加载完成后
 document.addEventListener("DOMContentLoaded", () => {
+    // 设置整体字体大小和行高
+    document.documentElement.style.fontSize = window.innerWidth / 112.5 + "px";
+    document.documentElement.style.lineHeight = window.innerHeight / 112.5 + "px";
+
     // 获取localStorage中的配置文件
     let config = JSON.parse(localStorage.getItem('config')) || [];
     // 判断空值
@@ -292,7 +296,7 @@ function showScramble(size, number) {
     // 获取打乱数组
     const scrambleList = score.scramble.split(',');
     // 弹框中显示打乱
-    renderTiles(puzzle, scrambleList, 300, currentSize, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
+    renderTiles(puzzle, scrambleList, 18, currentSize, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
     // 弹框中显示当局信息
     showInfo(score);
     // 显示弹框
@@ -385,15 +389,16 @@ function renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRat
     // 清空拼图容器
     puzzle.innerHTML = '';
     puzzle.style.gridTemplateColumns = "repeat(" + size + ", 1fr)";
-    puzzle.style.gap = tileLength * gapWidthRatio + "px";
+    puzzle.style.gap = tileLength * gapWidthRatio + "vw";
     // 遍历每个拼图块
     tiles.forEach((tile, index) => {
         const tileElement = document.createElement("div"); // 创建一个新的div元素
+        tileElement.dataset.index = index; // 添加自定义属性，用于存储索引值
         tileElement.classList.add("tile"); // 添加样式类
-        tileElement.style.width = tileLength + "px";
-        tileElement.style.height = tileLength + "px";
-        tileElement.style.fontSize = tileLength * fontSizeRatio + "px";
-        tileElement.style.borderRadius = tileLength * borderRadiusRatio + "px";
+        tileElement.style.width = "100%";
+        tileElement.style.height = "100%";
+        tileElement.style.fontSize = tileLength * fontSizeRatio + "vw";
+        tileElement.style.borderRadius = tileLength * borderRadiusRatio + "vw";
 
         if (tile !== 0) { // 如果拼图块不是空白块
             tileElement.textContent = tile; // 设置拼图块的文本

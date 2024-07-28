@@ -8,6 +8,9 @@ const avgTimeElement = document.getElementById('avg-time');
 const avgStepElement = document.getElementById('avg-step');
 const avgTpsElement = document.getElementById('avg-tps');
 
+// 默认字体大小
+const defaultFontSize = window.innerWidth / 112.5;
+
 // 渲染图表
 function renderChart() {
     // 获取当前成绩列表
@@ -88,7 +91,7 @@ function renderChart() {
             top: '2%',
             textStyle: {
                 color: '#000',
-                fontSize: 20,
+                fontSize: 1.25 * defaultFontSize,
                 fontWeight: 600
             }
         },
@@ -111,7 +114,7 @@ function renderChart() {
             top: "12%",
             textStyle: {
                 color: '#242424',
-                fontSize: 16,
+                fontSize: defaultFontSize,
                 fontWeight: 600
             },
             data: list.map(val => {
@@ -147,7 +150,7 @@ function renderChart() {
             },
             axisLabel: {
                 textStyle: {
-                    fontSize: 12,
+                    fontSize: 0.75 * defaultFontSize,
                     color: "#9e9d9f",
                     fontWeight: 600
                 }
@@ -170,13 +173,13 @@ function renderChart() {
                 axisLine: {
                     show: true,
                     lineStyle: {
-                        fontSize: 12,
+                        fontSize: 0.75 * defaultFontSize,
                         color: '#466fec',
                     }
                 },
                 axisLabel: {
                     textStyle: {
-                        fontSize: 12,
+                        fontSize: 0.75 * defaultFontSize,
                         color: "#466fec",
                         fontWeight: 600
                     }
@@ -200,13 +203,13 @@ function renderChart() {
                 axisLine: {
                     show: true,
                     lineStyle: {
-                        fontSize: 12,
+                        fontSize: 0.75 * defaultFontSize,
                         color: '#f1b649',
                     }
                 },
                 axisLabel: {
                     textStyle: {
-                        fontSize: 12,
+                        fontSize: 0.75 * defaultFontSize,
                         color: "#f1b649",
                         fontWeight: 600
                     }

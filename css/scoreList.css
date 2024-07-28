@@ -3,17 +3,17 @@ body {
 }
 
 .menu {
-    padding: 20px 10% 20px 10%;
-    height: 70px;
+    padding: 1% 10% 1% 10%;
+    height: 4.3vw;
 }
 
 .chart-container {
     background-color: #ffffff;
     border-radius: 10px;
-    padding: 10px;
+    padding: 0.6vw;
     margin: 0 auto;
     width: 76%;
-    height: 400px;
+    height: 25vw;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.09);
     display: flex;
     flex-direction: column;
@@ -24,46 +24,44 @@ body {
 
 .chart {
     width: 100%;
-    height: 300px;
+    height: 18vw;
 }
 
 .chart-info {
     width: 100%;
-    height: 100px;
-    /* border: 1px solid #000000; */
+    height: 6.2vw;
 }
 
 .chart-info-item {
     width: 15%;
-    height: 44px;
+    height: 2.7vw;
     margin-left: 1%;
-    margin-top: 2px;
+    margin-top: 0.1vw;
     float: left;
-    /* border: 1px solid #000000; */
-    line-height: 44px;
+    line-height: 270%;
 }
 
 .info-tag {
     text-align: center;
-    font-size: 18px;
+    font-size: 120%;
     color: rgb(46, 46, 46);
 }
 
 .info-data {
     text-align: left;
-    font-size: 18px;
+    font-size: 120%;
     font-weight: bold;
     color: black;
 }
 
 .main {
     flex-grow: 1;
-    padding: 20px 20px 20px 20px;
+    padding: 1%;
 }
 
 .group {
-    width: 140px;
-    height: 60px;
+    width: 8.7vw;
+    height: 3.6vw;
     background-color: rgb(250, 250, 250);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
     border-radius: 8px;
@@ -71,11 +69,12 @@ body {
     float: left;
     cursor: pointer;
     user-select: none;
-    margin-left: 20px;
+    margin-left: 1.2vw;
     font-weight: bold;
     text-align: center;
     color: #8a8a8a;
-    font-size: 36px;
+    font-size: 250%;
+    line-height: 160%;
 }
 
 .group.hidden {
@@ -86,8 +85,6 @@ body {
     height: 100%;
     width: 48%;
     float: left;
-    font-size: 36px;
-    line-height: 60px;
 }
 
 .group #group-last,
@@ -96,7 +93,6 @@ body {
     width: 26%;
     float: left;
     border-radius: 8px;
-    padding-top: 8px;
 }
 
 .group #group-last:hover,
@@ -106,8 +102,8 @@ body {
 }
 
 .menu-button-float {
-    width: 70px;
-    height: 60px;
+    width: 3.8vw;
+    height: 3.6vw;
     background-color: rgb(250, 250, 250);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
     border-radius: 8px;
@@ -116,7 +112,7 @@ body {
     align-items: center;
     cursor: pointer;
     user-select: none;
-    margin-left: 20px;
+    margin-left: 1.2vw;
     position: relative;
     float: left;
 }
@@ -137,8 +133,7 @@ body {
     transform: translate(30%, 0);
     transition: all 0.3s;
     color: #808080;
-    /* 提示文字颜色 */
-    font-size: 20px;
+    font-size: 130%;
 }
 
 .menu-button-float span {
@@ -159,8 +154,8 @@ body {
 }
 
 .menu-big-button-float {
-    width: 110px;
-    height: 60px;
+    width: 8vw;
+    height: 3.6vw;
     background-color: rgb(250, 250, 250);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
     border-radius: 8px;
@@ -171,7 +166,7 @@ body {
     user-select: none;
     position: relative;
     float: right;
-    margin-right: 20px;
+    margin-right: 1.2vw;
 }
 
 .menu-big-button-float::after {
@@ -190,8 +185,7 @@ body {
     transform: translate(30%, 0);
     transition: all 0.3s;
     color: #808080;
-    /* 提示文字颜色 */
-    font-size: 20px;
+    font-size: 130%;
 }
 
 .menu-big-button-float span {
@@ -213,7 +207,7 @@ body {
 
 table {
     width: 80%;
-    margin: 20px auto;
+    margin: 1.2vw auto;
     border-collapse: collapse;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     font-family: Arial, sans-serif;
@@ -223,8 +217,9 @@ table {
 
 th,
 td {
-    padding: 20px;
-    font-size: 20px;
+    padding: 1.25vw;
+    font-size: 140%;
+    line-height: 140%;
     text-align: center;
 }
 
@@ -271,8 +266,10 @@ tr:nth-child(odd):hover {
 }
 
 #overlay-content {
+    height: 19vw;
+    width: 48vw;
     background: white;
-    padding: 50px 60px 50px 60px;
+    padding: 3% 3% 3% 3.2%;
     border-radius: 8px;
     text-align: center;
     transform: translateY(40%);
@@ -289,14 +286,14 @@ tr:nth-child(odd):hover {
 }
 
 .overlay-info-menu {
-    padding: 30px 0px 50px 0px;
+    padding: 1% 0% 1.4% 0%;
     display: flex;
     flex-direction: column;
 }
 
 .overlay-menu-button {
-    width: 80px;
-    height: 70px;
+    width: 5vw;
+    height: 4.3vw;
     background-color: rgb(255, 255, 255);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
     border-radius: 8px;
@@ -305,8 +302,8 @@ tr:nth-child(odd):hover {
     align-items: center;
     cursor: pointer;
     user-select: none;
-    margin-top: 20px;
-    margin-left: 20px;
+    margin-top: 24%;
+    margin-left: 20%;
     position: relative;
 }
 
@@ -326,8 +323,7 @@ tr:nth-child(odd):hover {
     transform: translate(30%, 0);
     transition: all 0.3s;
     color: #808080;
-    /* 提示文字颜色 */
-    font-size: 20px;
+    font-size: 130%;
 }
 
 .overlay-menu-button span {
@@ -348,48 +344,48 @@ tr:nth-child(odd):hover {
 }
 
 #info-container {
-    width: 420px;
-    height: 300px;
+    width: 27vw;
+    height: 18vw;
     float: left;
-    margin-left: 40px;
-    padding-left: 20px;
+    margin-left: 6%;
     text-align: left;
     /* background-color: #ffeaea; */
 }
 
 .time-info {
-    font-size: 64px;
-    line-height: 64px;
+    font-size: 400%;
+    line-height: 100%;
     font-weight: bold;
-    margin-top: 0px;
-    margin-bottom: 10px;
+    margin-top: 0;
+    margin-bottom: 3%;
 }
 
 .info-item {
-    width: 90px;
-    height: 30px;
-    line-height: 30px;
+    width: 5.6vw;
+    height: 1.6vw;
     float: left;
-    margin-top: 16px;
-    margin-right: 10px;
+    margin-top: 4.4%;
+    margin-right: 0.8vw;
     /* border: #000000 1px solid; */
 }
 
 .info-item-tag {
     text-align: left;
-    font-size: 20px;
+    font-size: 130%;
+    line-height: 100%;
     color: rgb(46, 46, 46);
 }
 
 .info-item-data {
     text-align: left;
-    font-size: 20px;
+    font-size: 130%;
+    line-height: 100%;
     font-weight: bold;
     color: black;
 }
 
 #scramble-text {
-    font-size: 24px;
+    font-size: 150%;
 }
 
 .puzzle-container {
@@ -398,22 +394,22 @@ tr:nth-child(odd):hover {
 }
 
 .puzzle {
-    width: 300px;
-    height: 300px;
+    width: 18vw;
+    height: 18vw;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 5px;
-    margin-bottom: 20px;
+    margin-bottom: 0.4vw;
 }
 
 .tile {
-    width: 90px;
-    height: 90px;
+    width: 6vw;
+    height: 6vw;
     background-color: #f0f0f0;
     border-radius: 4px;
     color: white;
     font-weight: bold;
-    font-size: 56px;
+    font-size: 250%;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -421,8 +417,8 @@ tr:nth-child(odd):hover {
 }
 
 .game-mode {
-    width: 160px;
-    height: 60px;
+    width: 10vw;
+    height: 3.6vw;
     background-color: rgb(250, 250, 250);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
     border-radius: 8px;
@@ -431,10 +427,11 @@ tr:nth-child(odd):hover {
     align-items: center;
     cursor: pointer;
     user-select: none;
-    margin-right: 20px;
+    margin-right: 1.2vw;
     position: relative;
     float: right;
-    font-size: 24px;
+    font-size: 160%;
+    line-height: 160%;
     text-align: center;
     color: rgb(94, 94, 94);
 }
