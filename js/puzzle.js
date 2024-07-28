@@ -102,7 +102,8 @@ let gapWidthRatio = defaultGapWidthRatio1;
 // 圆角大小系数（取值范围0 - 0.5），：圆角大小 = 滑块的边长 * borderRadiusRatio
 let borderRadiusRatio = defaultBorderRadiusRatio1;
 // 游玩时候的拼图快总边长
-let edgeLength = 500;
+// let edgeLength = 500; // px
+let edgeLength = 27; // vw
 // 曼哈顿距离
 let manhattanDistance = 0
 
@@ -214,18 +215,17 @@ function renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRat
     // 清空拼图容器
     puzzle.innerHTML = '';
     puzzle.style.gridTemplateColumns = "repeat(" + size + ", 1fr)";
-    puzzle.style.gap = tileLength * gapWidthRatio + "px";
-    // puzzle.addEventListener("touchmove", touchMove, false);
+    puzzle.style.gap = tileLength * gapWidthRatio + "vw";
     puzzle.addEventListener("touchstart", touchMove, false);
     // 遍历每个拼图块
     tiles.forEach((tile, index) => {
         const tileElement = document.createElement("div"); // 创建一个新的div元素
         tileElement.dataset.index = index; // 添加自定义属性，用于存储索引值
         tileElement.classList.add("tile"); // 添加样式类
-        tileElement.style.width = tileLength + "px";
-        tileElement.style.height = tileLength + "px";
-        tileElement.style.fontSize = tileLength * fontSizeRatio + "px";
-        tileElement.style.borderRadius = tileLength * borderRadiusRatio + "px";
+        tileElement.style.width = "100%";
+        tileElement.style.height = "100%";
+        tileElement.style.fontSize = tileLength * fontSizeRatio + "vw";
+        tileElement.style.borderRadius = tileLength * borderRadiusRatio + "vw";
 
         if (tile !== 0) { // 如果拼图块不是空白块
             // 盲玩模式，开始移动，未完成，不是在配置状态，则渲染为蓝色
@@ -512,6 +512,13 @@ document.addEventListener("DOMContentLoaded", () => {
     else if (gameMode == "blind") {
         levelShowElement.style.color = "##161b48";
     }
+
+    // 设置字体大小
+    groupNumberElement.style.fontSize = groupElement.offsetHeight * 0.6 + "px";
+    groupNumberElement.style.lineHeight = groupElement.offsetHeight + "px";
+    moveModeElement.style.fontSize = groupElement.offsetHeight * 0.4 + "px";
+    gameModeElement.style.fontSize = groupElement.offsetHeight * 0.4 + "px";
+
     // 设置光标样式
     setCursorStyle(isCustomCursor);
     // 启用操作
@@ -538,7 +545,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             // 重新绘制preview-puzzle
             let tempList = Array.from({ length: 100 }, (_, i) => i + 1);
-            renderTiles(previewPuzzle, tempList, 400, 10, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
+            renderTiles(previewPuzzle, tempList, 20, 10, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
         });
     }
     // 为按钮添加点击事件监听器
@@ -953,9 +960,9 @@ function saveConfig() {
     config.groupNumber = groupNum;
     config.isCustomCursor = isCustomCursor;
     config.styleConfig.colorConfig = colorConfig;
-    config.styleConfig.fontSizeRatio = fontSizeRatio;
-    config.styleConfig.borderRadiusRatio = borderRadiusRatio;
-    config.styleConfig.gapWidthRatio = gapWidthRatio;
+    config.styleConfig.fontSizeRatio = parseFloat(fontSizeRatio);
+    config.styleConfig.borderRadiusRatio = parseFloat(borderRadiusRatio);
+    config.styleConfig.gapWidthRatio = parseFloat(gapWidthRatio);
     // 保存到localStorage
     localStorage.setItem("config", JSON.stringify(config));
 }
@@ -991,7 +998,7 @@ function resetConfig(defaultStyleConfig) {
     borderRadiusRatio = defaultStyleConfig.borderRadiusRatio;
     // 重新绘制preview-puzzle
     let tempList = Array.from({ length: 100 }, (_, i) => i + 1);
-    renderTiles(previewPuzzle, tempList, 400, 10, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
+    renderTiles(previewPuzzle, tempList, 20, 10, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
     // 更新颜色选择器
     setColorPickerValue();
     // 更新滑块
@@ -1007,7 +1014,7 @@ function showOverlay() {
     // 禁用胜利的效果
     isFinish = false;
     let tempList = Array.from({ length: 100 }, (_, i) => i + 1);
-    renderTiles(previewPuzzle, tempList, 400, 10, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
+    renderTiles(previewPuzzle, tempList, 20, 10, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
     // 颜色选择器初始化
     setColorPickerValue();
     // 滑块初始化
@@ -1048,7 +1055,7 @@ function setColorPickerValue() {
             colorConfig[index + 1] = value;
             // 重新绘制preview-puzzle
             let tempList = Array.from({ length: 100 }, (_, i) => i + 1);
-            renderTiles(previewPuzzle, tempList, 400, 10, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
+            renderTiles(previewPuzzle, tempList, 20, 10, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
         });
     }
 }

@@ -72,10 +72,10 @@ body {
     cursor: pointer;
     user-select: none;
     margin-left: 20px;
-    font-size: 36px;
     font-weight: bold;
     text-align: center;
     color: #8a8a8a;
+    font-size: 36px;
 }
 
 .group.hidden {
@@ -86,6 +86,7 @@ body {
     height: 100%;
     width: 48%;
     float: left;
+    font-size: 36px;
     line-height: 60px;
 }
 

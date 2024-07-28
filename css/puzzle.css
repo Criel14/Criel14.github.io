@@ -60,8 +60,8 @@ body {
 }
 
 .puzzle {
-    width: 500px;
-    height: 500px;
+    width: 30vw;
+    height: 30vw;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 4px;
@@ -132,8 +132,8 @@ body {
 }
 
 .menu-button-float {
-    width: 70px;
-    height: 60px;
+    width: 3.8vw;
+    height: 3.6vw;
     background-color: rgb(250, 250, 250);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
     border-radius: 8px;
@@ -186,8 +186,8 @@ body {
 }
 
 .group {
-    width: 140px;
-    height: 60px;
+    width: 8.7vw;
+    height: 3.6vw;
     background-color: rgb(250, 250, 250);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
     border-radius: 8px;
@@ -198,7 +198,6 @@ body {
     user-select: none;
     margin-top: 20px;
     margin-left: 5%;
-    font-size: 36px;
     font-weight: bold;
     text-align: center;
     color: #8a8a8a;
@@ -212,7 +211,6 @@ body {
     height: 100%;
     width: 48%;
     float: left;
-    line-height: 60px;
 }
 
 .group #group-last,
@@ -232,8 +230,8 @@ body {
 
 
 .menu-button-flex {
-    width: 70px;
-    height: 60px;
+    width: 4vw;
+    height: 3.6vw;
     background-color: rgb(250, 250, 250);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
     border-radius: 8px;
@@ -285,7 +283,7 @@ body {
 }
 
 #level {
-    font-size: 80px;
+    font-size: 5vw;
     font-weight: bold;
     display: block;
     margin-top: 40%;
@@ -298,8 +296,8 @@ body {
 }
 
 .move-mode {
-    width: 160px;
-    height: 60px;
+    width: 9.6vw;
+    height: 3.7vw;
     background-color: rgb(250, 250, 250);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
     border-radius: 8px;
@@ -325,8 +323,8 @@ body {
 }
 
 .game-mode {
-    width: 160px;
-    height: 60px;
+    width: 9.6vw;
+    height: 3.7vw;
     background-color: rgb(250, 250, 250);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.114);
     border-radius: 8px;
@@ -453,8 +451,8 @@ body {
 }
 
 .preview-puzzle {
-    width: 400px;
-    height: 400px;
+    width: 25vw;
+    height: 25vw;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 4px;
