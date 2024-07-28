@@ -53,15 +53,15 @@ body {
 
 .foot-info {
     display: flex;
-    margin-top: 40px;
+    margin-top: 2vw;
     width: auto;
     height: auto;
-    font-size: 14px;
-    color: #636363;
+    font-size: 90%;
+    color: #636363ba;
 }
 
 .foot-info a {
-    color: #636363;
+    color: #636363ba;
     font-weight: bold;
     text-decoration: none;
 }
@@ -70,7 +70,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-top: 100px;
+    margin-top: 6vw;
 }
 
 .puzzle {
@@ -78,30 +78,28 @@ body {
     height: 30vw;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 4px;
-    margin-bottom: 20px;
+    gap: 0vw;
+    margin-bottom: 1.2vw;
 }
 
 .shuffleButton {
-    margin-top: 40px;
+    margin-top: 2vw;
     width: 2.5vw;
     height: 2.5vw;
 }
 
 .tile {
-    width: 120px;
-    height: 120px;
+    width: 6vw;
+    height: 6vw;
     background-color: #f0f0f0;
-    border-radius: 4px;
     color: white;
     font-weight: bold;
-    font-size: 56px;
+    font-size: 300%;
     display: flex;
     justify-content: center;
     align-items: center;
     user-select: none;
     transition: box-shadow 0.5s ease-in-out;
-    /* box-shadow: 0 0 20px #ffff5d7a; */
 }
 
 
@@ -144,7 +142,7 @@ body {
     display: block;
     margin-top: 1.8vw;
     margin-left: 5%;
-    margin-bottom: 10px;
+    margin-bottom: 0.6vw;
 }
 
 .menu-button-float {
@@ -158,7 +156,7 @@ body {
     align-items: center;
     cursor: pointer;
     user-select: none;
-    margin-top: 20px;
+    margin-top: 1.2vw;
     margin-left: 5%;
     position: relative;
     float: left;
@@ -180,8 +178,7 @@ body {
     transform: translate(30%, 0);
     transition: all 0.3s;
     color: #808080;
-    /* 提示文字颜色 */
-    font-size: 20px;
+    font-size: 130%;
 }
 
 .menu-button-float span {
@@ -212,8 +209,10 @@ body {
     justify-content: center;
     cursor: pointer;
     user-select: none;
-    margin-top: 20px;
+    margin-top: 1.2vw;
     margin-left: 5%;
+    font-size: 250%;
+    line-height: 160%;
     font-weight: bold;
     text-align: center;
     color: #8a8a8a;
@@ -235,7 +234,7 @@ body {
     width: 26%;
     float: left;
     border-radius: 8px;
-    padding-top: 13px;
+    padding-top: 2%;
 }
 
 .group #group-last:hover,
@@ -256,7 +255,7 @@ body {
     align-items: center;
     cursor: pointer;
     user-select: none;
-    margin-top: 20px;
+    margin-top: 1.2vw;
     margin-left: 50%;
     position: relative;
 }
@@ -277,8 +276,7 @@ body {
     transform: translate(30%, 0);
     transition: all 0.3s;
     color: #808080;
-    /* 提示文字颜色 */
-    font-size: 20px;
+    font-size: 130%;
 }
 
 .menu-button-flex span {
@@ -322,9 +320,9 @@ body {
     align-items: center;
     cursor: pointer;
     user-select: none;
-    margin-top: 26px;
+    margin-top: 1.6vw;
     margin-left: 50%;
-    font-size: 24px;
+    font-size: 170%;
     text-align: center;
     color: rgb(94, 94, 94);
 }
@@ -349,9 +347,9 @@ body {
     align-items: center;
     cursor: pointer;
     user-select: none;
-    margin-top: 26px;
+    margin-top: 1.6vw;
     margin-left: 50%;
-    font-size: 24px;
+    font-size: 170%;
     text-align: center;
     color: rgb(94, 94, 94);
 }
@@ -382,7 +380,7 @@ body {
 }
 
 #config-overlay-content {
-    width: 52vw;
+    width: 50vw;
     height: 25vw;
     background: white;
     padding: 2.4% 3% 2.4% 3%;
@@ -418,8 +416,8 @@ body {
     align-items: center;
     cursor: pointer;
     user-select: none;
-    margin-top: 20px;
-    margin-left: 20px;
+    margin-top: 1vw;
+    margin-left: 1vw;
     position: relative;
 }
 
@@ -439,8 +437,7 @@ body {
     transform: translate(30%, 0);
     transition: all 0.3s;
     color: #808080;
-    /* 提示文字颜色 */
-    font-size: 20px;
+    font-size: 130%;
 }
 
 .config-overlay-menu-button span {
@@ -499,7 +496,7 @@ body {
 }
 
 .size-menu {
-    width: 12vw;
+    width: 11vw;
     height: 100%;
     float: left;
     margin-left: 6%;
@@ -511,7 +508,7 @@ body {
 .size-menu-item {
     width: 100%;
     height: 24%;
-    padding-top: 10px;
+    padding-top: 6%;
     background-color: #f6f6f6;
     border-radius: 6px;
     margin-top: 10%;

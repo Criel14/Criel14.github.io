@@ -517,12 +517,6 @@ document.addEventListener("DOMContentLoaded", () => {
         levelShowElement.style.color = "##161b48";
     }
 
-    // 设置字体大小
-    groupNumberElement.style.fontSize = groupElement.offsetHeight * 0.6 + "px";
-    groupNumberElement.style.lineHeight = groupElement.offsetHeight + "px";
-    moveModeElement.style.fontSize = groupElement.offsetHeight * 0.4 + "px";
-    gameModeElement.style.fontSize = groupElement.offsetHeight * 0.4 + "px";
-
     // 设置光标样式
     setCursorStyle(isCustomCursor);
     // 启用操作
