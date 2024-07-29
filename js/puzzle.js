@@ -54,6 +54,8 @@ const sizeInfoElements = document.getElementsByClassName("size-info");
 // 确认页面的按钮
 const confirmButtonElement = document.getElementById("confirm-overlay-confirm-button");
 const cancelButtonElement = document.getElementById("confirm-overlay-cancel-button");
+// 底部开源说明
+const footInfoElement = document.getElementById("foot-info");
 
 // 定义拼图的阶数（边长）
 let size = 4;
@@ -785,6 +787,8 @@ function switswitchDataView() {
         levelShowElement.classList.add("hidden");
         groupElement.classList.add("hidden");
         colorModeElement.classList.add("hidden");
+        footInfoElement.style.color = "#00000000";
+        footInfoElement.getElementsByTagName('a')[0].style.color = "#00000000";
     }
     else {
         showTip = true;
@@ -798,6 +802,8 @@ function switswitchDataView() {
         levelShowElement.classList.remove("hidden");
         groupElement.classList.remove("hidden");
         colorModeElement.classList.remove("hidden");
+        footInfoElement.style.color = "#636363ba";
+        footInfoElement.getElementsByTagName('a')[0].style.color = "#636363ba";
     }
     updateTimerAndStep();
 }
