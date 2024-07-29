@@ -590,9 +590,9 @@ body {
     cursor: pointer;
     float: left;
     margin-left: 8%;
-    background-color: #ffdddd;
+    /* background-color: #ffdddd; */
     border-radius: 8px;
-    border: #ce4242 1px solid;
+    /* border: #ce4242 1px solid; */
     text-align: center;
     line-height: 3vw;
     font-size: 130%;
@@ -601,7 +601,7 @@ body {
 }
 
 .confirm-overlay-confirm-button:hover {
-    background-color: #f3d0d0;
+    background-color: #fff0f0;
     transition: 0.3s;
 }
 
@@ -611,9 +611,9 @@ body {
     cursor: pointer;
     float: left;
     margin-left: 18%;
-    background-color: #ddffdd;
+    /* background-color: #ddffdd; */
     border-radius: 8px;
-    border: #3ec13e 1px solid;
+    /* border: #3ec13e 1px solid; */
     text-align: center;
     line-height: 3vw;
     font-size: 130%;
@@ -622,6 +622,6 @@ body {
 }
 
 .confirm-overlay-cancel-button:hover {
-    background-color: #cdf3cd;
+    background-color: #ecffec;
     transition: 0.3s;
 }
