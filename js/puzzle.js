@@ -656,7 +656,23 @@ document.addEventListener('keydown', function (event) {
         case "Escape":
             hideOverlay();
             break;
+        case "Control":
+        case "ControlLeft":
+        case "ControlRight":
+            isAllowOperate = false;
+            break;
         default:
+            break;
+    }
+});
+
+// 按键松开监听
+document.addEventListener('keyup', function (event) {
+    switch (event.key) {
+        case "Control":
+        case "ControlLeft":
+        case "ControlRight":
+            isAllowOperate = true;
             break;
     }
 });
