@@ -51,6 +51,9 @@ const colorConfigReset2Element = document.getElementById("config-overlay-reset2-
 const sizeInputs = document.getElementsByClassName("size-input");
 // 显示滑块的值
 const sizeInfoElements = document.getElementsByClassName("size-info");
+// 确认页面的按钮
+const confirmButtonElement = document.getElementById("confirm-overlay-confirm-button");
+const cancelButtonElement = document.getElementById("confirm-overlay-cancel-button");
 
 // 定义拼图的阶数（边长）
 let size = 4;
@@ -572,7 +575,7 @@ document.addEventListener("DOMContentLoaded", () => {
     colorConfigCloseElement.addEventListener("click", () => {
         if (isChangeConfig) {
             showConfirmOverlay();
-            document.getElementById("confirm-overlay-confirm-button").addEventListener("click", () => {
+            confirmButtonElement.addEventListener("click", () => {
                 hideOverlay();
                 hideConfirmOverlay();
             });
@@ -580,7 +583,7 @@ document.addEventListener("DOMContentLoaded", () => {
             hideOverlay();
         }
     });
-    document.getElementById("confirm-overlay-cancel-button").addEventListener("click", hideConfirmOverlay);
+    cancelButtonElement.addEventListener("click", hideConfirmOverlay);
     colorConfigSaveElement.addEventListener("click", () => {
         saveConfig();
         hideOverlay();
@@ -994,6 +997,8 @@ function setCursorStyle(isCustomCursor) {
         colorConfigSaveElement.classList.add("custom-pointer");
         colorConfigReset1Element.classList.add("custom-pointer");
         colorConfigReset2Element.classList.add("custom-pointer");
+        confirmButtonElement.classList.add("custom-pointer");
+        cancelButtonElement.classList.add("custom-pointer");
         for (let index = 0; index < colorInputs.length; index++) {
             colorInputs[index].classList.add("custom-pointer");
         }
@@ -1016,6 +1021,8 @@ function setCursorStyle(isCustomCursor) {
         colorConfigSaveElement.classList.remove("custom-pointer");
         colorConfigReset1Element.classList.remove("custom-pointer");
         colorConfigReset2Element.classList.remove("custom-pointer");
+        confirmButtonElement.classList.remove("custom-pointer");
+        cancelButtonElement.classList.remove("custom-pointer");
         for (let index = 0; index < colorInputs.length; index++) {
             colorInputs[index].classList.remove("custom-pointer");
         }

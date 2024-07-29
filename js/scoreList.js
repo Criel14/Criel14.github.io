@@ -291,6 +291,7 @@ document.addEventListener("DOMContentLoaded", () => {
     overlayDeleteElement.addEventListener("click", () => {
         showConfirmOverlay();
         document.getElementById("confirm-info").textContent = "确定删除本次成绩？";
+        document.getElementById("confirm-info").title = "Confirm delete this score?";
         document.getElementById("confirm-overlay-confirm-button").addEventListener("click", deleteScore);
     });
 
@@ -298,12 +299,14 @@ document.addEventListener("DOMContentLoaded", () => {
     deleteGroupElement.addEventListener("click", () => {
         showConfirmOverlay();
         document.getElementById("confirm-info").textContent = "确定删除本组成绩？";
+        document.getElementById("confirm-info").title = "Confirm delete this group's scores?";
         document.getElementById("confirm-overlay-confirm-button").addEventListener("click", deleteGroupScores);
     });
     // 删除所有成绩
     deleteAllElement.addEventListener("click", () => {
         showConfirmOverlay();
         document.getElementById("confirm-info").textContent = "确定删除全部成绩？";
+        document.getElementById("confirm-info").title = "Confirm delete all scores?";
         document.getElementById("confirm-overlay-confirm-button").addEventListener("click", deleteAllScores);
     });
 
