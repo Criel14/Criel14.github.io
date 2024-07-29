@@ -91,6 +91,8 @@ let isAllowOperate = true;
 let moveSequence = [];
 // 是否的重玩模式
 let isRetry = false;
+// 在配置页面是否做了修改
+let isChangeConfig = false;
 
 // 样式配置
 // 颜色配置
@@ -102,7 +104,6 @@ let gapWidthRatio = defaultGapWidthRatio1;
 // 圆角大小系数（取值范围0 - 0.5），：圆角大小 = 滑块的边长 * borderRadiusRatio
 let borderRadiusRatio = defaultBorderRadiusRatio1;
 // 游玩时候的拼图快总边长
-// let edgeLength = 500; // px
 let edgeLength = 27; // vw
 // 曼哈顿距离
 let manhattanDistance = 0
@@ -487,6 +488,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // 设置整体字体大小和行高
     document.documentElement.style.fontSize = window.innerWidth / 112.5 + "px";
     document.documentElement.style.lineHeight = window.innerHeight / 112.5 + "px";
+    // 隐藏确认框
+    hideConfirmOverlay();
 
     // 获取url中的isRetry参数
     const isRetryParam = new URLSearchParams(window.location.search).get("isRetry");
@@ -532,12 +535,15 @@ document.addEventListener("DOMContentLoaded", () => {
             switch (index) {
                 case 0:
                     gapWidthRatio = sizeInput.value;
+                    isChangeConfig = true;
                     break;
                 case 1:
                     fontSizeRatio = sizeInput.value;
+                    isChangeConfig = true;
                     break;
                 case 2:
                     borderRadiusRatio = sizeInput.value;
+                    isChangeConfig = true;
                     break;
                 default:
                     break;
@@ -556,7 +562,6 @@ document.addEventListener("DOMContentLoaded", () => {
     gameModeElement.addEventListener("click", switchGameMode);
     cursorModeElement.addEventListener("click", switchCursorStyle);
     scoreListElement.addEventListener("click", redirectToScoreList);
-    colorConfigCloseElement.addEventListener("click", hideOverlay);
     colorModeElement.addEventListener("click", showOverlay);
     groupLastElement.addEventListener("click", () => {
         switchGroup(-1);
@@ -564,6 +569,18 @@ document.addEventListener("DOMContentLoaded", () => {
     groupNextElement.addEventListener("click", () => {
         switchGroup(1);
     });
+    colorConfigCloseElement.addEventListener("click", () => {
+        if (isChangeConfig) {
+            showConfirmOverlay();
+            document.getElementById("confirm-overlay-confirm-button").addEventListener("click", () => {
+                hideOverlay();
+                hideConfirmOverlay();
+            });
+        } else {
+            hideOverlay();
+        }
+    });
+    document.getElementById("confirm-overlay-cancel-button").addEventListener("click", hideConfirmOverlay);
     colorConfigSaveElement.addEventListener("click", () => {
         saveConfig();
         hideOverlay();
@@ -1061,7 +1078,7 @@ function loadConfig() {
 
 // 应用默认/预设配置，未保存到config
 function resetConfig(defaultStyleConfig) {
-    console.log("使用预设");
+    isChangeConfig = true;
     colorConfig = defaultStyleConfig.colorConfig;
     gapWidthRatio = defaultStyleConfig.gapWidthRatio;
     fontSizeRatio = defaultStyleConfig.fontSizeRatio;
@@ -1081,6 +1098,8 @@ function showOverlay() {
     colorConfigOverlayElement.classList.remove('hidden');
     // 暂时禁用操作
     isAllowOperate = false;
+    // 初始化是否修改的值
+    isChangeConfig = false;
     // 禁用胜利的效果
     isFinish = false;
     let tempList = Array.from({ length: 100 }, (_, i) => i + 1);
@@ -1102,6 +1121,16 @@ function hideOverlay() {
     createTiles();
 }
 
+// 显示确认弹框
+function showConfirmOverlay() {
+    document.getElementById("confirm-overlay").classList.remove('hidden');
+}
+
+// 隐藏确认弹框
+function hideConfirmOverlay() {
+    document.getElementById("confirm-overlay").classList.add('hidden');
+}
+
 // 设置颜色选择器样式
 jscolor.presets.default = {
     previewSize: 30,
@@ -1119,6 +1148,7 @@ function setColorPickerValue() {
         colorInput.jscolor.fromString(colorConfig[index + 1]);
         // 添加事件监听器
         colorInput.addEventListener("input", function () {
+            isChangeConfig = true;
             // 获取输入框的值
             const value = colorInput.value;
             // 将值赋给colorConfig对象

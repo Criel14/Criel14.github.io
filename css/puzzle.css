@@ -538,3 +538,90 @@ body {
     width: 80%;
     height: 0.4vw;
 }
+
+.confirm-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1001;
+}
+
+.confirm-overlay.hidden {
+    display: none;
+}
+
+#confirm-overlay-content {
+    width: 18vw;
+    height: 8vw;
+    background: white;
+    padding: 2.4% 2% 1% 2%;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+#confirm-info {
+    width: 18vw;
+    height: 2vw;
+    text-align: center;
+    font-size: 160%;
+    line-height: 2vw;
+    font-weight: bold;
+    /* border: #141845 1px solid; */
+}
+
+.confirm-menu {
+    width: 18vw;
+    height: 3.2vw;
+    margin-top: 14%;
+    /* border: #141845 1px solid; */
+}
+
+#confirm-overlay-confirm-button {
+    width: 6vw;
+    height: 3vw;
+    float: left;
+    margin-left: 8%;
+    background-color: #ffdddd;
+    border-radius: 8px;
+    border: #ce4242 1px solid;
+    text-align: center;
+    line-height: 3vw;
+    font-size: 130%;
+    font-weight: bold;
+    color: #ce4242;
+    cursor: pointer;
+}
+
+#confirm-overlay-confirm-button:hover {
+    background-color: #f3d0d0;
+    transition: 0.3s;
+}
+
+#confirm-overlay-cancel-button {
+    width: 6vw;
+    height: 3vw;
+    float: left;
+    margin-left: 18%;
+    background-color: #ddffdd;
+    border-radius: 8px;
+    border: #3ec13e 1px solid;
+    text-align: center;
+    line-height: 3vw;
+    font-size: 130%;
+    font-weight: bold;
+    color: #3ec13e;
+    cursor: pointer;
+}
+
+#confirm-overlay-cancel-button:hover {
+    background-color: #cdf3cd;
+    transition: 0.3s;
+}

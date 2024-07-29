@@ -28,6 +28,8 @@ const overlayElement = document.getElementById("overlay");
 const overlayCloseElement = document.getElementById("overlay-close-button");
 const overlayDeleteElement = document.getElementById("overlay-delete-button");
 const overlayReplayElement = document.getElementById("overlay-replay-button");
+// 确定弹框
+const confirmOverlayElement = document.getElementById("confirm-overlay");
 // 清空本组和清空全部的按钮
 const deleteGroupElement = document.getElementById("delete-group");
 const deleteAllElement = document.getElementById("delete-all");
@@ -216,6 +218,7 @@ document.addEventListener('keydown', (event) => {
         case 'Escape':
             // 隐藏弹框
             hideOverlay();
+            hideConfirmOverlay();
             break;
         case "a":
         case "A":
@@ -237,6 +240,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // 设置整体字体大小和行高
     document.documentElement.style.fontSize = window.innerWidth / 112.5 + "px";
     document.documentElement.style.lineHeight = window.innerHeight / 112.5 + "px";
+    // 隐藏确认弹框
+    hideConfirmOverlay();
 
     // 获取localStorage中的配置文件
     let config = JSON.parse(localStorage.getItem('config')) || [];
@@ -281,12 +286,27 @@ document.addEventListener("DOMContentLoaded", () => {
     backElement.addEventListener("click", redirectToindex);
     // 关闭弹框按钮
     overlayCloseElement.addEventListener("click", hideOverlay);
+    document.getElementById("confirm-overlay-cancel-button").addEventListener("click", hideConfirmOverlay);
     // 删除单次成绩按钮
-    overlayDeleteElement.addEventListener("click", deleteScore);
+    overlayDeleteElement.addEventListener("click", () => {
+        showConfirmOverlay();
+        document.getElementById("confirm-info").textContent = "确定删除本次成绩？";
+        document.getElementById("confirm-overlay-confirm-button").addEventListener("click", deleteScore);
+    });
+
     // 删除本组按钮
-    deleteGroupElement.addEventListener("click", deleteGroupScores);
+    deleteGroupElement.addEventListener("click", () => {
+        showConfirmOverlay();
+        document.getElementById("confirm-info").textContent = "确定删除本组成绩？";
+        document.getElementById("confirm-overlay-confirm-button").addEventListener("click", deleteGroupScores);
+    });
     // 删除所有成绩
-    deleteAllElement.addEventListener("click", deleteAllScores);
+    deleteAllElement.addEventListener("click", () => {
+        showConfirmOverlay();
+        document.getElementById("confirm-info").textContent = "确定删除全部成绩？";
+        document.getElementById("confirm-overlay-confirm-button").addEventListener("click", deleteAllScores);
+    });
+
     // 打开录像回放
     overlayReplayElement.addEventListener("click", () => {
         window.location.href = "replay.html";
@@ -365,6 +385,16 @@ function hideOverlay() {
     setTimeout(() => {
         overlayElement.classList.add('hidden');
     }, 200); // Wait for the animation to finish
+}
+
+// 显示确认弹框
+function showConfirmOverlay() {
+    confirmOverlayElement.classList.remove('hidden');
+}
+
+// 隐藏确认弹框
+function hideConfirmOverlay() {
+    confirmOverlayElement.classList.add('hidden');
 }
 
 // 根据数字返回对应的颜色，默认为66ccff
