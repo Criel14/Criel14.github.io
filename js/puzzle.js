@@ -112,6 +112,14 @@ let borderRadiusRatio = defaultBorderRadiusRatio1;
 let edgeLength = 27; // vw
 // 曼哈顿距离
 let manhattanDistance = 0
+// 背景色
+let lightNormalBackgroundColor = "#e6f1eb";
+let lightBlindBackgroundColor = "#e6e9f1";
+let darkBackgroundColor = "#222222";
+let lightLevelNormalFontColor = "#093009";
+let lightLevelBlindFontColor = "#161b48";
+let darkLevelFontColor = "#ffffff";
+
 
 
 // 移动模式列表
@@ -148,11 +156,13 @@ function getLayer(number, size) {
 function createTiles() {
     // 修改背景颜色
     if (gameMode == "normal") {
-        document.body.style.backgroundColor = "#e6f1eb";
+        document.body.style.backgroundColor = lightNormalBackgroundColor;
     }
     else if (gameMode == "blind") {
-        document.body.style.backgroundColor = "#e6e9f1";
+        document.body.style.backgroundColor = lightBlindBackgroundColor;
     }
+    // document.body.style.backgroundColor = darkBackgroundColor;
+
     isFinish = false;
     isStart = false;
     isMoving = false;
@@ -271,7 +281,7 @@ function renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRat
         // 添加胜利效果
         if (isFinish == true) {
             // 发光一定时间
-            tileElement.style.boxShadow = "0 0 100px #ffff5d7a";
+            tileElement.style.boxShadow = "0 0 100px #ffff5d40";
             setTimeout(() => { tileElement.style.boxShadow = "none"; }, 500);
         }
         puzzle.appendChild(tileElement); // 将拼图块添加到拼图容器中
@@ -520,11 +530,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 设置level文本颜色
     if (gameMode == "normal") {
-        levelShowElement.style.color = "#093009";
+        levelShowElement.style.color = lightLevelNormalFontColor;
     }
     else if (gameMode == "blind") {
-        levelShowElement.style.color = "##161b48";
+        levelShowElement.style.color = lightLevelBlindFontColor;
     }
+    // levelShowElement.style.color = darkLevelFontColor;
 
     // 设置光标样式
     setCursorStyle(isCustomCursor);

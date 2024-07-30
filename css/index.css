@@ -33,7 +33,7 @@ body {
 } */
 
 .title-button {
-    width: 40vw;
+    width: 36vw;
     margin: 0 auto;
     padding: 0;
     text-align: center;
@@ -60,6 +60,7 @@ body {
     left: 0;
     display: flex;
     justify-content: center;
+    text-align: center;
     align-items: center;
     opacity: 0;
     transform: translate(30%, 0);
