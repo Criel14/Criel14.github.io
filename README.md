@@ -38,7 +38,13 @@ tip: 二者都能在国内访问；前者速度较慢，若没有科学上网，
 
 ### 游戏页—个性化设置
 
-![](READMEresource/puzzle-style-settings.png)
+版本20240726：
+
+![](READMEresource/puzzle-style-settings20240726.png)
+
+版本20240802：
+
+![](READMEresource/puzzle-style-settings20240802.png)
 
 ### 成绩列表页
 
@@ -288,7 +294,7 @@ localStorage.setItem("config", JSON.stringify(config));
   - 初步实现录像回放功能
 - 2024.7.26
   - 完善录像回放功能，修复优化项目的各个部分
-  - 确定**网页数字华容道v1.0**内容
+  - 项目初发布，版本20240726
 - ——以下是后续优化——
 - 2024.7.27
   - 适配移动端的滑动操作和UI， **需要横屏**
