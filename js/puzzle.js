@@ -679,8 +679,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }, originalWidth == "48vw" ? 0 : 200);
     })
     colorConfigSaveElement.addEventListener("click", () => {
-        saveConfig();
-        hideOverlay();
         if (isChangeConfig) {
             // 显示提示
             new NoticeJs({
@@ -689,6 +687,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 type: 'success',
                 position: 'topCenter',
             }).show();
+            saveConfig();
+            hideOverlay();
         } else {
             // 显示提示
             new NoticeJs({
@@ -1434,6 +1434,8 @@ function resetConfig(defaultStyleConfig) {
 function showOverlay() {
     colorConfigOverlayElement.classList.add('visible');
     colorConfigOverlayElement.classList.remove('hidden');
+    // 禁用鼠标样式
+    setCursorStyle(false);
     // 暂时禁用操作
     isAllowOperate = false;
     // 初始化是否修改的值
@@ -1454,6 +1456,9 @@ function hideOverlay() {
     setTimeout(() => {
         colorConfigOverlayElement.classList.add('hidden');
     }, 200); // Wait for the animation to finish
+    
+    // 恢复鼠标样式
+    setCursorStyle(isCustomCursor);
 
     // 重新加载配置和渲染拼图快
     loadConfig();

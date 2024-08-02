@@ -600,6 +600,7 @@ body {
     margin-top: 6%;
     margin-bottom: 6%;
     border: #cccccc 1px solid;
+    cursor: pointer;
 }
 
 .save-menu-item-text {
