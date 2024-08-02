@@ -9,6 +9,7 @@
     <title>Online 15 Puzzle Game</title>
     <link rel="stylesheet" href="css/puzzle.css">
     <link rel="stylesheet" href="css/cursor.css">
+    <link rel="stylesheet" href="css/noticejs.css">
 </head>
 
 <body>
@@ -76,10 +77,12 @@
 
     <div id="config-overlay" class="hidden">
         <div id="config-overlay-content">
+            <!-- 效果预览 -->
             <div class="preview-puzzle-container">
                 <div class="preview-puzzle" id="preview-puzzle"></div>
             </div>
-            <div class="color-menu">
+            <!-- 方块颜色菜单 -->
+            <div class="color-menu" id="color-menu">
                 <div class="color-menu-item">
                     <input class="color-input" data-jscolor="{}">
                 </div>
@@ -135,7 +138,65 @@
                     <input class="color-input" data-jscolor="{}">
                 </div>
             </div>
-            <div class="size-menu">
+            <!-- 字体颜色菜单 -->
+            <div class="font-color-menu" id="font-color-menu">
+                <div class="font-color-menu-item">
+                    <input class="font-color-input" data-jscolor="{}">
+                </div>
+                <div class="font-color-menu-item">
+                    <input class="font-color-input" data-jscolor="{}">
+                </div>
+                <div class="font-color-menu-item">
+                    <input class="font-color-input" data-jscolor="{}">
+                </div>
+                <div class="font-color-menu-item">
+                    <input class="font-color-input" data-jscolor="{}">
+                </div>
+                <div class="font-color-menu-item">
+                    <input class="font-color-input" data-jscolor="{}">
+                </div>
+                <div class="font-color-menu-item">
+                    <input class="font-color-input" data-jscolor="{}">
+                </div>
+                <div class="font-color-menu-item">
+                    <input class="font-color-input" data-jscolor="{}">
+                </div>
+                <div class="font-color-menu-item">
+                    <input class="font-color-input" data-jscolor="{}">
+                </div>
+                <div class="font-color-menu-item">
+                    <input class="font-color-input" data-jscolor="{}">
+                </div>
+                <div class="font-color-menu-item">
+                    <input class="font-color-input" data-jscolor="{}">
+                </div>
+                <div class="font-color-menu-item">
+                    <input class="font-color-input" data-jscolor="{}">
+                </div>
+                <div class="font-color-menu-item">
+                    <input class="font-color-input" data-jscolor="{}">
+                </div>
+                <div class="font-color-menu-item">
+                    <input class="font-color-input" data-jscolor="{}">
+                </div>
+                <div class="font-color-menu-item">
+                    <input class="font-color-input" data-jscolor="{}">
+                </div>
+                <div class="font-color-menu-item">
+                    <input class="font-color-input" data-jscolor="{}">
+                </div>
+                <div class="font-color-menu-item">
+                    <input class="font-color-input" data-jscolor="{}">
+                </div>
+                <div class="font-color-menu-item">
+                    <input class="font-color-input" data-jscolor="{}">
+                </div>
+                <div class="font-color-menu-item">
+                    <input class="font-color-input" data-jscolor="{}">
+                </div>
+            </div>
+            <!-- 大小设置菜单 -->
+            <div class="size-menu hidden" id="size-menu">
                 <div class="size-menu-item" title="gap width">
                     <span class="size-tip">间隙大小</span>
                     <br>
@@ -158,19 +219,49 @@
                     <input type="range" class="size-input" min="0" max="0.5" step="0.01" value="0">
                 </div>
             </div>
+            <!-- 保存/预设菜单 -->
+            <div class="save-menu hidden" id="save-menu">
+                <div id="config-overlay-save1-button" class="save-menu-item">
+                    <div class="save-menu-item-text">预设1</div>
+                    <div id="config-overlay-preset1-button" class="save-menu-item-button save-load" style="width: 60%;">加载</div>
+                </div>
+                <div id="config-overlay-save2-button" class="save-menu-item">
+                    <div class="save-menu-item-text">预设2</div>
+                    <div id="config-overlay-preset2-button" class="save-menu-item-button save-load" style="width: 60%;">加载</div>
+                </div>
+                <div id="config-overlay-save2-button" class="save-menu-item">
+                    <div class="save-menu-item-text">自定义方案1</div>
+                    <div id="save-config1" class="save-menu-item-button save-save">保存</div>
+                    <div id="load-config1" class="save-menu-item-button save-load">加载</div>
+                </div>
+                <div id="config-overlay-save2-button" class="save-menu-item">
+                    <div class="save-menu-item-text">自定义方案2</div>
+                    <div id="save-config2" class="save-menu-item-button save-save">保存</div>
+                    <div id="load-config2" class="save-menu-item-button save-load">加载</div>
+                </div>
+                <div id="config-overlay-save2-button" class="save-menu-item">
+                    <div class="save-menu-item-text">自定义方案3</div>
+                    <div id="save-config3" class="save-menu-item-button save-save">保存</div>
+                    <div id="load-config3" class="save-menu-item-button save-load">加载</div>
+                </div>
+            </div>
         </div>
+        <!-- 配置界面按钮 -->
         <div class="config-overlay-menu">
             <div id="config-overlay-close-button" class="config-overlay-menu-button" title="关闭 close（ esc ）"
                 data-text="关闭">
                 <img src="image/back.png" alt="switch" width="60%" height="60%">
             </div>
-            <div id="config-overlay-reset1-button" class="config-overlay-menu-button" title="使用预设1 default1"
-                data-text="预设1">
-                <img src="image/default1.png" alt="switch" width="70%" height="70%">
+            <div id="config-overlay-color-button" class="config-overlay-menu-button" title="设置方块颜色和字体颜色 Set block color and font color"
+                data-text="颜色">
+                <img src="image/pallette.png" alt="switch" width="58%" height="62%">
             </div>
-            <div id="config-overlay-reset2-button" class="config-overlay-menu-button" title="使用预设2 default2"
-                data-text="预设2">
-                <img src="image/default2.png" alt="switch" width="70%" height="70%">
+            <div id="config-overlay-size-button" class="config-overlay-menu-button" title="设置字体大小、间隙大小、圆角大小 Set font size, gap size, and border radius"
+                data-text="大小">
+                <img src="image/resize.png" alt="switch" width="54%" height="54%">
+            </div>
+            <div id="config-overlay-preset-button" class="config-overlay-menu-button" title="预设 preset" data-text="预设">
+                <img src="image/default.png" alt="switch" width="60%" height="60%">
             </div>
             <div id="config-overlay-save-button" class="config-overlay-menu-button" title="保存 save" data-text="保存">
                 <img src="image/save.png" alt="switch" width="60%" height="60%">
@@ -181,7 +272,7 @@
     <!-- 确定操作弹框 -->
     <div id="confirm-overlay" class="confirm-overlay hidden">
         <div id="confirm-overlay-content">
-            <div id="confirm-info" title="Configuration has not been saved, are you sure you want to exit?">配置未保存，确定退出吗？</div>
+            <div id="confirm-info">配置未保存，确定退出吗？</div>
             <div class="confirm-menu">
                 <div id="confirm-overlay-confirm-button" class="confirm-overlay-confirm-button" title="yes">确定</div>
                 <div id="confirm-overlay-cancel-button" class="confirm-overlay-cancel-button" title="cancel">取消</div>
@@ -190,6 +281,7 @@
     </div>
 
     <script src="js/defaultConfig.js"></script>
+    <script src="js/notice.js"></script>
     <script src="js/jscolor.js"></script>
     <script src="js/puzzle.js"></script>
 </body>

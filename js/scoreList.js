@@ -50,6 +50,8 @@ let groupNum = 1;
 // 样式配置
 // 颜色配置
 let colorConfig = defaultColorConfig1;
+// 字体颜色配置
+let fontColorConfig = defaultFontColorConfig1;
 // 字体比例（取值范围0 - 1.0）：字体大小 = 滑块的边长 * fontSizeRatio
 let fontSizeRatio = defaultFontSizeRatio1;
 // 间隙大小（取值范围0 - 0.1）
@@ -257,6 +259,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fontSizeRatio = config.styleConfig.fontSizeRatio;
     borderRadiusRatio = config.styleConfig.borderRadiusRatio;
     gapWidthRatio = config.styleConfig.gapWidthRatio;
+    fontColorConfig = config.styleConfig.fontColorConfig || defaultFontColorConfig1; // 新增配置，需要适配旧版本
     // 更新显示内容
     groupNumberElement.textContent = "G" + groupNum;
     switchGameModeElement.textContent = gameMode;
@@ -406,6 +409,11 @@ function getColor(number, size) {
     return colorConfig[getLayer(number, size)] || "#ffffff";
 }
 
+// 返回字体颜色
+function getFontColor(number, size) {
+    return fontColorConfig[getLayer(number, size)] || "#ffffff";
+}
+
 // 返回层数，一行一列这样，在颜色里使用
 function getLayer(number, size) {
     number--;
@@ -443,6 +451,7 @@ function renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRat
 
         if (tile !== 0) { // 如果拼图块不是空白块
             tileElement.textContent = tile; // 设置拼图块的文本
+            tileElement.style.color = getFontColor(tile, size); // 设置拼图块的字体颜色
             tileElement.style.backgroundColor = getColor(tile, size); // 设置拼图块的背景颜色
         }
         puzzle.appendChild(tileElement); // 将拼图块添加到拼图容器中

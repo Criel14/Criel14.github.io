@@ -44,6 +44,50 @@ let defaultColorConfig2 = {
     18: "#fdb7b6"
 };
 
+// 字体颜色预设1：全白
+let defaultFontColorConfig1 = {
+    1: "#ffffff",
+    2: "#ffffff",
+    3: "#ffffff",
+    4: "#ffffff",
+    5: "#ffffff",
+    6: "#ffffff",
+    7: "#ffffff",
+    8: "#ffffff",
+    9: "#ffffff",
+    10: "#ffffff",
+    11: "#ffffff",
+    12: "#ffffff",
+    13: "#ffffff",
+    14: "#ffffff",
+    15: "#ffffff",
+    16: "#ffffff",
+    17: "#ffffff",
+    18: "#ffffff",
+}
+
+// 字体颜色预设2：全黑
+let defaultFontColorConfig2 = {
+    1: "#000000",
+    2: "#000000",
+    3: "#000000",
+    4: "#000000",
+    5: "#000000",
+    6: "#000000",
+    7: "#000000",
+    8: "#000000",
+    9: "#000000",
+    10: "#000000",
+    11: "#000000",
+    12: "#000000",
+    13: "#000000",
+    14: "#000000",
+    15: "#000000",
+    16: "#000000",
+    17: "#000000",
+    18: "#000000",
+}
+
 // 样式配置
 // 字体比例（取值范围0 - 1.0）：字体大小 = 滑块的边长 * fontSizeRatio
 let defaultFontSizeRatio1 = 0.5;
@@ -57,6 +101,7 @@ let defaultBorderRadiusRatio2 = 0.01;
 
 let defaultStyleConfig1 = {
     "colorConfig": defaultColorConfig1,
+    "fontColorConfig": defaultFontColorConfig1,
     "fontSizeRatio": defaultFontSizeRatio1,
     "gapWidthRatio": defaultGapWidthRatio1,
     "borderRadiusRatio": defaultBorderRadiusRatio1,
@@ -64,6 +109,7 @@ let defaultStyleConfig1 = {
 
 let defaultStyleConfig2 = {
     "colorConfig": defaultColorConfig2,
+    "fontColorConfig": defaultFontColorConfig1,
     "fontSizeRatio": defaultFontSizeRatio2,
     "gapWidthRatio": defaultGapWidthRatio2,
     "borderRadiusRatio": defaultBorderRadiusRatio2,

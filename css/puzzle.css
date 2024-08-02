@@ -380,14 +380,14 @@ body {
 }
 
 #config-overlay-content {
-    width: 50vw;
+    width: 48vw;
     height: 25vw;
     background: white;
     padding: 2.4% 3% 2.4% 3%;
     border-radius: 8px;
     text-align: center;
     transform: translateX(40%);
-    transition: transform 0.2s ease;
+    transition: transform 0.2s ease, width 0.2s ease;
 }
 
 #config-overlay.visible {
@@ -481,6 +481,10 @@ body {
     /* background-color: #ff808033; */
 }
 
+.color-menu.hidden {
+    display: none;
+}
+
 .color-menu-item {
     width: 100%;
     height: 1vw;
@@ -488,6 +492,34 @@ body {
 }
 
 .color-input {
+    font-size: 90%;
+    width: 6vw;
+    height: 1vw;
+    border-radius: 6px;
+    border: #e1e1e1 1px solid;
+}
+
+.font-color-menu {
+    width: 8vw;
+    height: 100%;
+    float: left;
+    margin-left: 5%;
+    display: flex;
+    flex-direction: column;
+    /* background-color: #ff808033; */
+}
+
+.font-color-menu.hidden {
+    display: none;
+}
+
+.font-color-menu-item {
+    width: 100%;
+    height: 1vw;
+    margin-top: 0.35vw;
+}
+
+.font-color-input {
     font-size: 90%;
     width: 6vw;
     height: 1vw;
@@ -505,17 +537,23 @@ body {
     /* background-color: #00ff1a2d; */
 }
 
+.size-menu.hidden {
+    display: none;
+}
+
 .size-menu-item {
     width: 100%;
     height: 24%;
     padding-top: 6%;
-    background-color: #f6f6f6;
+    /* background-color: #f6f6f6; */
     border-radius: 6px;
-    margin-top: 10%;
+    margin-top: 8%;
+    margin-bottom: 10%;
+    color: #707070;
 }
 
 .size-menu-item:hover {
-    background-color: #f0f0f0;
+    background-color: #f8f8f8;
     transition: 0.3s;
 }
 
@@ -538,6 +576,75 @@ body {
     width: 80%;
     height: 0.4vw;
 }
+
+.save-menu {
+    width: 20vw;
+    height: 100%;
+    float: left;
+    margin-left: 6%;
+    display: flex;
+    flex-direction: column;
+    /* background-color: #00ff1a2d; */
+}
+
+.save-menu.hidden {
+    display: none;
+}
+
+.save-menu-item {
+    width: 100%;
+    height: 12vw;
+    padding: 0;
+    /* background-color: #f6f6f6; */
+    border-radius: 6px;
+    margin-top: 6%;
+    margin-bottom: 6%;
+    border: #cccccc 1px solid;
+}
+
+.save-menu-item-text {
+    width: 40%;
+    height: 100%;
+    float: left;
+    line-height: 280%;
+    font-size: 100%;
+    border-radius: 4px;
+    background-color: #f8f8f8;
+}
+
+.save-menu-item-button {
+    width: 30%;
+    height: 100%;
+    float: left;
+    line-height: 280%;
+    font-size: 100%;
+}
+
+.save-save {
+    color: #00ad00;
+    font-weight: bold;
+    line-height: 280%;
+    font-size: 100%;
+}
+
+.save-save:hover {
+    background-color: #e0ffe5;
+    transition: 0.3s;
+}
+
+.save-load {
+    color: #0004d4;
+    font-weight: bold;
+    line-height: 280%;
+    font-size: 100%;
+}
+
+.save-load:hover {
+    background-color: #ecebff;
+    transition: 0.3s;
+}
+
+
 
 .confirm-overlay {
     position: fixed;

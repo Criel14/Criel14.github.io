@@ -44,9 +44,11 @@ const colorConfigSaveElement = document.getElementById("config-overlay-save-butt
 const previewPuzzle = document.getElementById("preview-puzzle");
 // 所有class为color-input的元素
 const colorInputs = document.getElementsByClassName("color-input");
+// 所有class为font-color-input的元素
+const fontColorInputs = document.getElementsByClassName("font-color-input");
 // 切换颜色预设按钮
-const colorConfigReset1Element = document.getElementById("config-overlay-reset1-button");
-const colorConfigReset2Element = document.getElementById("config-overlay-reset2-button");
+const colorConfigPreset1Element = document.getElementById("config-overlay-preset1-button");
+const colorConfigPreset2Element = document.getElementById("config-overlay-preset2-button");
 // 调节size的滑块input
 const sizeInputs = document.getElementsByClassName("size-input");
 // 显示滑块的值
@@ -56,6 +58,17 @@ const confirmButtonElement = document.getElementById("confirm-overlay-confirm-bu
 const cancelButtonElement = document.getElementById("confirm-overlay-cancel-button");
 // 底部开源说明
 const footInfoElement = document.getElementById("foot-info");
+
+// 配置界面
+const configContentElement = document.getElementById("config-overlay-content");
+// 颜色菜单
+const colorMenu = document.getElementById("color-menu");
+// 字体颜色菜单
+const fontColorMenu = document.getElementById("font-color-menu");
+// 大小菜单
+const sizeMenu = document.getElementById("size-menu");
+// 预设/保存菜单
+const saveMenu = document.getElementById("save-menu");
 
 // 定义拼图的阶数（边长）
 let size = 4;
@@ -102,6 +115,8 @@ let isChangeConfig = false;
 // 样式配置
 // 颜色配置
 let colorConfig = defaultColorConfig1;
+// 字体颜色配置
+let fontColorConfig = defaultFontColorConfig1;
 // 字体比例（取值范围0 - 1.0）：字体大小 = 滑块的边长 * fontSizeRatio
 let fontSizeRatio = defaultFontSizeRatio1;
 // 间隙大小（取值范围0 - 0.1）
@@ -121,7 +136,6 @@ let lightLevelBlindFontColor = "#161b48";
 let darkLevelFontColor = "#ffffff";
 
 
-
 // 移动模式列表
 let moveModeList = ["click", "slide", "keyboard"];
 
@@ -129,10 +143,15 @@ let moveModeList = ["click", "slide", "keyboard"];
 let gameModeList = ["normal", "blind"];
 
 
-// 根据数字返回对应的颜色，默认为#ffffff
+// 根据数字返回对应的方块颜色颜色，默认为#ffffff
 // number为0至size*size -1，0为空白格，number和显示出来的数字是一样的
 function getColor(number, size) {
     return colorConfig[getLayer(number, size)] || "#ffffff";
+}
+
+// 返回字体颜色
+function getFontColor(number, size) {
+    return fontColorConfig[getLayer(number, size)] || "#ffffff";
 }
 
 // 返回层数，一行一列这样，在颜色里使用
@@ -250,6 +269,7 @@ function renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRat
             }
             else {
                 tileElement.textContent = tile; // 设置拼图块的文本
+                tileElement.style.color = getFontColor(tile, size); // 设置拼图块的字体颜色
                 tileElement.style.backgroundColor = getColor(tile, size); // 设置拼图块的背景颜色
             }
             // 为拼图块添加事件监听器
@@ -265,9 +285,11 @@ function renderTiles(puzzle, tiles, edgeLength, size, gapWidthRatio, fontSizeRat
             if (!isAllowOperate) {
                 tileElement.addEventListener("mouseenter", () => {
                     colorInputs[getLayer(tile, size) - 1].style.borderColor = "#000000";
+                    fontColorInputs[getLayer(tile, size) - 1].style.borderColor = "#000000";
                 });
                 tileElement.addEventListener("mouseleave", () => {
                     colorInputs[getLayer(tile, size) - 1].style.borderColor = "#e1e1e1";
+                    fontColorInputs[getLayer(tile, size) - 1].style.borderColor = "#e1e1e1";
                 });
                 tileElement.addEventListener("click", () => {
                     colorInputs[getLayer(tile, size) - 1].jscolor.show();
@@ -588,7 +610,12 @@ document.addEventListener("DOMContentLoaded", () => {
     colorConfigCloseElement.addEventListener("click", () => {
         if (isChangeConfig) {
             showConfirmOverlay();
-            confirmButtonElement.addEventListener("click", () => {
+            document.getElementById("confirm-info").textContent = "配置未保存，确定退出吗？";
+            document.getElementById("confirm-info").title = "Configuration has not been saved, are you sure you want to exit?";
+            const oldElement = document.getElementById("confirm-overlay-confirm-button");
+            const newElement = oldElement.cloneNode(true);
+            oldElement.parentNode.replaceChild(newElement, oldElement);
+            newElement.addEventListener("click", () => {
                 hideOverlay();
                 hideConfirmOverlay();
             });
@@ -597,16 +624,157 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
     cancelButtonElement.addEventListener("click", hideConfirmOverlay);
+    colorConfigPreset1Element.addEventListener("click", () => {
+        showConfirmOverlay();
+        document.getElementById("confirm-info").textContent = "确定要加载预设1吗？(将会覆盖当前配置)";
+        document.getElementById("confirm-info").title = "Are you sure you want to load Preset 1? (This will overwrite the current configuration)";
+
+        const oldElement = document.getElementById("confirm-overlay-confirm-button");
+        const newElement = oldElement.cloneNode(true);
+        oldElement.parentNode.replaceChild(newElement, oldElement);
+        newElement.addEventListener("click", () => {
+            resetConfig(defaultStyleConfig1);
+            hideConfirmOverlay();
+        });
+    });
+    colorConfigPreset2Element.addEventListener("click", () => {
+        showConfirmOverlay();
+        document.getElementById("confirm-info").textContent = "确定要加载预设2吗？(将会覆盖当前配置)";
+        document.getElementById("confirm-info").title = "Are you sure you want to load Preset 2? (This will overwrite the current configuration)";
+        const oldElement = document.getElementById("confirm-overlay-confirm-button");
+        const newElement = oldElement.cloneNode(true);
+        oldElement.parentNode.replaceChild(newElement, oldElement);
+        newElement.addEventListener("click", () => {
+            resetConfig(defaultStyleConfig2);
+            hideConfirmOverlay();
+        });
+    })
+
+    // 设置界面的三个按钮
+    document.getElementById("config-overlay-color-button").addEventListener("click", () => {
+        let originalWidth = configContentElement.style.width;
+        configContentElement.style.width = "48vw";
+        setTimeout(() => {
+            colorMenu.classList.remove("hidden");
+            fontColorMenu.classList.remove("hidden");
+            sizeMenu.classList.add("hidden");
+            saveMenu.classList.add("hidden");
+        }, originalWidth == "48vw" ? 0 : 200);
+    })
+    document.getElementById("config-overlay-size-button").addEventListener("click", () => {
+        colorMenu.classList.add("hidden");
+        fontColorMenu.classList.add("hidden");
+        sizeMenu.classList.remove("hidden");
+        saveMenu.classList.add("hidden");
+        configContentElement.style.width = "40vw";
+    })
+    document.getElementById("config-overlay-preset-button").addEventListener("click", () => {
+        let originalWidth = configContentElement.style.width;
+        configContentElement.style.width = "48vw";
+        setTimeout(() => {
+            colorMenu.classList.add("hidden");
+            fontColorMenu.classList.add("hidden");
+            sizeMenu.classList.add("hidden");
+            saveMenu.classList.remove("hidden");
+        }, originalWidth == "48vw" ? 0 : 200);
+    })
     colorConfigSaveElement.addEventListener("click", () => {
         saveConfig();
         hideOverlay();
+        if (isChangeConfig) {
+            // 显示提示
+            new NoticeJs({
+                title: '提示',
+                text: '当前方案保存成功',
+                type: 'success',
+                position: 'topCenter',
+            }).show();
+        } else {
+            // 显示提示
+            new NoticeJs({
+                title: '提示',
+                text: '方案未修改',
+                type: 'info',
+                position: 'topCenter',
+            }).show();
+        }
     });
-    colorConfigReset1Element.addEventListener("click", () => {
-        resetConfig(defaultStyleConfig1);
+
+    // 预设保存按钮
+    document.getElementById("save-config1").addEventListener("click", () => {
+        showConfirmOverlay();
+        document.getElementById("confirm-info").textContent = "确定要保存到方案1吗？";
+        document.getElementById("confirm-info").title = "Are you sure you want to save to Custom Scheme 1?";
+        const oldElement = document.getElementById("confirm-overlay-confirm-button");
+        const newElement = oldElement.cloneNode(true);
+        oldElement.parentNode.replaceChild(newElement, oldElement);
+        newElement.addEventListener("click", () => {
+            saveCustomConfig(1);
+            hideConfirmOverlay();
+        });
     });
-    colorConfigReset2Element.addEventListener("click", () => {
-        resetConfig(defaultStyleConfig2);
+    document.getElementById("save-config2").addEventListener("click", () => {
+        showConfirmOverlay();
+        document.getElementById("confirm-info").textContent = "确定要保存到方案2吗？";
+        document.getElementById("confirm-info").title = "Are you sure you want to save to Custom Scheme 2?";
+        const oldElement = document.getElementById("confirm-overlay-confirm-button");
+        const newElement = oldElement.cloneNode(true);
+        oldElement.parentNode.replaceChild(newElement, oldElement);
+        newElement.addEventListener("click", () => {
+            saveCustomConfig(2);
+            hideConfirmOverlay();
+        });
+    });
+    document.getElementById("save-config3").addEventListener("click", () => {
+        showConfirmOverlay();
+        document.getElementById("confirm-info").textContent = "确定要保存到方案3吗？";
+        document.getElementById("confirm-info").title = "Are you sure you want to save to Custom Scheme 3?";
+        const oldElement = document.getElementById("confirm-overlay-confirm-button");
+        const newElement = oldElement.cloneNode(true);
+        oldElement.parentNode.replaceChild(newElement, oldElement);
+        newElement.addEventListener("click", () => {
+            saveCustomConfig(3);
+            hideConfirmOverlay();
+        });
     })
+    // 预设加载按钮
+    document.getElementById("load-config1").addEventListener("click", () => {
+        showConfirmOverlay();
+        document.getElementById("confirm-info").textContent = "确定要加载方案1吗？(将会覆盖当前配置)";
+        document.getElementById("confirm-info").title = "Are you sure you want to load Scheme 1? (This will overwrite the current configuration)";
+        const oldElement = document.getElementById("confirm-overlay-confirm-button");
+        const newElement = oldElement.cloneNode(true);
+        oldElement.parentNode.replaceChild(newElement, oldElement);
+        newElement.addEventListener("click", () => {
+            loadCustomConfig(1);
+            hideConfirmOverlay();
+        });
+    });
+    document.getElementById("load-config2").addEventListener("click", () => {
+        showConfirmOverlay();
+        document.getElementById("confirm-info").textContent = "确定要加载方案2吗？(将会覆盖当前配置)";
+        document.getElementById("confirm-info").title = "Are you sure you want to load Scheme 2? (This will overwrite the current configuration)";
+        const oldElement = document.getElementById("confirm-overlay-confirm-button");
+        const newElement = oldElement.cloneNode(true);
+        oldElement.parentNode.replaceChild(newElement, oldElement);
+        newElement.addEventListener("click", () => {
+            loadCustomConfig(2);
+            hideConfirmOverlay();
+        });
+    });
+    document.getElementById("load-config3").addEventListener("click", () => {
+        showConfirmOverlay();
+        document.getElementById("confirm-info").textContent = "确定要加载方案3吗？(将会覆盖当前配置)";
+        document.getElementById("confirm-info").title = "Are you sure you want to load Scheme 3? (This will overwrite the current configuration)";
+        const oldElement = document.getElementById("confirm-overlay-confirm-button");
+        const newElement = oldElement.cloneNode(true);
+        oldElement.parentNode.replaceChild(newElement, oldElement);
+        newElement.addEventListener("click", () => {
+            loadCustomConfig(3);
+            hideConfirmOverlay();
+        });
+    });
+
     // 初始化拼图
     createTiles();
 });
@@ -693,6 +861,16 @@ document.addEventListener('keydown', function (event) {
         case "ControlLeft":
         case "ControlRight":
             isAllowOperate = false;
+            break;
+        case "T":
+        case "t":
+            // 测试
+            document.getElementById("size-menu").classList.add("hidden");
+            break;
+        case "Y":
+        case "y":
+            // 测试
+            document.getElementById("size-menu").classList.remove("hidden");
             break;
         default:
             break;
@@ -1012,12 +1190,15 @@ function setCursorStyle(isCustomCursor) {
         colorModeElement.classList.add("custom-pointer");
         colorConfigCloseElement.classList.add("custom-pointer");
         colorConfigSaveElement.classList.add("custom-pointer");
-        colorConfigReset1Element.classList.add("custom-pointer");
-        colorConfigReset2Element.classList.add("custom-pointer");
+        colorConfigPreset1Element.classList.add("custom-pointer");
+        colorConfigPreset2Element.classList.add("custom-pointer");
         confirmButtonElement.classList.add("custom-pointer");
         cancelButtonElement.classList.add("custom-pointer");
         for (let index = 0; index < colorInputs.length; index++) {
             colorInputs[index].classList.add("custom-pointer");
+        }
+        for (let index = 0; index < fontColorInputs.length; index++) {
+            fontColorInputs[index].classList.add("custom-pointer");
         }
     }
     else {
@@ -1036,12 +1217,15 @@ function setCursorStyle(isCustomCursor) {
         colorModeElement.classList.remove("custom-pointer");
         colorConfigCloseElement.classList.remove("custom-pointer");
         colorConfigSaveElement.classList.remove("custom-pointer");
-        colorConfigReset1Element.classList.remove("custom-pointer");
-        colorConfigReset2Element.classList.remove("custom-pointer");
+        colorConfigPreset1Element.classList.remove("custom-pointer");
+        colorConfigPreset2Element.classList.remove("custom-pointer");
         confirmButtonElement.classList.remove("custom-pointer");
         cancelButtonElement.classList.remove("custom-pointer");
         for (let index = 0; index < colorInputs.length; index++) {
             colorInputs[index].classList.remove("custom-pointer");
+        }
+        for (let index = 0; index < fontColorInputs.length; index++) {
+            fontColorInputs[index].classList.remove("custom-pointer");
         }
     }
 }
@@ -1071,6 +1255,7 @@ function saveConfig() {
     config.groupNumber = groupNum;
     config.isCustomCursor = isCustomCursor;
     config.styleConfig.colorConfig = colorConfig;
+    config.styleConfig.fontColorConfig = fontColorConfig;
     config.styleConfig.fontSizeRatio = parseFloat(fontSizeRatio);
     config.styleConfig.borderRadiusRatio = parseFloat(borderRadiusRatio);
     config.styleConfig.gapWidthRatio = parseFloat(gapWidthRatio);
@@ -1078,6 +1263,7 @@ function saveConfig() {
     localStorage.setItem("config", JSON.stringify(config));
 }
 
+// 修改配置信息
 function loadConfig() {
     // 获取localStorage中的配置文件
     let config = JSON.parse(localStorage.getItem('config')) || [];
@@ -1097,13 +1283,141 @@ function loadConfig() {
     fontSizeRatio = config.styleConfig.fontSizeRatio;
     borderRadiusRatio = config.styleConfig.borderRadiusRatio;
     gapWidthRatio = config.styleConfig.gapWidthRatio;
+    fontColorConfig = config.styleConfig.fontColorConfig || defaultFontColorConfig1; // 新增配置，需要适配旧版本
     saveConfig();
 }
+
+// 保存自定义方案（3个方案）
+function saveCustomConfig(number) {
+    console.log("保存" + number);
+    // 保存当前配置
+    saveConfig();
+    // 获取localStorage中的配置文件
+    let config = JSON.parse(localStorage.getItem('config')) || [];
+    if (number == 1) {
+        let customConfig1 = {
+            "colorConfig": colorConfig,
+            "fontColorConfig": fontColorConfig,
+            "fontSizeRatio": fontSizeRatio,
+            "borderRadiusRatio": borderRadiusRatio,
+            "gapWidthRatio": gapWidthRatio
+        }
+        config.customConfig1 = customConfig1;
+        // 显示提示
+        new NoticeJs({
+            title: '提示',
+            text: '已将当前方案保存至自定义方案1',
+            type: 'success',
+            position: 'topCenter',
+        }).show();
+    } else if (number == 2) {
+        let customConfig2 = {
+            "colorConfig": colorConfig,
+            "fontColorConfig": fontColorConfig,
+            "fontSizeRatio": fontSizeRatio,
+            "borderRadiusRatio": borderRadiusRatio,
+            "gapWidthRatio": gapWidthRatio
+        }
+        config.customConfig2 = customConfig2;
+        // 显示提示
+        new NoticeJs({
+            title: '提示',
+            text: '已将当前方案保存至自定义方案2',
+            type: 'success',
+            position: 'topCenter',
+        }).show();
+    } else if (number == 3) {
+        let customConfig3 = {
+            "colorConfig": colorConfig,
+            "fontColorConfig": fontColorConfig,
+            "fontSizeRatio": fontSizeRatio,
+            "borderRadiusRatio": borderRadiusRatio,
+            "gapWidthRatio": gapWidthRatio
+        }
+        config.customConfig3 = customConfig3;
+        // 显示提示
+        new NoticeJs({
+            title: '提示',
+            text: '已将当前方案保存至自定义方案3',
+            type: 'success',
+            position: 'topCenter',
+        }).show();
+    }
+    // 保存到localStorage
+    localStorage.setItem("config", JSON.stringify(config));
+    // 修改标识
+    isChangeConfig = false;
+}
+
+// 加载自定义方案
+function loadCustomConfig(number) {
+    isChangeConfig = true;
+    // 获取localStorage中的配置文件
+    let config = JSON.parse(localStorage.getItem('config')) || [];
+    if (number == 1) {
+        if (config.customConfig1 == null) {
+            // 显示提示
+            new NoticeJs({
+                title: '警告',
+                text: '自定义方案1不存在',
+                type: 'warning',
+                position: 'topCenter',
+            }).show();
+        } else {
+            colorConfig = config.customConfig1.colorConfig;
+            fontColorConfig = config.customConfig1.fontColorConfig;
+            fontSizeRatio = config.customConfig1.fontSizeRatio;
+            borderRadiusRatio = config.customConfig1.borderRadiusRatio;
+            gapWidthRatio = config.customConfig1.gapWidthRatio;
+        }
+    } else if (number == 2) {
+        if (config.customConfig2 == null) {
+            // 显示提示
+            new NoticeJs({
+                title: '警告',
+                text: '自定义方案2不存在',
+                type: 'warning',
+                position: 'topCenter',
+            }).show();
+        } else {
+            colorConfig = config.customConfig2.colorConfig;
+            fontColorConfig = config.customConfig2.fontColorConfig;
+            fontSizeRatio = config.customConfig2.fontSizeRatio;
+            borderRadiusRatio = config.customConfig2.borderRadiusRatio;
+            gapWidthRatio = config.customConfig2.gapWidthRatio;
+        }
+    } else if (number == 3) {
+        if (config.customConfig3 == null) {
+            // 显示提示
+            new NoticeJs({
+                title: '警告',
+                text: '自定义方案3不存在',
+                type: 'warning',
+                position: 'topCenter',
+            }).show();
+        } else {
+            colorConfig = config.customConfig3.colorConfig;
+            fontColorConfig = config.customConfig3.fontColorConfig;
+            fontSizeRatio = config.customConfig3.fontSizeRatio;
+            borderRadiusRatio = config.customConfig3.borderRadiusRatio;
+            gapWidthRatio = config.customConfig3.gapWidthRatio;
+        }
+    }
+    // 重新绘制preview-puzzle
+    let tempList = Array.from({ length: 100 }, (_, i) => i + 1);
+    renderTiles(previewPuzzle, tempList, 20, 10, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
+    // 更新颜色选择器
+    setColorPickerValue();
+    // 更新滑块
+    setSizeSliderValue();
+}
+
 
 // 应用默认/预设配置，未保存到config
 function resetConfig(defaultStyleConfig) {
     isChangeConfig = true;
     colorConfig = defaultStyleConfig.colorConfig;
+    fontColorConfig = defaultStyleConfig.fontColorConfig;
     gapWidthRatio = defaultStyleConfig.gapWidthRatio;
     fontSizeRatio = defaultStyleConfig.fontSizeRatio;
     borderRadiusRatio = defaultStyleConfig.borderRadiusRatio;
@@ -1140,6 +1454,7 @@ function hideOverlay() {
     setTimeout(() => {
         colorConfigOverlayElement.classList.add('hidden');
     }, 200); // Wait for the animation to finish
+
     // 重新加载配置和渲染拼图快
     loadConfig();
     createTiles();
@@ -1165,11 +1480,13 @@ jscolor.presets.default = {
 
 // 颜色选择器初始化（更新内容）
 function setColorPickerValue() {
-    // 遍历colorInputs
+    // 遍历colorInputs和fontColorInputs
     for (let index = 0; index < colorInputs.length; index++) {
         let colorInput = colorInputs[index];
+        let fontColorInput = fontColorInputs[index];
         // 设置初始值
         colorInput.jscolor.fromString(colorConfig[index + 1]);
+        fontColorInput.jscolor.fromString(fontColorConfig[index + 1]);
         // 添加事件监听器
         colorInput.addEventListener("input", function () {
             isChangeConfig = true;
@@ -1181,6 +1498,17 @@ function setColorPickerValue() {
             let tempList = Array.from({ length: 100 }, (_, i) => i + 1);
             renderTiles(previewPuzzle, tempList, 20, 10, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
         });
+        fontColorInput.addEventListener("input", function () {
+            isChangeConfig = true;
+            // 获取输入框的值
+            const value = fontColorInput.value;
+            // 将值赋给fontColorConfig对象
+            fontColorConfig[index + 1] = value;
+            // 重新绘制preview-puzzle
+            let tempList = Array.from({ length: 100 }, (_, i) => i + 1);
+            renderTiles(previewPuzzle, tempList, 20, 10, gapWidthRatio, fontSizeRatio, borderRadiusRatio);
+        });
+
     }
 }
 
