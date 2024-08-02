@@ -682,20 +682,22 @@ document.addEventListener("DOMContentLoaded", () => {
         if (isChangeConfig) {
             // 显示提示
             new NoticeJs({
-                title: '提示',
-                text: '当前方案保存成功',
+                title: '当前方案保存成功',
+                text: 'The current scheme has been successfully saved.',
                 type: 'success',
                 position: 'topCenter',
+                width: Math.floor(window.innerWidth / 112.5 * 35),
             }).show();
             saveConfig();
             hideOverlay();
         } else {
             // 显示提示
             new NoticeJs({
-                title: '提示',
-                text: '方案未修改',
+                title: '方案未修改',
+                text: 'The scheme has not been modified.',
                 type: 'info',
                 position: 'topCenter',
+                width: Math.floor(window.innerWidth / 112.5 * 35),
             }).show();
         }
     });
@@ -1305,10 +1307,11 @@ function saveCustomConfig(number) {
         config.customConfig1 = customConfig1;
         // 显示提示
         new NoticeJs({
-            title: '提示',
-            text: '已将当前方案保存至自定义方案1',
+            title: '已将当前方案保存至自定义方案1',
+            text: 'The current scheme has been saved to Custom Scheme 1',
             type: 'success',
             position: 'topCenter',
+            width: Math.floor(window.innerWidth / 112.5 * 35),
         }).show();
     } else if (number == 2) {
         let customConfig2 = {
@@ -1321,10 +1324,11 @@ function saveCustomConfig(number) {
         config.customConfig2 = customConfig2;
         // 显示提示
         new NoticeJs({
-            title: '提示',
-            text: '已将当前方案保存至自定义方案2',
+            title: '已将当前方案保存至自定义方案2',
+            text: 'The current scheme has been saved to Custom Scheme 2',
             type: 'success',
             position: 'topCenter',
+            width: Math.floor(window.innerWidth / 112.5 * 35),
         }).show();
     } else if (number == 3) {
         let customConfig3 = {
@@ -1337,10 +1341,11 @@ function saveCustomConfig(number) {
         config.customConfig3 = customConfig3;
         // 显示提示
         new NoticeJs({
-            title: '提示',
-            text: '已将当前方案保存至自定义方案3',
+            title: '已将当前方案保存至自定义方案3',
+            text: 'The current scheme has been saved to Custom Scheme 3',
             type: 'success',
             position: 'topCenter',
+            width: Math.floor(window.innerWidth / 112.5 * 35),
         }).show();
     }
     // 保存到localStorage
@@ -1358,10 +1363,11 @@ function loadCustomConfig(number) {
         if (config.customConfig1 == null) {
             // 显示提示
             new NoticeJs({
-                title: '警告',
-                text: '自定义方案1不存在',
+                title: '自定义方案1不存在',
+                text: 'Custom Scheme 1 does not exist',
                 type: 'warning',
                 position: 'topCenter',
+                width: Math.floor(window.innerWidth / 112.5 * 35),
             }).show();
         } else {
             colorConfig = config.customConfig1.colorConfig;
@@ -1374,10 +1380,11 @@ function loadCustomConfig(number) {
         if (config.customConfig2 == null) {
             // 显示提示
             new NoticeJs({
-                title: '警告',
-                text: '自定义方案2不存在',
+                title: '自定义方案2不存在',
+                text: 'Custom Scheme 2 does not exist.',
                 type: 'warning',
                 position: 'topCenter',
+                width: Math.floor(window.innerWidth / 112.5 * 35),
             }).show();
         } else {
             colorConfig = config.customConfig2.colorConfig;
@@ -1390,10 +1397,11 @@ function loadCustomConfig(number) {
         if (config.customConfig3 == null) {
             // 显示提示
             new NoticeJs({
-                title: '警告',
-                text: '自定义方案3不存在',
+                title: '自定义方案3不存在',
+                text: 'Custom Scheme 3 does not exist.',
                 type: 'warning',
                 position: 'topCenter',
+                width: Math.floor(window.innerWidth / 112.5 * 35),
             }).show();
         } else {
             colorConfig = config.customConfig3.colorConfig;
@@ -1456,7 +1464,7 @@ function hideOverlay() {
     setTimeout(() => {
         colorConfigOverlayElement.classList.add('hidden');
     }, 200); // Wait for the animation to finish
-    
+
     // 恢复鼠标样式
     setCursorStyle(isCustomCursor);
 
