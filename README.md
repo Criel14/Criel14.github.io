@@ -318,7 +318,7 @@ localStorage.setItem("config", JSON.stringify(config));
     - 大小：修改方块间隙大小、字体大小、圆角大小
     - 预设/方案：
       - 提供2个系统自带预设
-      - 提供3个自定义方案栏（新增自定义方案）
+      - 提供3个自定义方案栏（新增自定义方案，config新增customConfig1，customConfig2，customConfig3子对象）
 
   - 部分功能增加了NoticeJs弹框提示
 
