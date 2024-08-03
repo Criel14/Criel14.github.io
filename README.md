@@ -268,9 +268,9 @@ localStorage.setItem("config", JSON.stringify(config));
 
 <br>
 
-## 日志
-
 <span id="log"></span>
+
+## 日志
 
 - ——项目基础搭建——
 - 2024.7.16
