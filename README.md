@@ -34,21 +34,11 @@ tip: 二者都能在国内访问；前者速度较慢，若没有科学上网，
 
 ![](docs/images/puzzle.png)
 
-## 游戏页—个性化设置
-
-![](docs/images/puzzle-style-settings20240802.png)
-
 ## 成绩列表页
 
 ![](docs/images/scoreList.png)
 
-## 成绩列表页—详细成绩
 
-![](docs/images/scoreList-detail.png)
-
-## 录像回放页
-
-![](docs/images/replay.png)
 
 <br>
 
