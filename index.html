@@ -1,20 +1,124 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>15 Puzzle Welcome</title>
-    <link rel="stylesheet" href="css/index.css">
+    <title>Criel's 15 Puzzle</title>
+    <style>
+        /* 全局重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #e0f7fa, #e8f5e9);
+            color: #2a2a2a;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 1.5rem;
+            border: 4px solid #4db6ac;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.6rem;
+        }
+
+        p {
+            font-size: 1rem;
+            margin-bottom: 1.8rem;
+            color: #555;
+        }
+
+        .btn-play {
+            display: inline-block;
+            background: #4db6ac;
+            color: #fff;
+            font-size: 1.15rem;
+            font-weight: 600;
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn-play:hover {
+            background: #66c2b1;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(77,182,172,0.3);
+        }
+
+        .github-link {
+            display: inline-block;
+            margin-top: 1.5rem;
+            font-size: 0.95rem;
+            color: #4db6ac;
+            text-decoration: none;
+            border-bottom: 1px dashed #4db6ac;
+            transition: 0.2s ease;
+        }
+
+        .github-link:hover {
+            color: #388e83;
+            border-bottom-color: #388e83;
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.75rem;
+            }
+            .btn-play {
+                width: 100%;
+                padding: 0.9rem;
+            }
+        }
+    </style>
 </head>
 
 <body>
     <div class="container">
-        <div id="puzzle-game-title" class="title-button" data-text="Click to Play →">
-            <span>15 Puzzle Game</span>
+        <!-- 头像 -->
+        <img class="avatar" src="docs/images/criel-avatar.jpg" alt="Criel Avatar">
+
+        <h1>Hi, I'm Criel! 🍊</h1>
+        <p>Welcome to my personal space — explore my projects and ideas.</p>
+
+        <!-- 15 Puzzle页 跳转按钮 -->
+        <a class="btn-play" href="puzzle-game/puzzle.html">Play the Puzzle →</a>
+
+        <!-- GitHub 个人主页 -->
+        <div>
+            <a class="github-link" href="https://github.com/Criel14" target="_blank">
+                Visit my GitHub • @Criel14
+            </a>
         </div>
     </div>
-    <script src="js/index.js"></script>
 </body>
 
 </html>

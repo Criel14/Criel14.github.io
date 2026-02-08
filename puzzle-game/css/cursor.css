@@ -1,0 +1,16 @@
+/*鼠标样式*/
+body {
+    cursor: auto;
+}
+
+.custom-cursor {
+    cursor: url(../image/cur/normal.png), auto;
+}
+
+.custom-pointer {
+    cursor: url(../image/cur/link.png), auto;
+}
+
+.custom-text {
+    cursor: url(../image/cur/text.png), auto;
+}
