@@ -1,5 +1,7 @@
 ﻿const boardEl = document.getElementById("board");
 const scoreValueEl = document.getElementById("scoreValue");
+const applesValueEl = document.getElementById("applesValue");
+const ratioValueEl = document.getElementById("ratioValue");
 const timeValueEl = document.getElementById("timeValue");
 const startBtn = document.getElementById("startBtn");
 const pauseBtn = document.getElementById("pauseBtn");
@@ -30,27 +32,34 @@ const MODE_TIME_LIMIT = "timeLimit";
 const MODE_CUSTOM = "custom";
 const MODE_STORAGE_KEY = "snake_mode";
 const BEST_STORAGE_KEY_APPLES_40 = "snake_best_apples40_ms";
+const BEST_STORAGE_KEY_TIME_LIMIT = "snake_best_time_limit_score";
 
 // 40 Apples 的目标苹果数量
 const APPLES_TARGET = 40;
 
 // 容错时间配置
 const GRACE_DURATION_MS = 800;
+const TIME_LIMIT_MS = 120000;
+const HARD_DROP_INTERVAL_MS = 30;
 
 let timerId = null;
 let timeTimerId = null;
 let graceTimerId = null;
+let hardDropTimerId = null;
 let isRunning = false;
 let isPaused = false;
 let isGameOver = false;
 let isInGrace = false;
+let isHardDropping = false;
 let direction = { x: 1, y: 0 };
 let pendingDirection = { x: 1, y: 0 };
 let snake = [];
 let apple = { x: 0, y: 0 };
 let score = 0;
+let appleCount = 0;
 let cells = [];
 let elapsedMs = 0;
+let remainingMs = 0;
 let currentLang = "zh";
 const LANG_STORAGE_KEY = "snake_lang";
 let currentMode = MODE_APPLES_40;
@@ -59,6 +68,8 @@ let modeDisabledMap = new Map();
 let graceStartMs = 0;
 let isTargetCompleted = false;
 let graceRemainingMs = 0;
+let hardDropQueue = [];
+let hardDropResult = null;
 
 const I18N_MAP = {
     zh: {
@@ -75,6 +86,8 @@ const I18N_MAP = {
         statsTitle: "统计",
         timeLabel: "时间",
         scoreLabel: "分数",
+        applesLabel: "苹果",
+        scorePerAppleLabel: "分数/苹果",
         modeTitle: "游戏模式",
         mode40: "40 Apples（竞速）",
         modeTime: "限时打分（2分钟）",
@@ -98,6 +111,8 @@ const I18N_MAP = {
         statsTitle: "Stats",
         timeLabel: "Time",
         scoreLabel: "Score",
+        applesLabel: "Apples",
+        scorePerAppleLabel: "Score/Apple",
         modeTitle: "Game Mode",
         mode40: "40 Apples (Speedrun)",
         modeTime: "Time Attack (2 min)",
@@ -121,6 +136,7 @@ function init() {
     loadMode();
     loadBestRecord();
     updateBestDisplay();
+    updateModeStyling();
     resetGame();
 }
 
@@ -155,15 +171,20 @@ function bindEvents() {
 function resetGame() {
     // 重置游戏状态（分数、方向、蛇身、苹果）
     score = 0;
+    appleCount = 0;
     updateScore();
+    updateApples();
+    updateScoreRatio();
     hideBestBadge();
     hideResultStatus();
     clearGrace();
+    clearHardDrop();
     direction = { x: 1, y: 0 };
     pendingDirection = { x: 1, y: 0 };
     isGameOver = false;
     isTargetCompleted = false;
     elapsedMs = 0;
+    remainingMs = currentMode === MODE_TIME_LIMIT ? TIME_LIMIT_MS : 0;
     updateTime();
     snake = [
         { x: 4, y: 5 },
@@ -187,6 +208,7 @@ function startGame() {
     setControlLock(true);
     hideBestBadge();
     clearGrace();
+    clearHardDrop();
     updatePauseButton();
     runLoop();
     startTimer();
@@ -202,6 +224,7 @@ function togglePause() {
         runLoop();
         startTimer();
         resumeGrace();
+        resumeHardDrop();
         updatePauseButton();
         return;
     }
@@ -209,6 +232,7 @@ function togglePause() {
     stopLoop();
     stopTimer();
     pauseGrace();
+    pauseHardDrop();
     updatePauseButton();
 }
 
@@ -224,6 +248,7 @@ function finishGame(result) {
     stopLoop();
     stopTimer();
     clearGrace();
+    clearHardDrop();
     isRunning = false;
     isPaused = false;
     isGameOver = true;
@@ -231,12 +256,19 @@ function finishGame(result) {
     updatePauseButton();
 
     // 只有完成 40 Apples 目标时才记录最佳成绩
-    const isCompleted = result.reason === "apples40-complete" || isTargetCompleted;
-    if (isCompleted) {
-        updateBestRecordIfNeeded(elapsedMs);
+    if (currentMode === MODE_APPLES_40) {
+        const isCompleted = result.reason === "apples40-complete" || isTargetCompleted;
+        if (isCompleted) {
+            updateBestRecordIfNeeded(elapsedMs);
+            hideResultStatus();
+        } else {
+            showResultStatus();
+        }
+        return;
+    }
+    if (currentMode === MODE_TIME_LIMIT) {
+        updateBestRecordIfNeeded(score);
         hideResultStatus();
-    } else {
-        showResultStatus();
     }
 }
 
@@ -290,11 +322,14 @@ function applyMove(newHead) {
 
     if (isApple(newHead)) {
         // 吃到苹果：加分并生成新苹果，不移除尾巴
+        appleCount += 1;
         score += 1;
         updateScore();
+        updateApples();
+        updateScoreRatio();
 
         // 40 Apples 模式：达到目标即结束游戏
-        if (currentMode === MODE_APPLES_40 && score >= APPLES_TARGET) {
+        if (currentMode === MODE_APPLES_40 && appleCount >= APPLES_TARGET) {
             isTargetCompleted = true;
             finishGame({
                 reason: "apples40-complete"
@@ -370,14 +405,44 @@ function isCollision(pos) {
 function updateScore() {
     // 更新分数显示
     scoreValueEl.textContent = score.toString();
-    scoreValueEl.classList.remove("bump");
-    void scoreValueEl.offsetWidth;
-    scoreValueEl.classList.add("bump");
+    if (currentMode === MODE_TIME_LIMIT) {
+        scoreValueEl.classList.remove("bump");
+        void scoreValueEl.offsetWidth;
+        scoreValueEl.classList.add("bump");
+    }
+}
+
+function updateApples() {
+    // 更新苹果数量显示
+    applesValueEl.textContent = appleCount.toString();
+    if (currentMode === MODE_APPLES_40) {
+        applesValueEl.classList.remove("bump");
+        void applesValueEl.offsetWidth;
+        applesValueEl.classList.add("bump");
+    }
+}
+
+function updateScoreRatio() {
+    // 更新分数/苹果显示
+    if (appleCount <= 0) {
+        ratioValueEl.textContent = "0.00";
+        return;
+    }
+    const ratio = score / appleCount;
+    ratioValueEl.textContent = ratio.toFixed(2);
 }
 
 function handleKey(event) {
     // 键盘控制：W/A/S/D
     const key = event.key.toLowerCase();
+    if (event.code === "Space" || key === " ") {
+        event.preventDefault();
+        if (!isRunning || isPaused || isGameOver) {
+            return;
+        }
+        performHardDrop();
+        return;
+    }
     if (key === "w") {
         rotate({ x: 0, y: -1 });
     }
@@ -414,6 +479,21 @@ function getSpeedInterval() {
 function startTimer() {
     // 启动计时器，记录游戏时长
     stopTimer();
+    if (currentMode === MODE_TIME_LIMIT) {
+        const startRemaining = remainingMs > 0 ? remainingMs : TIME_LIMIT_MS;
+        const startAt = Date.now();
+        remainingMs = startRemaining;
+        timeTimerId = setInterval(() => {
+            remainingMs = Math.max(0, startRemaining - (Date.now() - startAt));
+            updateTime();
+            if (remainingMs <= 0) {
+                finishGame({
+                    reason: "time-up"
+                });
+            }
+        }, 120);
+        return;
+    }
     const startAt = Date.now() - elapsedMs;
     timeTimerId = setInterval(() => {
         elapsedMs = Date.now() - startAt;
@@ -431,7 +511,8 @@ function stopTimer() {
 
 function updateTime() {
     // 更新时间显示（m:ss.mmm）
-    const text = formatTime(elapsedMs);
+    const baseMs = currentMode === MODE_TIME_LIMIT ? remainingMs : elapsedMs;
+    const text = formatTime(baseMs);
     timeValueEl.innerHTML = `<span class="time-main">${text.main}</span><span class="time-ms">${text.ms}</span>`;
 }
 
@@ -453,7 +534,7 @@ function formatTime(totalMs) {
 function render() {
     // 渲染蛇身与苹果
     cells.forEach(cell => {
-        cell.classList.remove("snake", "apple", "head");
+        cell.classList.remove("snake", "apple", "head", "ghost");
     });
 
     snake.forEach((segment, segmentIndex) => {
@@ -473,6 +554,8 @@ function render() {
     if (appleIndex !== null) {
         cells[appleIndex].classList.add("apple");
     }
+
+    renderGhost();
 }
 
 function getIndex(pos) {
@@ -481,6 +564,66 @@ function getIndex(pos) {
         return null;
     }
     return pos.y * GRID_SIZE + pos.x;
+}
+
+function renderGhost() {
+    // 渲染落点提示（单点）
+    if (!isRunning || isPaused || isGameOver || isHardDropping) {
+        return;
+    }
+    const landing = getHardDropLanding();
+    if (!landing) {
+        return;
+    }
+    const index = getIndex(landing);
+    if (index === null) {
+        return;
+    }
+    const head = snake[0];
+    if (head && head.x === landing.x && head.y === landing.y) {
+        return;
+    }
+    cells[index].classList.add("ghost");
+}
+
+function getHardDropLanding() {
+    // 计算硬降落点：遇到苹果则停在苹果，否则停在撞墙/撞身前一格
+    if (!direction || (direction.x === 0 && direction.y === 0)) {
+        return null;
+    }
+
+    let tempSnake = snake.map(segment => ({ ...segment }));
+    let lastSafe = tempSnake[0];
+
+    while (true) {
+        const nextHead = {
+            x: tempSnake[0].x + direction.x,
+            y: tempSnake[0].y + direction.y
+        };
+
+        if (isHitWall(nextHead)) {
+            return lastSafe;
+        }
+
+        const willEat = isApple(nextHead);
+        const bodyToCheck = willEat ? tempSnake : tempSnake.slice(0, -1);
+        const hitSelf = bodyToCheck.some(segment => segment.x === nextHead.x && segment.y === nextHead.y);
+
+        if (hitSelf) {
+            return lastSafe;
+        }
+
+        tempSnake.unshift(nextHead);
+        if (!willEat) {
+            tempSnake.pop();
+        }
+
+        lastSafe = nextHead;
+
+        if (willEat) {
+            return nextHead;
+        }
+    }
 }
 
 function setControlLock(isLocked) {
@@ -533,6 +676,205 @@ function initSpeedControl() {
     speedRange.step = SPEED_STEP.toString();
     loadSpeed();
     updateSpeedValue();
+}
+
+function performHardDrop() {
+    // 硬降：沿当前方向快速冲刺直到撞墙/撞身/吃到苹果
+    if (direction.x === 0 && direction.y === 0) {
+        return;
+    }
+    clearHardDrop();
+    stopLoop();
+
+    // 硬降期间不触发容错
+    if (isInGrace) {
+        clearGrace();
+    }
+
+    let steps = 0;
+    let tempSnake = snake.map(segment => ({ ...segment }));
+    let collisionType = null;
+    let collisionPos = null;
+
+    while (true) {
+        const nextHead = {
+            x: tempSnake[0].x + direction.x,
+            y: tempSnake[0].y + direction.y
+        };
+
+        // 撞墙直接结束（无容错）
+        if (isHitWall(nextHead)) {
+            collisionType = "wall";
+            collisionPos = nextHead;
+            break;
+        }
+
+        const willEat = isApple(nextHead);
+        const bodyToCheck = willEat ? tempSnake : tempSnake.slice(0, -1);
+        const hitSelf = bodyToCheck.some(segment => segment.x === nextHead.x && segment.y === nextHead.y);
+
+        if (hitSelf) {
+            collisionType = "self";
+            collisionPos = nextHead;
+            break;
+        }
+
+        tempSnake.unshift(nextHead);
+        if (!willEat) {
+            tempSnake.pop();
+        }
+        steps += 1;
+
+        if (willEat) {
+            break;
+        }
+    }
+
+    if (collisionType) {
+        // 撞墙：停在边界格；撞身：显示重叠的撞击位置
+        snake = tempSnake;
+        if (collisionType === "self" && collisionPos) {
+            snake.unshift(collisionPos);
+            snake.pop();
+        }
+        render();
+        finishGame({
+            reason: "hard-drop-collision"
+        });
+        return;
+    }
+
+    // 硬降吃到苹果：基础分 + 冲刺距离奖励
+    snake = tempSnake;
+    appleCount += 1;
+    score += 1 + steps;
+    updateScore();
+    updateApples();
+    updateScoreRatio();
+
+    if (currentMode === MODE_APPLES_40 && appleCount >= APPLES_TARGET) {
+        isTargetCompleted = true;
+        finishGame({
+            reason: "apples40-complete"
+        });
+        return;
+    }
+
+    placeApple();
+    render();
+    if (isRunning && !isPaused && !isGameOver) {
+        runLoop();
+    }
+}
+
+function startHardDrop(queue, result) {
+    // 启动硬降动画，逐步推进直到结果
+    stopLoop();
+    hardDropQueue = queue.slice();
+    hardDropResult = result;
+    isHardDropping = true;
+    startHardDropTimer();
+}
+
+function startHardDropTimer() {
+    stopHardDropTimer();
+    hardDropTimerId = setInterval(() => {
+        advanceHardDrop();
+    }, HARD_DROP_INTERVAL_MS);
+}
+
+function stopHardDropTimer() {
+    if (hardDropTimerId) {
+        clearInterval(hardDropTimerId);
+        hardDropTimerId = null;
+    }
+}
+
+function advanceHardDrop() {
+    if (!isHardDropping) {
+        return;
+    }
+
+    if (hardDropQueue.length === 0) {
+        // 队列耗尽，根据结果收尾
+        const resultType = hardDropResult ? hardDropResult.type : "collision";
+        endHardDrop();
+        if (resultType === "collision") {
+            finishGame({
+                reason: "hard-drop-collision"
+            });
+        } else if (isRunning && !isPaused && !isGameOver) {
+            runLoop();
+        }
+        return;
+    }
+
+    const nextHead = hardDropQueue.shift();
+    const isLastStep = hardDropQueue.length === 0;
+    const isAppleStep = hardDropResult && hardDropResult.type === "apple" && isLastStep;
+
+    snake.unshift(nextHead);
+    if (!isAppleStep) {
+        snake.pop();
+    }
+
+    if (isAppleStep) {
+        // 硬降吃到苹果：基础分 + 冲刺距离奖励
+        appleCount += 1;
+        score += 1 + hardDropResult.steps;
+        updateScore();
+
+        if (currentMode === MODE_APPLES_40 && appleCount >= APPLES_TARGET) {
+            isTargetCompleted = true;
+            endHardDrop();
+            finishGame({
+                reason: "apples40-complete"
+            });
+            return;
+        }
+
+        placeApple();
+        endHardDrop();
+        render();
+        if (isRunning && !isPaused && !isGameOver) {
+            runLoop();
+        }
+        return;
+    }
+
+    render();
+}
+
+function endHardDrop() {
+    // 收尾硬降动画状态
+    stopHardDropTimer();
+    isHardDropping = false;
+    hardDropQueue = [];
+    hardDropResult = null;
+}
+
+function clearHardDrop() {
+    // 强制清理硬降状态
+    stopHardDropTimer();
+    isHardDropping = false;
+    hardDropQueue = [];
+    hardDropResult = null;
+}
+
+function pauseHardDrop() {
+    // 暂停硬降动画
+    if (!isHardDropping) {
+        return;
+    }
+    stopHardDropTimer();
+}
+
+function resumeHardDrop() {
+    // 继续硬降动画
+    if (!isHardDropping) {
+        return;
+    }
+    startHardDropTimer();
 }
 
 function startGrace() {
@@ -617,8 +959,8 @@ function initModeControl() {
     // 记录模式按钮的初始禁用状态，避免误解锁暂未开放的模式
     modeDisabledMap = new Map();
     modeInputs.forEach(input => {
-        // 强制禁用未开放的模式，避免被错误选中
-        if (input.value !== MODE_APPLES_40) {
+        // 仅禁用暂未开放的模式
+        if (input.value === MODE_CUSTOM) {
             input.disabled = true;
         }
         modeDisabledMap.set(input, input.disabled);
@@ -640,6 +982,9 @@ function handleModeChange(event) {
     }
     currentMode = input.value;
     localStorage.setItem(MODE_STORAGE_KEY, currentMode);
+    loadBestRecord();
+    updateBestDisplay();
+    updateModeStyling();
     resetGame();
 }
 
@@ -658,8 +1003,9 @@ function loadMode() {
 }
 
 function loadBestRecord() {
-    // 读取 40 Apples 最佳纪录
-    const saved = localStorage.getItem(BEST_STORAGE_KEY_APPLES_40);
+    // 按模式读取最佳纪录
+    const key = currentMode === MODE_TIME_LIMIT ? BEST_STORAGE_KEY_TIME_LIMIT : BEST_STORAGE_KEY_APPLES_40;
+    const saved = localStorage.getItem(key);
     if (saved === null || saved === "") {
         bestRecordMs = null;
         return;
@@ -670,6 +1016,15 @@ function loadBestRecord() {
 
 function updateBestRecordIfNeeded(currentMs) {
     // 只要成绩更好就更新
+    if (currentMode === MODE_TIME_LIMIT) {
+        if (bestRecordMs === null || currentMs > bestRecordMs) {
+            bestRecordMs = currentMs;
+            localStorage.setItem(BEST_STORAGE_KEY_TIME_LIMIT, bestRecordMs.toString());
+            showBestBadge();
+        }
+        updateBestDisplay();
+        return;
+    }
     if (bestRecordMs === null || currentMs < bestRecordMs) {
         bestRecordMs = currentMs;
         localStorage.setItem(BEST_STORAGE_KEY_APPLES_40, bestRecordMs.toString());
@@ -682,6 +1037,10 @@ function updateBestDisplay() {
     // 更新最佳纪录显示
     if (bestRecordMs === null) {
         bestValueEl.textContent = "--";
+        return;
+    }
+    if (currentMode === MODE_TIME_LIMIT) {
+        bestValueEl.textContent = bestRecordMs.toString();
         return;
     }
     const text = formatTime(bestRecordMs);
@@ -706,6 +1065,19 @@ function showResultStatus() {
 function hideResultStatus() {
     // 隐藏未完成提示
     resultStatusEl.classList.remove("is-visible");
+}
+
+function updateModeStyling() {
+    // 根据模式调整高亮与动效目标
+    applesValueEl.classList.remove("is-highlight");
+    scoreValueEl.classList.remove("is-highlight");
+    if (currentMode === MODE_APPLES_40) {
+        applesValueEl.classList.add("is-highlight");
+        return;
+    }
+    if (currentMode === MODE_TIME_LIMIT) {
+        scoreValueEl.classList.add("is-highlight");
+    }
 }
 
 function updatePauseButton() {
