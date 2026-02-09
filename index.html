@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh">
 
 <head>
@@ -60,7 +60,9 @@
             color: #fff;
             font-size: 1.15rem;
             font-weight: 600;
-            padding: 0.8rem 2rem;
+            width: 220px;
+            padding: 0.8rem 0;
+            text-align: center;
             border: none;
             border-radius: 8px;
             cursor: pointer;
@@ -89,13 +91,20 @@
             border-bottom-color: #388e83;
         }
 
+        .btn-stack {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 1.2rem;
+            justify-items: center;
+        }
+
         @media (max-width: 480px) {
             h1 {
                 font-size: 1.75rem;
             }
             .btn-play {
-                width: 100%;
-                padding: 0.9rem;
+                width: 200px;
+                padding: 0.85rem 0;
             }
         }
     </style>
@@ -106,16 +115,19 @@
         <!-- 头像 -->
         <img class="avatar" src="docs/images/criel-avatar.jpg" alt="Criel Avatar">
 
-        <h1>Hi, I'm Criel! 🍊</h1>
-        <p>Welcome to my personal space — explore my projects and ideas.</p>
+        <h1>Hi, I'm Criel!🍊</h1>
+        <p>Welcome to my personal space - explore my projects and ideas.</p>
 
-        <!-- 15 Puzzle页 跳转按钮 -->
-        <a class="btn-play" href="puzzle-game/puzzle.html">Play the Puzzle →</a>
+        <!-- 项目入口 -->
+        <div class="btn-stack">
+            <a class="btn-play" href="puzzle-game/puzzle.html">Play the Puzzle →</a>
+            <a class="btn-play" href="snake-game/snake.html">Play Snake →</a>
+        </div>
 
         <!-- GitHub 个人主页 -->
         <div>
             <a class="github-link" href="https://github.com/Criel14" target="_blank">
-                Visit my GitHub • @Criel14
+                Visit my GitHub @Criel14
             </a>
         </div>
     </div>

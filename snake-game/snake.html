@@ -1,0 +1,67 @@
+﻿<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <link rel="stylesheet" href="snake.css">
+</head>
+<body>
+    <main class="page">
+        <div class="layout">
+            <div class="left-column">
+                <aside class="panel-card panel">
+                    <div class="panel-title" data-i18n="controlsTitle">控制</div>
+                    <button id="startBtn" class="btn" data-i18n="start">开始游戏</button>
+                    <button id="pauseBtn" class="btn" data-i18n="pause">暂停游戏</button>
+                    <button id="endBtn" class="btn" data-i18n="end">结束游戏</button>
+                    <div class="speed-control">
+                        <div class="speed-title">
+                            <span data-i18n="speedTitle">移动间隔</span>
+                            <span class="speed-value"><span id="speedValue">220</span>ms</span>
+                        </div>
+                        <input id="speedRange" class="speed-range" type="range" min="30" max="500" step="10" value="310" aria-label="Speed">
+                    </div>
+                    <div class="panel-row">
+                        <button id="langToggleBtn" class="btn btn-ghost btn-icon" aria-label="Language">
+                            <span class="iconify" data-icon="mdi:translate" aria-hidden="true"></span>
+                            <span class="sr-only" data-i18n="language">语言：中文</span>
+                        </button>
+                        <a class="btn btn-ghost btn-icon" href="../index.html" aria-label="Back to Home">
+                            <span class="iconify" data-icon="mdi:home" aria-hidden="true"></span>
+                            <span class="sr-only">返回主页</span>
+                        </a>
+                    </div>
+                </aside>
+                <aside class="panel-card tips-card">
+                    <div class="tip-title" data-i18n="tipsTitle">提示</div>
+                    <div class="tip-text" data-i18n="tipsText">W / A / S / D 移动</div>
+                </aside>
+            </div>
+            <section class="panel-card board-card">
+                <header class="card-header">
+                    <h1 class="main-title" data-i18n="gameTitle">Snake Game</h1>
+                </header>
+                <div class="board-wrap">
+                    <div id="board" class="board" aria-label="Snake game board"></div>
+                </div>
+            </section>
+            <aside class="panel-card stats">
+                <div class="stats-title" data-i18n="statsTitle">统计</div>
+                <div class="stats-item">
+                    <div class="stats-label" data-i18n="timeLabel">时间</div>
+                    <div class="stats-value time-value" id="timeValue">
+                        <span class="time-main">0:00</span><span class="time-ms">.000</span>
+                    </div>
+                </div>
+                <div class="stats-item">
+                    <div class="stats-label" data-i18n="scoreLabel">分数</div>
+                    <div class="stats-value score-value" id="scoreValue">0</div>
+                </div>
+            </aside>
+        </div>
+    </main>
+    <script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script>
+    <script src="snake.js"></script>
+</body>
+</html>
