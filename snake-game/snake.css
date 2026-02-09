@@ -334,6 +334,13 @@ body {
     font-weight: 600;
 }
 
+.rule-hint {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: #7a8a92;
+    font-weight: 600;
+}
+
 .grace-wrap {
     margin-top: 12px;
     justify-content: center;

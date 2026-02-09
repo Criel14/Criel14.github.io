@@ -13,11 +13,13 @@ const modeInputs = Array.from(document.querySelectorAll("input[name='gameMode']"
 const bestValueEl = document.getElementById("bestValue");
 const bestBadgeEl = document.getElementById("bestBadge");
 const resultStatusEl = document.getElementById("resultStatus");
+const bestItemEl = document.getElementById("bestItem");
 const graceWrapEl = document.getElementById("graceWrap");
 const graceBarEl = document.getElementById("graceBar");
 const ruleOverlayEl = document.getElementById("ruleOverlay");
 const ruleTitleEl = document.getElementById("ruleTitle");
 const ruleDescEl = document.getElementById("ruleDesc");
+const ruleHintEl = document.getElementById("ruleHint");
 const i18nNodes = document.querySelectorAll("[data-i18n]");
 
 // 场地边长
@@ -77,9 +79,9 @@ let hardDropResult = null;
 const I18N_MAP = {
     zh: {
         controlsTitle: "控制",
-        start: "开始游戏",
-        pause: "暂停游戏",
-        end: "结束游戏",
+        start: "开始游戏 (Enter)",
+        pause: "暂停游戏 (P)",
+        end: "结束游戏 (Esc)",
         speedTitle: "移动间隔",
         speedHint: "范围 500ms - 30ms",
         language: "语言：中文",
@@ -94,7 +96,7 @@ const I18N_MAP = {
         modeTitle: "游戏模式",
         mode40: "40苹果竞速",
         modeTime: "限时打分",
-        modeCustom: "自由模式（暂无）",
+        modeCustom: "自由模式",
         bestLabel: "最佳纪录",
         personalBest: "PERSONAL BEST",
         notFinished: "未完成",
@@ -102,15 +104,16 @@ const I18N_MAP = {
         ruleDesc40: "尽可能快地吃下40个苹果",
         ruleTitleTime: "限时打分",
         ruleDescTime: "在2分钟内获得尽可能高的分数",
-        ruleTitleCustom: "自由模式（暂无）",
-        ruleDescCustom: "该模式暂未开放",
+        ruleTitleCustom: "自由模式",
+        ruleDescCustom: "自由游玩，没有时间限制",
+        ruleHint: "按下Enter开始游戏",
         resume: "继续游戏"
     },
     en: {
         controlsTitle: "Controls",
-        start: "Start",
-        pause: "Pause",
-        end: "End",
+        start: "Start (Enter)",
+        pause: "Pause (P)",
+        end: "End (Esc)",
         speedTitle: "Interval",
         speedHint: "Range 500ms - 30ms",
         language: "Language: English",
@@ -125,7 +128,7 @@ const I18N_MAP = {
         modeTitle: "Game Mode",
         mode40: "40 Apples Speedrun",
         modeTime: "Time Attack",
-        modeCustom: "Free Mode (TBD)",
+        modeCustom: "Free Mode",
         bestLabel: "Best Record",
         personalBest: "PERSONAL BEST",
         notFinished: "Not Finished",
@@ -133,8 +136,9 @@ const I18N_MAP = {
         ruleDesc40: "Eat 40 apples as fast as possible",
         ruleTitleTime: "Time Attack",
         ruleDescTime: "Score as high as possible in 2 minutes",
-        ruleTitleCustom: "Free Mode (TBD)",
-        ruleDescCustom: "This mode is not available yet",
+        ruleTitleCustom: "Free Mode",
+        ruleDescCustom: "Free play with no time limit",
+        ruleHint: "Press Enter to start",
         resume: "Resume"
     }
 };
@@ -289,6 +293,11 @@ function finishGame(result) {
     }
     if (currentMode === MODE_TIME_LIMIT) {
         updateBestRecordIfNeeded(score);
+        hideResultStatus();
+        showRuleOverlay();
+        return;
+    }
+    if (currentMode === MODE_CUSTOM) {
         hideResultStatus();
         showRuleOverlay();
     }
@@ -455,8 +464,28 @@ function updateScoreRatio() {
 }
 
 function handleKey(event) {
-    // 键盘控制：W/A/S/D
+    // 键盘控制：W/A/S/D + 方向键
     const key = event.key.toLowerCase();
+    if (event.key === "Enter") {
+        event.preventDefault();
+        if (!isRunning && !isGameOver) {
+            startGame();
+        } else if (isGameOver) {
+            resetGame();
+            startGame();
+        }
+        return;
+    }
+    if (key === "p") {
+        event.preventDefault();
+        togglePause();
+        return;
+    }
+    if (event.key === "Escape") {
+        event.preventDefault();
+        endGame();
+        return;
+    }
     if (event.code === "Space" || key === " ") {
         event.preventDefault();
         if (!isRunning || isPaused || isGameOver) {
@@ -475,6 +504,18 @@ function handleKey(event) {
         rotate({ x: -1, y: 0 });
     }
     if (key === "d") {
+        rotate({ x: 1, y: 0 });
+    }
+    if (event.key === "ArrowUp") {
+        rotate({ x: 0, y: -1 });
+    }
+    if (event.key === "ArrowDown") {
+        rotate({ x: 0, y: 1 });
+    }
+    if (event.key === "ArrowLeft") {
+        rotate({ x: -1, y: 0 });
+    }
+    if (event.key === "ArrowRight") {
         rotate({ x: 1, y: 0 });
     }
 }
@@ -982,10 +1023,7 @@ function initModeControl() {
     // 记录模式按钮的初始禁用状态，避免误解锁暂未开放的模式
     modeDisabledMap = new Map();
     modeInputs.forEach(input => {
-        // 仅禁用暂未开放的模式
-        if (input.value === MODE_CUSTOM) {
-            input.disabled = true;
-        }
+        // 当前所有模式都可用，保留初始禁用状态
         modeDisabledMap.set(input, input.disabled);
     });
 }
@@ -1028,6 +1066,10 @@ function loadMode() {
 
 function loadBestRecord() {
     // 按模式读取最佳纪录
+    if (currentMode === MODE_CUSTOM) {
+        bestRecordMs = null;
+        return;
+    }
     const key = currentMode === MODE_TIME_LIMIT ? BEST_STORAGE_KEY_TIME_LIMIT : BEST_STORAGE_KEY_APPLES_40;
     const saved = localStorage.getItem(key);
     if (saved === null || saved === "") {
@@ -1095,12 +1137,19 @@ function updateModeStyling() {
     // 根据模式调整高亮与动效目标
     applesValueEl.classList.remove("is-highlight");
     scoreValueEl.classList.remove("is-highlight");
+    if (bestItemEl) {
+        bestItemEl.style.display = "";
+    }
     if (currentMode === MODE_APPLES_40) {
         applesValueEl.classList.add("is-highlight");
         return;
     }
     if (currentMode === MODE_TIME_LIMIT) {
         scoreValueEl.classList.add("is-highlight");
+        return;
+    }
+    if (currentMode === MODE_CUSTOM && bestItemEl) {
+        bestItemEl.style.display = "none";
     }
 }
 
@@ -1113,15 +1162,24 @@ function updateRuleOverlay() {
     if (currentMode === MODE_APPLES_40) {
         ruleTitleEl.textContent = dict.ruleTitle40;
         ruleDescEl.textContent = dict.ruleDesc40;
+        if (ruleHintEl) {
+            ruleHintEl.textContent = dict.ruleHint;
+        }
         return;
     }
     if (currentMode === MODE_TIME_LIMIT) {
         ruleTitleEl.textContent = dict.ruleTitleTime;
         ruleDescEl.textContent = dict.ruleDescTime;
+        if (ruleHintEl) {
+            ruleHintEl.textContent = dict.ruleHint;
+        }
         return;
     }
     ruleTitleEl.textContent = dict.ruleTitleCustom;
     ruleDescEl.textContent = dict.ruleDescCustom;
+    if (ruleHintEl) {
+        ruleHintEl.textContent = dict.ruleHint;
+    }
 }
 
 function showRuleOverlay() {

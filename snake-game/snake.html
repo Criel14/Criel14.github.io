@@ -44,8 +44,8 @@
                             <input type="radio" name="gameMode" value="timeLimit">
                             <span data-i18n="modeTime">限时打分</span>
                         </label>
-                        <label class="mode-option mode-btn mode-option--disabled">
-                            <input type="radio" name="gameMode" value="custom" disabled>
+                        <label class="mode-option mode-btn">
+                            <input type="radio" name="gameMode" value="custom">
                             <span data-i18n="modeCustom">自由模式（暂无）</span>
                         </label>
                     </div>
@@ -63,6 +63,7 @@
                     <div class="rule-card">
                         <div class="rule-title" id="ruleTitle">40苹果竞速</div>
                         <div class="rule-desc" id="ruleDesc">尽可能快地吃下40个苹果</div>
+                        <div class="rule-hint" id="ruleHint">按下Enter开始游戏</div>
                     </div>
                 </div>
                 <div class="board-wrap">
@@ -81,7 +82,6 @@
                     <div class="stats-value time-value" id="timeValue">
                         <span class="time-main">0:00</span><span class="time-ms">.000</span>
                     </div>
-                    <div class="stats-sub status-text" id="resultStatus" data-i18n="notFinished">未完成</div>
                 </div>
                 <div class="stats-item">
                     <div class="stats-label" data-i18n="scoreLabel">分数</div>
@@ -95,10 +95,11 @@
                     <div class="stats-label" data-i18n="scorePerAppleLabel">分数/苹果</div>
                     <div class="stats-value ratio-value" id="ratioValue">0.00</div>
                 </div>
-                <div class="stats-item">
+                <div class="stats-item" id="bestItem">
                     <div class="stats-label" data-i18n="bestLabel">最佳纪录</div>
                     <div class="stats-value best-value" id="bestValue">--</div>
                     <div class="stats-sub personal-best" id="bestBadge" data-i18n="personalBest">PERSONAL BEST</div>
+                    <div class="stats-sub status-text" id="resultStatus" data-i18n="notFinished">未完成</div>
                 </div>
             </aside>
         </div>
