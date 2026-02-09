@@ -38,15 +38,15 @@
                     <div class="mode-options">
                         <label class="mode-option mode-btn">
                             <input type="radio" name="gameMode" value="apples40" checked>
-                            <span data-i18n="mode40">40 Apples</span>
+                            <span data-i18n="mode40">40苹果竞速</span>
                         </label>
                         <label class="mode-option mode-btn">
                             <input type="radio" name="gameMode" value="timeLimit">
-                            <span data-i18n="modeTime">限时打分（2分钟）</span>
+                            <span data-i18n="modeTime">限时打分</span>
                         </label>
                         <label class="mode-option mode-btn mode-option--disabled">
                             <input type="radio" name="gameMode" value="custom" disabled>
-                            <span data-i18n="modeCustom">自定义模式（暂定）</span>
+                            <span data-i18n="modeCustom">自由模式（暂无）</span>
                         </label>
                     </div>
                 </aside>
@@ -59,6 +59,12 @@
                 <header class="card-header">
                     <h1 class="main-title" data-i18n="gameTitle">Snake Game</h1>
                 </header>
+                <div id="ruleOverlay" class="rule-overlay" aria-live="polite">
+                    <div class="rule-card">
+                        <div class="rule-title" id="ruleTitle">40苹果竞速</div>
+                        <div class="rule-desc" id="ruleDesc">尽可能快地吃下40个苹果</div>
+                    </div>
+                </div>
                 <div class="board-wrap">
                     <div id="board" class="board" aria-label="Snake game board"></div>
                 </div>

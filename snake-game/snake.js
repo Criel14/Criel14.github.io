@@ -15,6 +15,9 @@ const bestBadgeEl = document.getElementById("bestBadge");
 const resultStatusEl = document.getElementById("resultStatus");
 const graceWrapEl = document.getElementById("graceWrap");
 const graceBarEl = document.getElementById("graceBar");
+const ruleOverlayEl = document.getElementById("ruleOverlay");
+const ruleTitleEl = document.getElementById("ruleTitle");
+const ruleDescEl = document.getElementById("ruleDesc");
 const i18nNodes = document.querySelectorAll("[data-i18n]");
 
 // 场地边长
@@ -89,12 +92,18 @@ const I18N_MAP = {
         applesLabel: "苹果",
         scorePerAppleLabel: "分数/苹果",
         modeTitle: "游戏模式",
-        mode40: "40 Apples（竞速）",
-        modeTime: "限时打分（2分钟）",
-        modeCustom: "自定义模式（暂定）",
+        mode40: "40苹果竞速",
+        modeTime: "限时打分",
+        modeCustom: "自由模式（暂无）",
         bestLabel: "最佳纪录",
         personalBest: "PERSONAL BEST",
         notFinished: "未完成",
+        ruleTitle40: "40苹果竞速",
+        ruleDesc40: "尽可能快地吃下40个苹果",
+        ruleTitleTime: "限时打分",
+        ruleDescTime: "在2分钟内获得尽可能高的分数",
+        ruleTitleCustom: "自由模式（暂无）",
+        ruleDescCustom: "该模式暂未开放",
         resume: "继续游戏"
     },
     en: {
@@ -114,12 +123,18 @@ const I18N_MAP = {
         applesLabel: "Apples",
         scorePerAppleLabel: "Score/Apple",
         modeTitle: "Game Mode",
-        mode40: "40 Apples (Speedrun)",
-        modeTime: "Time Attack (2 min)",
-        modeCustom: "Custom (TBD)",
+        mode40: "40 Apples Speedrun",
+        modeTime: "Time Attack",
+        modeCustom: "Free Mode (TBD)",
         bestLabel: "Best Record",
         personalBest: "PERSONAL BEST",
         notFinished: "Not Finished",
+        ruleTitle40: "40 Apples Speedrun",
+        ruleDesc40: "Eat 40 apples as fast as possible",
+        ruleTitleTime: "Time Attack",
+        ruleDescTime: "Score as high as possible in 2 minutes",
+        ruleTitleCustom: "Free Mode (TBD)",
+        ruleDescCustom: "This mode is not available yet",
         resume: "Resume"
     }
 };
@@ -137,6 +152,7 @@ function init() {
     loadBestRecord();
     updateBestDisplay();
     updateModeStyling();
+    updateRuleOverlay();
     resetGame();
 }
 
@@ -186,6 +202,7 @@ function resetGame() {
     elapsedMs = 0;
     remainingMs = currentMode === MODE_TIME_LIMIT ? TIME_LIMIT_MS : 0;
     updateTime();
+    updateRuleOverlay();
     snake = [
         { x: 4, y: 5 },
         { x: 3, y: 5 },
@@ -210,6 +227,7 @@ function startGame() {
     clearGrace();
     clearHardDrop();
     updatePauseButton();
+    hideRuleOverlay();
     runLoop();
     startTimer();
 }
@@ -226,6 +244,7 @@ function togglePause() {
         resumeGrace();
         resumeHardDrop();
         updatePauseButton();
+        hideRuleOverlay();
         return;
     }
     isPaused = true;
@@ -234,6 +253,7 @@ function togglePause() {
     pauseGrace();
     pauseHardDrop();
     updatePauseButton();
+    showRuleOverlay();
 }
 
 function endGame() {
@@ -264,11 +284,13 @@ function finishGame(result) {
         } else {
             showResultStatus();
         }
+        showRuleOverlay();
         return;
     }
     if (currentMode === MODE_TIME_LIMIT) {
         updateBestRecordIfNeeded(score);
         hideResultStatus();
+        showRuleOverlay();
     }
 }
 
@@ -657,6 +679,7 @@ function applyI18n() {
             node.textContent = dict[key];
         }
     });
+    updateRuleOverlay();
     updatePauseButton();
 }
 
@@ -985,6 +1008,7 @@ function handleModeChange(event) {
     loadBestRecord();
     updateBestDisplay();
     updateModeStyling();
+    updateRuleOverlay();
     resetGame();
 }
 
@@ -1078,6 +1102,42 @@ function updateModeStyling() {
     if (currentMode === MODE_TIME_LIMIT) {
         scoreValueEl.classList.add("is-highlight");
     }
+}
+
+function updateRuleOverlay() {
+    // 根据模式刷新规则提示
+    if (!ruleTitleEl || !ruleDescEl) {
+        return;
+    }
+    const dict = I18N_MAP[currentLang];
+    if (currentMode === MODE_APPLES_40) {
+        ruleTitleEl.textContent = dict.ruleTitle40;
+        ruleDescEl.textContent = dict.ruleDesc40;
+        return;
+    }
+    if (currentMode === MODE_TIME_LIMIT) {
+        ruleTitleEl.textContent = dict.ruleTitleTime;
+        ruleDescEl.textContent = dict.ruleDescTime;
+        return;
+    }
+    ruleTitleEl.textContent = dict.ruleTitleCustom;
+    ruleDescEl.textContent = dict.ruleDescCustom;
+}
+
+function showRuleOverlay() {
+    if (!ruleOverlayEl) {
+        return;
+    }
+    if (!isRunning) {
+        ruleOverlayEl.classList.remove("is-hidden");
+    }
+}
+
+function hideRuleOverlay() {
+    if (!ruleOverlayEl) {
+        return;
+    }
+    ruleOverlayEl.classList.add("is-hidden");
 }
 
 function updatePauseButton() {

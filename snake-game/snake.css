@@ -57,6 +57,7 @@ body {
 
 .board-card {
     padding: 18px 18px 22px;
+    position: relative;
 }
 
 .card-header {
@@ -292,6 +293,45 @@ body {
     justify-content: center;
     align-items: center;
     padding: 6px;
+}
+
+.rule-overlay {
+    position: absolute;
+    top: 48%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(520px, 70vw);
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.rule-overlay.is-hidden {
+    display: none;
+}
+
+.rule-card {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px 18px;
+    text-align: center;
+    box-shadow: 0 12px 30px rgba(22, 56, 68, 0.12);
+    max-width: 100%;
+}
+
+.rule-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #2b7a6b;
+    margin-bottom: 6px;
+}
+
+.rule-desc {
+    font-size: 0.95rem;
+    color: var(--muted);
+    font-weight: 600;
 }
 
 .grace-wrap {
