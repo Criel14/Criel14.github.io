@@ -33,6 +33,23 @@
                         </a>
                     </div>
                 </aside>
+                <aside class="panel-card mode-panel">
+                    <div class="panel-title" data-i18n="modeTitle">游戏模式</div>
+                    <div class="mode-options">
+                        <label class="mode-option mode-btn">
+                            <input type="radio" name="gameMode" value="apples40" checked>
+                            <span data-i18n="mode40">40 Apples</span>
+                        </label>
+                        <label class="mode-option mode-btn mode-option--disabled">
+                            <input type="radio" name="gameMode" value="timeLimit" disabled>
+                            <span data-i18n="modeTime">限时打分（2分钟）</span>
+                        </label>
+                        <label class="mode-option mode-btn mode-option--disabled">
+                            <input type="radio" name="gameMode" value="custom" disabled>
+                            <span data-i18n="modeCustom">自定义模式（暂定）</span>
+                        </label>
+                    </div>
+                </aside>
                 <aside class="panel-card tips-card">
                     <div class="tip-title" data-i18n="tipsTitle">提示</div>
                     <div class="tip-text" data-i18n="tipsText">W / A / S / D 移动</div>
@@ -44,6 +61,11 @@
                 </header>
                 <div class="board-wrap">
                     <div id="board" class="board" aria-label="Snake game board"></div>
+                </div>
+                <div id="graceWrap" class="grace-wrap" aria-live="polite">
+                    <div class="grace-track">
+                        <div id="graceBar" class="grace-bar"></div>
+                    </div>
                 </div>
             </section>
             <aside class="panel-card stats">
@@ -57,6 +79,12 @@
                 <div class="stats-item">
                     <div class="stats-label" data-i18n="scoreLabel">分数</div>
                     <div class="stats-value score-value" id="scoreValue">0</div>
+                </div>
+                <div class="stats-item">
+                    <div class="stats-label" data-i18n="bestLabel">最佳纪录</div>
+                    <div class="stats-value best-value" id="bestValue">--</div>
+                    <div class="stats-sub personal-best" id="bestBadge" data-i18n="personalBest">PERSONAL BEST</div>
+                    <div class="stats-sub status-text" id="resultStatus" data-i18n="notFinished">未完成</div>
                 </div>
             </aside>
         </div>
