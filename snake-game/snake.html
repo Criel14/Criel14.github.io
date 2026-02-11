@@ -56,7 +56,10 @@
                 </aside>
                 <aside class="panel-card tips-card">
                     <div class="tip-title" data-i18n="tipsTitle">提示</div>
-                    <div class="tip-text" data-i18n="tipsText">W / A / S / D 移动</div>
+                    <div class="tip-text">
+                        <span data-i18n="tipsText">W / A / S / D 移动</span>
+                        <button id="guideOpenBtn" class="tip-link" type="button" data-i18n="guideLink">详细</button>
+                    </div>
                 </aside>
             </div>
             <section class="panel-card board-card">
@@ -108,6 +111,59 @@
             </aside>
         </div>
     </main>
+    <div id="guideModal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="guideTitle">
+        <div class="modal-backdrop" data-modal-close></div>
+        <div class="modal-panel" role="document">
+            <div class="modal-header">
+                <h2 id="guideTitle" class="modal-title" data-i18n="guideTitle">游戏指南</h2>
+                <button class="btn btn-ghost btn-icon modal-close" type="button" data-modal-close aria-label="Close">
+                    <span class="iconify" data-icon="mdi:close" aria-hidden="true"></span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <section class="guide-section">
+                    <div class="guide-title" data-i18n="guideControlsTitle">操作</div>
+                    <p class="guide-text">
+                        <span class="guide-key" data-i18n="guideControlsKey1">W / A / S / D</span>
+                        <span data-i18n="guideControlsDesc1">移动</span>
+                        <span class="guide-sep">，</span>
+                        <span class="guide-key" data-i18n="guideControlsKey2">Space</span>
+                        <span data-i18n="guideControlsDesc2">冲刺。</span>
+                    </p>
+                </section>
+                <section class="guide-section">
+                    <div class="guide-title" data-i18n="guideMechanicsTitle">特殊机制</div>
+                    <p class="guide-text">
+                        <span class="guide-key" data-i18n="guideMechanicsKey1">1. 碰撞缓冲：</span>
+                        <span data-i18n="guideMechanicsDesc1">撞击后不会立刻结束，进入短暂计时。计时结束前成功转向避开碰撞则继续，否则结束。</span>
+                    </p>
+                    <p class="guide-text">
+                        <span class="guide-key" data-i18n="guideMechanicsKey2">2. 锁定冲刺：</span>
+                        <span data-i18n="guideMechanicsDesc2">冲刺采用一冲到底，并取消碰撞缓冲，直至撞到苹果、墙壁或蛇身。</span>
+                    </p>
+                </section>
+                <section class="guide-section">
+                    <div class="guide-title" data-i18n="guideScoreTitle">得分机制</div>
+                    <p class="guide-text" data-i18n="guideScoreText">正常移动吃下 1 个苹果得 1 分；锁定冲刺吃到苹果可额外获得冲刺行进距离的分数。</p>
+                </section>
+                <section class="guide-section">
+                    <div class="guide-title" data-i18n="guideModesTitle">游戏模式</div>
+                    <p class="guide-text">
+                        <span class="guide-key" data-i18n="guideModesKey1">1. 40 苹果竞速：</span>
+                        <span data-i18n="guideModesDesc1">尽可能快地吃下 40 个苹果。</span>
+                    </p>
+                    <p class="guide-text">
+                        <span class="guide-key" data-i18n="guideModesKey2">2. 限时打分：</span>
+                        <span data-i18n="guideModesDesc2">2 分钟内获得尽可能高的分数。</span>
+                    </p>
+                    <p class="guide-text">
+                        <span class="guide-key" data-i18n="guideModesKey3">3. 自由模式：</span>
+                        <span data-i18n="guideModesDesc3">无时间限制，随意游玩。</span>
+                    </p>
+                </section>
+            </div>
+        </div>
+    </div>
     <script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script>
     <script src="snake.js"></script>
 </body>

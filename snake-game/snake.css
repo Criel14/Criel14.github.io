@@ -330,6 +330,38 @@ body.theme-dark .mode-option input:checked + span {
     color: var(--text);
 }
 
+.tip-text {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.tip-link {
+    border: none;
+    background: transparent;
+    color: var(--accent);
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    border-bottom: 1px solid transparent;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.tip-link:hover {
+    color: var(--accent-hover);
+    border-color: currentColor;
+}
+
+body.theme-dark .tip-link {
+    color: #8fd6cb;
+}
+
+body.theme-dark .tip-link:hover {
+    color: #9ee2d8;
+    border-color: currentColor;
+}
+
 .board-wrap {
     display: flex;
     justify-content: center;
@@ -608,6 +640,91 @@ body.theme-dark .cell.apple.ghost {
 
 .stats-value.is-highlight {
     color: #d9a21b;
+}
+
+.modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 30;
+}
+
+.modal.is-open {
+    display: flex;
+}
+
+.modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(9, 14, 18, 0.45);
+}
+
+.modal-panel {
+    position: relative;
+    width: min(640px, 92vw);
+    max-height: 82vh;
+    overflow: hidden;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    box-shadow: 0 22px 50px rgba(8, 18, 24, 0.28);
+    padding: 16px 18px 18px;
+    display: grid;
+    gap: 12px;
+    z-index: 1;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.modal-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.modal-close {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+}
+
+.modal-body {
+    overflow: auto;
+    display: grid;
+    gap: 14px;
+    padding-right: 4px;
+}
+
+.guide-section {
+    display: grid;
+    gap: 6px;
+}
+
+.guide-title {
+    font-weight: 700;
+    color: var(--text);
+    font-size: 0.98rem;
+}
+
+.guide-text {
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.guide-key {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+body.modal-open {
+    overflow: hidden;
 }
 
 @media (max-width: 700px) {

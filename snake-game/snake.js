@@ -22,6 +22,8 @@ const ruleOverlayEl = document.getElementById("ruleOverlay");
 const ruleTitleEl = document.getElementById("ruleTitle");
 const ruleDescEl = document.getElementById("ruleDesc");
 const ruleHintEl = document.getElementById("ruleHint");
+const guideOpenBtn = document.getElementById("guideOpenBtn");
+const guideModalEl = document.getElementById("guideModal");
 const i18nNodes = document.querySelectorAll("[data-i18n]");
 
 // 场地边长
@@ -91,6 +93,7 @@ const I18N_MAP = {
         language: "语言：中文",
         tipsTitle: "提示",
         tipsText: "W / A / S / D 移动，SPACE 冲刺",
+        guideLink: "详细",
         gameTitle: "Snake Game",
         statsTitle: "统计",
         timeLabel: "时间",
@@ -111,7 +114,27 @@ const I18N_MAP = {
         ruleTitleCustom: "自由模式",
         ruleDescCustom: "自由游玩，没有时间限制",
         ruleHint: "按下Enter开始游戏",
-        resume: "继续游戏"
+        resume: "继续游戏",
+        guideTitle: "游戏指南",
+        guideControlsTitle: "操作",
+        guideControlsKey1: "W / A / S / D",
+        guideControlsDesc1: "移动",
+        guideControlsKey2: "Space",
+        guideControlsDesc2: "冲刺。",
+        guideMechanicsTitle: "特殊机制",
+        guideMechanicsKey1: "1. 碰撞缓冲：",
+        guideMechanicsDesc1: "撞击后不会立刻结束，进入短暂计时。计时结束前成功转向避开碰撞则继续，否则结束。",
+        guideMechanicsKey2: "2. 锁定冲刺：",
+        guideMechanicsDesc2: "冲刺采用一冲到底，并取消碰撞缓冲，直至撞到苹果、墙壁或蛇身。",
+        guideScoreTitle: "得分机制",
+        guideScoreText: "正常移动吃下 1 个苹果得 1 分；锁定冲刺吃到苹果可额外获得冲刺行进距离的分数。",
+        guideModesTitle: "游戏模式",
+        guideModesKey1: "1. 40 苹果竞速：",
+        guideModesDesc1: "尽可能快地吃下 40 个苹果。",
+        guideModesKey2: "2. 限时打分：",
+        guideModesDesc2: "2 分钟内获得尽可能高的分数。",
+        guideModesKey3: "3. 自由模式：",
+        guideModesDesc3: "无时间限制，随意游玩。"
     },
     en: {
         controlsTitle: "Controls",
@@ -123,6 +146,7 @@ const I18N_MAP = {
         language: "Language: English",
         tipsTitle: "Tips",
         tipsText: "W / A / S / D to move",
+        guideLink: "Details",
         gameTitle: "Snake Game",
         statsTitle: "Stats",
         timeLabel: "Time",
@@ -143,7 +167,27 @@ const I18N_MAP = {
         ruleTitleCustom: "Free Mode",
         ruleDescCustom: "Free play with no time limit",
         ruleHint: "Press Enter to start",
-        resume: "Resume"
+        resume: "Resume",
+        guideTitle: "Game Guide",
+        guideControlsTitle: "Controls",
+        guideControlsKey1: "W / A / S / D",
+        guideControlsDesc1: "to move",
+        guideControlsKey2: "Space",
+        guideControlsDesc2: "to dash.",
+        guideMechanicsTitle: "Special Mechanics",
+        guideMechanicsKey1: "1. Collision buffer:",
+        guideMechanicsDesc1: "after a hit, the game doesn't end immediately and a short timer starts. If you turn away before it ends, you survive; otherwise the game ends.",
+        guideMechanicsKey2: "2. Locked dash:",
+        guideMechanicsDesc2: "dashes run to completion with no collision buffer, stopping only when hitting an apple, wall, or the snake.",
+        guideScoreTitle: "Scoring",
+        guideScoreText: "Normal movement gives 1 point per apple. Dashing into an apple adds bonus points based on dash distance.",
+        guideModesTitle: "Modes",
+        guideModesKey1: "1. 40 Apples Speedrun:",
+        guideModesDesc1: "eat 40 apples as fast as possible.",
+        guideModesKey2: "2. Time Attack:",
+        guideModesDesc2: "score as much as possible in 2 minutes.",
+        guideModesKey3: "3. Free Mode:",
+        guideModesDesc3: "no time limit."
     }
 };
 
@@ -187,6 +231,12 @@ function bindEvents() {
     pauseBtn.addEventListener("click", togglePause);
     endBtn.addEventListener("click", endGame);
     langToggleBtn.addEventListener("click", toggleLanguage);
+    if (guideOpenBtn) {
+        guideOpenBtn.addEventListener("click", openGuide);
+    }
+    if (guideModalEl) {
+        guideModalEl.addEventListener("click", handleGuideClose);
+    }
     if (themeToggleBtn) {
         themeToggleBtn.addEventListener("click", toggleTheme);
     }
@@ -474,6 +524,13 @@ function updateScoreRatio() {
 
 function handleKey(event) {
     // 键盘控制：W/A/S/D + 方向键
+    if (isGuideOpen()) {
+        if (event.key === "Escape") {
+            event.preventDefault();
+            closeGuide();
+        }
+        return;
+    }
     const key = event.key.toLowerCase();
     if (event.key === "Enter") {
         event.preventDefault();
@@ -758,6 +815,39 @@ function applyTheme() {
         } else if (window.Iconify && typeof window.Iconify.replace === "function") {
             window.Iconify.replace(themeIconEl);
         }
+    }
+}
+
+function isGuideOpen() {
+    return guideModalEl && guideModalEl.classList.contains("is-open");
+}
+
+function openGuide() {
+    if (!guideModalEl) {
+        return;
+    }
+    guideModalEl.classList.add("is-open");
+    guideModalEl.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-open");
+}
+
+function closeGuide() {
+    if (!guideModalEl) {
+        return;
+    }
+    guideModalEl.classList.remove("is-open");
+    guideModalEl.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modal-open");
+}
+
+function handleGuideClose(event) {
+    const target = event.target;
+    if (!target) {
+        return;
+    }
+    const closeTrigger = target.closest("[data-modal-close]");
+    if (closeTrigger) {
+        closeGuide();
     }
 }
 
