@@ -7,6 +7,8 @@ const startBtn = document.getElementById("startBtn");
 const pauseBtn = document.getElementById("pauseBtn");
 const endBtn = document.getElementById("endBtn");
 const langToggleBtn = document.getElementById("langToggleBtn");
+const themeToggleBtn = document.getElementById("themeToggleBtn");
+const themeIconEl = document.getElementById("themeIcon");
 const speedRange = document.getElementById("speedRange");
 const speedValueEl = document.getElementById("speedValue");
 const modeInputs = Array.from(document.querySelectorAll("input[name='gameMode']"));
@@ -30,6 +32,7 @@ const SPEED_MIN = 30;
 const SPEED_MAX = 500;
 const SPEED_STEP = 10;
 const SPEED_STORAGE_KEY = "snake_speed_ms";
+const THEME_STORAGE_KEY = "snake_theme";
 
 // 模式常量与本地存储键
 const MODE_APPLES_40 = "apples40";
@@ -67,6 +70,7 @@ let elapsedMs = 0;
 let remainingMs = 0;
 let currentLang = "zh";
 const LANG_STORAGE_KEY = "snake_lang";
+let currentTheme = "light";
 let currentMode = MODE_APPLES_40;
 let bestRecordMs = null;
 let modeDisabledMap = new Map();
@@ -86,7 +90,7 @@ const I18N_MAP = {
         speedHint: "范围 500ms - 30ms",
         language: "语言：中文",
         tipsTitle: "提示",
-        tipsText: "W / A / S / D 移动",
+        tipsText: "W / A / S / D 移动，SPACE 冲刺",
         gameTitle: "Snake Game",
         statsTitle: "统计",
         timeLabel: "时间",
@@ -150,6 +154,8 @@ function init() {
     setControlLock(false);
     loadLanguage();
     applyI18n();
+    loadTheme();
+    applyTheme();
     initSpeedControl();
     initModeControl();
     loadMode();
@@ -181,6 +187,9 @@ function bindEvents() {
     pauseBtn.addEventListener("click", togglePause);
     endBtn.addEventListener("click", endGame);
     langToggleBtn.addEventListener("click", toggleLanguage);
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener("click", toggleTheme);
+    }
     speedRange.addEventListener("input", handleSpeedChange);
     modeInputs.forEach(input => {
         input.addEventListener("change", handleModeChange);
@@ -722,6 +731,34 @@ function applyI18n() {
     });
     updateRuleOverlay();
     updatePauseButton();
+}
+
+function toggleTheme() {
+    currentTheme = currentTheme === "dark" ? "light" : "dark";
+    localStorage.setItem(THEME_STORAGE_KEY, currentTheme);
+    applyTheme();
+}
+
+function loadTheme() {
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    if (savedTheme === "dark" || savedTheme === "light") {
+        currentTheme = savedTheme;
+    }
+}
+
+function applyTheme() {
+    document.body.classList.toggle("theme-dark", currentTheme === "dark");
+    if (themeIconEl) {
+        themeIconEl.setAttribute(
+            "data-icon",
+            currentTheme === "dark" ? "material-symbols:clear-day" : "material-symbols:clear-night"
+        );
+        if (window.Iconify && typeof window.Iconify.scan === "function") {
+            window.Iconify.scan(themeIconEl);
+        } else if (window.Iconify && typeof window.Iconify.replace === "function") {
+            window.Iconify.replace(themeIconEl);
+        }
+    }
 }
 
 function updateSpeedValue() {
