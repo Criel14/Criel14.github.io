@@ -1,4 +1,4 @@
-﻿:root {
+:root {
     --bg-1: #e6f5f6;
     --bg-2: #f1f6ec;
     --card: #ffffff;
@@ -533,6 +533,11 @@ body.theme-dark .cell.head {
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35), 0 0 8px rgba(99, 183, 123, 0.55) !important;
 }
 
+body.theme-dark .cell.head.danger {
+    background: #f3cf5e !important;
+    box-shadow: inset 0 0 0 1px rgba(176, 128, 28, 0.45), 0 0 8px rgba(243, 207, 94, 0.35) !important;
+}
+
 body.theme-dark .cell.apple {
     background: var(--apple) !important;
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3), 0 0 6px rgba(242, 139, 139, 0.5) !important;
@@ -791,3 +796,4 @@ body.modal-open {
         width: 100%;
     }
 }
+
