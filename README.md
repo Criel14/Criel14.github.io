@@ -95,6 +95,4 @@ Netlify (国内直接访问) : https://criel-puzzle-game.netlify.app/
 
 # 支持我
 
-如果对你有帮助，我非常荣幸，玩得开心！你的支持是我进步的动力。
-
-![](docs/images/wechat-pay.jpg)
+如果对你有帮助，我非常荣幸，玩得开心！你的[支持](https://github.com/Criel14/Criel14.github.io/blob/main/docs/images/wechat-pay.jpg)是我进步的动力。
