@@ -3,15 +3,44 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Criel 的个人站点" />
-    <title>Criel</title>
+    <meta name="description" content="Criel 的个人游戏站：数字华容道与贪吃蛇。" />
+    <title>Criel's Game Space</title>
     <link rel="stylesheet" href="/src/shared/styles/base.css" />
+    <link rel="stylesheet" href="/src/shared/styles/home.css" />
   </head>
   <body>
     <main class="home">
-      <h1>Criel</h1>
-      <p>个人站点正在重构中。</p>
-      <a href="https://github.com/Criel14" target="_blank" rel="noreferrer">GitHub @Criel14</a>
+      <header class="home-header">
+        <p class="home-kicker">Criel / Game Space</p>
+        <h1 class="home-title">两个小游戏</h1>
+        <p class="home-intro">无需登录，打开就能玩。成绩保存在当前浏览器。</p>
+      </header>
+
+      <nav class="game-list" aria-label="游戏列表">
+        <a class="game-card" href="/puzzle-game/puzzle.html">
+          <span class="game-index">01</span>
+          <span class="game-body">
+            <span class="game-title">数字华容道</span>
+            <span class="game-desc">2×2 到 10×10，滑动、点击或键盘操作。</span>
+          </span>
+          <span class="game-arrow" aria-hidden="true">→</span>
+        </a>
+
+        <a class="game-card" href="/snake-game/snake.html">
+          <span class="game-index">02</span>
+          <span class="game-body">
+            <span class="game-title">贪吃蛇</span>
+            <span class="game-desc">碰撞缓冲、锁定冲刺，三种模式。</span>
+          </span>
+          <span class="game-arrow" aria-hidden="true">→</span>
+        </a>
+      </nav>
+
+      <footer class="home-footer">
+        <a href="https://github.com/Criel14" target="_blank" rel="noreferrer">GitHub</a>
+        <span aria-hidden="true">·</span>
+        <a href="mailto:chencriel@qq.com">chencriel@qq.com</a>
+      </footer>
     </main>
   </body>
 </html>

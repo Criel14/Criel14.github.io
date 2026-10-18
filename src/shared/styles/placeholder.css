@@ -1,0 +1,61 @@
+.placeholder {
+  width: min(100% - 3rem, 640px);
+  margin: 0 auto;
+  padding: clamp(2rem, 8vh, 4rem) 0;
+}
+
+.placeholder-back {
+  display: inline-block;
+  font-size: 0.8125rem;
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+}
+
+.placeholder-box {
+  margin-top: 2rem;
+  padding: clamp(1.5rem, 6vw, 3rem);
+  border: 1px solid var(--line);
+}
+
+.placeholder-label {
+  margin: 0 0 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.placeholder-title {
+  margin: 0;
+  font-size: clamp(2rem, 7vw, 3rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.placeholder-text {
+  margin: 1rem 0 0;
+  color: var(--muted);
+}
+
+.placeholder-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #ddd;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 520px) {
+  .placeholder {
+    width: min(100% - 2rem, 640px);
+  }
+}
