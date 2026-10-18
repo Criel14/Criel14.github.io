@@ -10,6 +10,7 @@
 ## 开发
 
 - 环境：Node.js 22+、npm。
+- **不要自动启动开发服务器（`npm run dev`）或预览服务器（`npm run preview`）**；需要看效果时由用户自己启动，除非用户明确要求。
 - `npm install` 安装依赖。
 - `npm run dev` 启动 Vite 开发服务器。
 - `npm run build` 执行 TypeScript 类型检查并构建到 `dist/`。
