@@ -155,21 +155,40 @@ export interface SessionResult {
   readonly retryOf?: string;
 }
 
-/**
- * 颜色主题。
- * layerColors / layerFontColors 长度固定为 18，对应 L 形分层的层 1–18；
- * 颜色统一为 #rrggbb。blankColor 允许 transparent 或 #rrggbb。
- */
-export interface Theme {
-  readonly id: string;
-  readonly name: string;
-  readonly builtin: boolean;
-  readonly layerColors: readonly string[];
-  readonly layerFontColors: readonly string[];
+/** 着色模式对象共有的字段。 */
+interface ColorModeFields {
+  /**
+   * 调色板长度由 mode 决定：
+   * - layer：18，索引 0–17 对应层 1–18；
+   * - row：10，索引 0–9 对应数字块原本所属的第 1–10 行；
+   * - fixed：99，索引 0–98 对应数字 1–99。
+   */
+  readonly palette: readonly string[];
+  /** 空白格背景色；默认 transparent。 */
   readonly blankColor: string;
+  /** 'auto' 按背景亮度自动选黑/白；否则为 #rrggbb。 */
+  readonly fontColor: string;
 }
 
-/** 棋盘尺寸比例；以实际格子边长为基准计算，不保存固定像素值。 */
+/** 降阶：现有 L 形分层，颜色绑定数字块。 */
+export interface LayerColorMode extends ColorModeFields {
+  readonly mode: 'layer';
+}
+
+/** 按行：按数字块原本所属行着色，颜色跟随数字块。 */
+export interface RowColorMode extends ColorModeFields {
+  readonly mode: 'row';
+}
+
+/** 固定色：每个数字单独着色，与阶数和位置无关。 */
+export interface FixedColorMode extends ColorModeFields {
+  readonly mode: 'fixed';
+}
+
+/** 主题的着色模式；一个主题只对应一种模式。 */
+export type ColorMode = LayerColorMode | RowColorMode | FixedColorMode;
+
+/** 某个主题自带的尺寸比例；以实际格子边长为基准计算，不保存固定像素值。 */
 export interface BoardMetrics {
   /** 字号 = 格子边长 × fontSizeRatio，范围 0–1。 */
   readonly fontSizeRatio: number;
@@ -179,11 +198,19 @@ export interface BoardMetrics {
   readonly radiusRatio: number;
 }
 
+/** 统一外观入口：颜色模式和尺寸比例都属于主题。 */
+export interface Theme {
+  readonly id: string;
+  readonly name: string;
+  readonly builtin: boolean;
+  readonly color: ColorMode;
+  readonly metrics: BoardMetrics;
+}
+
 /** 外观状态；activeThemeId 必须能解析到 themes 中的主题，否则回退内置主题。 */
 export interface AppearanceState {
   readonly activeThemeId: string;
   readonly themes: readonly Theme[];
-  readonly metrics: BoardMetrics;
 }
 
 /** 统计页的成绩桶筛选；moveMode 不参与分桶。 */

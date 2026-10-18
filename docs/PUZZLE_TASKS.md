@@ -4,7 +4,7 @@
 >
 > 当前分支：`refactor/vite-ts`
 >
-> 状态：P0 文档已完成，P1 已完成
+> 状态：P0–P2 已完成，P3 待开始
 >
 > 标记：`[ ]` 未开始 / `[~]` 进行中 / `[x]` 已完成 / `[!]` 阻塞
 >
@@ -16,7 +16,7 @@
 | ---- | ------------------------- | ---------- | ----- |
 | P0   | 架构与任务文档            | —          | `[x]` |
 | P1   | 领域类型与 score 共享函数 | P0         | `[x]` |
-| P2   | appearance 纯逻辑         | P1         | `[ ]` |
+| P2   | appearance 纯逻辑         | P1         | `[x]` |
 | P3   | session 纯逻辑            | P1         | `[ ]` |
 | P4   | stats 纯逻辑              | P1         | `[ ]` |
 | P5   | replay 纯逻辑             | P1         | `[ ]` |
@@ -106,7 +106,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P2-0 主题类型重构
 
-- [ ] 文件：`src/games/puzzle/types.ts`
+- [x] 文件：`src/games/puzzle/types.ts`
 - 内容：
   - 新增共享字段接口 `ColorModeFields`（内部），以及 `LayerColorMode`、`RowColorMode`、`FixedColorMode`、`ColorMode`；不引入 `ColorModeKind`。
   - `Theme` 改为统一入口：`id`、`name`、`builtin`、`color: ColorMode`、`metrics: BoardMetrics`。
@@ -119,7 +119,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P2-1 层算法
 
-- [ ] 文件：`src/games/puzzle/core/appearance/layers.ts`、`layers.test.ts`
+- [x] 文件：`src/games/puzzle/core/appearance/layers.ts`、`layers.test.ts`
 - 内容：
   - `getTileLayer(tile, size)`：保留旧版 L 形公式；`tile <= 0` 或越界返回 0。
   - `getLayerCount(size)`：返回 `2 * size - 2`；非法 size 返回 0。
@@ -133,7 +133,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P2-2 内置主题与默认尺寸
 
-- [ ] 文件：`src/games/puzzle/core/appearance/presets.ts`、`presets.test.ts`
+- [x] 文件：`src/games/puzzle/core/appearance/presets.ts`、`presets.test.ts`
 - 内容：
   - `BUILTIN_THEMES`：只保留旧代码的两套降阶主题 `rainbow`、`rainbow-soft`，完整保留 18 层背景色和 metrics。
   - 两套主题的 `color.mode` 均为 `layer`，`palette` 为旧配置的 1–18 层颜色；`blankColor: 'transparent'`，`fontColor: '#ffffff'`。
@@ -150,7 +150,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P2-3 取色与主题克隆
 
-- [ ] 文件：`src/games/puzzle/core/appearance/theme.ts`、`theme.test.ts`
+- [x] 文件：`src/games/puzzle/core/appearance/theme.ts`、`theme.test.ts`
 - 内容：
   - `getTileVisual(tile, size, theme)`：返回 `{ background, color }`；空白块返回 `blankColor` 和 `transparent`。
   - 按 `theme.color.mode` 取色：降阶 `getTileLayer - 1`；按行 `Math.floor((tile - 1) / size)`；固定色 `tile - 1`。
@@ -168,7 +168,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P2-4 主题尺寸比例
 
-- [ ] 文件：`src/games/puzzle/core/appearance/metrics.ts`、`metrics.test.ts`
+- [x] 文件：`src/games/puzzle/core/appearance/metrics.ts`、`metrics.test.ts`
 - 内容：
   - `DEFAULT_METRICS` 或复用 presets。
   - `clampRatio(value, min, max)`。
@@ -182,7 +182,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P2-5 外观状态与公共入口
 
-- [ ] 文件：`src/games/puzzle/core/appearance/appearance.ts`、`appearance.test.ts`、`index.ts`
+- [x] 文件：`src/games/puzzle/core/appearance/appearance.ts`、`appearance.test.ts`、`index.ts`
 - 内容：
   - `createDefaultAppearance()`：两套内置主题 + 默认激活 `rainbow`；不生成空 Theme 占位。
   - `getActiveTheme(appearance)`：找不到时回退第一个内置主题。
