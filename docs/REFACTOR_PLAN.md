@@ -1,6 +1,6 @@
 # 重构计划
 
-> 状态：讨论稿 / 重构起点
+> 状态：阶段 1 进行中（Vite + TypeScript 骨架已搭建）
 >
 > 分支：`refactor/vite-ts`
 >

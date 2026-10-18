@@ -1,136 +1,17 @@
-﻿<!DOCTYPE html>
-<html lang="zh">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Criel's Game Space</title>
-    <style>
-        /* 全局重置 */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        html, body {
-            width: 100%;
-            height: 100%;
-            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-        }
-
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: linear-gradient(135deg, #e0f7fa, #e8f5e9);
-            color: #2a2a2a;
-            text-align: center;
-            padding: 2rem;
-        }
-
-        .container {
-            max-width: 400px;
-            width: 100%;
-        }
-
-        .avatar {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin: 0 auto 1.5rem;
-            border: 4px solid #4db6ac;
-        }
-
-        h1 {
-            font-size: 2rem;
-            font-weight: 600;
-            margin-bottom: 0.6rem;
-        }
-
-        p {
-            font-size: 1rem;
-            margin-bottom: 1.8rem;
-            color: #555;
-        }
-
-        .btn-play {
-            display: inline-block;
-            background: #4db6ac;
-            color: #fff;
-            font-size: 1.15rem;
-            font-weight: 600;
-            width: 220px;
-            padding: 0.8rem 0;
-            text-align: center;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: 0.2s ease;
-            text-decoration: none;
-        }
-
-        .btn-play:hover {
-            background: #66c2b1;
-            transform: translateY(-3px);
-            box-shadow: 0 6px 12px rgba(77,182,172,0.3);
-        }
-
-        .github-link {
-            display: inline-block;
-            margin-top: 1.5rem;
-            font-size: 0.95rem;
-            color: #4db6ac;
-            text-decoration: none;
-            border-bottom: 1px dashed #4db6ac;
-            transition: 0.2s ease;
-        }
-
-        .github-link:hover {
-            color: #388e83;
-            border-bottom-color: #388e83;
-        }
-
-        .btn-stack {
-            display: grid;
-            gap: 12px;
-            margin-bottom: 1.2rem;
-            justify-items: center;
-        }
-
-        @media (max-width: 480px) {
-            h1 {
-                font-size: 1.75rem;
-            }
-            .btn-play {
-                width: 200px;
-                padding: 0.85rem 0;
-            }
-        }
-    </style>
-</head>
-
-<body>
-    <div class="container">
-        <!-- 头像 -->
-        <img class="avatar" src="docs/images/criel-avatar.jpg" alt="Criel Avatar">
-
-        <h1>Hi, I'm Criel!🍊</h1>
-        <p>Welcome to my personal space - explore my projects and ideas.</p>
-
-        <!-- 项目入口 -->
-        <div class="btn-stack">
-            <a class="btn-play" href="puzzle-game/puzzle.html">Play 15 Puzzle →</a>
-            <a class="btn-play" href="snake-game/snake.html">Play Snake →</a>
-        </div>
-
-        <!-- GitHub 个人主页 -->
-        <div>
-            <a class="github-link" href="https://github.com/Criel14" target="_blank">
-                Visit my GitHub @Criel14
-            </a>
-        </div>
-    </div>
-</body>
-
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Criel 的个人站点" />
+    <title>Criel</title>
+    <link rel="stylesheet" href="/src/shared/styles/base.css" />
+  </head>
+  <body>
+    <main class="home">
+      <h1>Criel</h1>
+      <p>个人站点正在重构中。</p>
+      <a href="https://github.com/Criel14" target="_blank" rel="noreferrer">GitHub @Criel14</a>
+    </main>
+  </body>
 </html>

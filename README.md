@@ -5,6 +5,8 @@
 - 🧩 数字华容道
 - 🐍 贪吃蛇
 
+> 当前 `refactor/vite-ts` 分支正在从零重构，以下功能说明暂时保留作为行为参考，页面会逐步迁移。
+
 # 访问地址
 
 网页部署使用Github Pages和Netlify两种，二者内容相同，用户本地数据不互通；
@@ -12,6 +14,23 @@
 Github Pages: https://criel14.github.io/
 
 Netlify (国内直接访问) : https://criel-puzzle-game.netlify.app/
+
+# 本地开发
+
+需要 Node.js 22+ 和 npm。
+
+```bash
+npm install
+npm run dev
+```
+
+常用命令：
+
+- `npm run build`：类型检查并构建到 `dist/`
+- `npm run preview`：预览构建结果
+- `npm run typecheck`：TypeScript 类型检查
+- `npm run lint`：ESLint 检查
+- `npm run format` / `npm run format:check`：Prettier 格式化/检查
 
 <br>
 
@@ -48,8 +67,6 @@ Netlify (国内直接访问) : https://criel-puzzle-game.netlify.app/
 
 ![scoreList-detail](docs/images/scoreList-detail.png)
 
-
-
 <br>
 
 # Snake Game 贪吃蛇
@@ -84,8 +101,6 @@ Netlify (国内直接访问) : https://criel-puzzle-game.netlify.app/
 ![](/docs/images/snake-dark.png)
 
 <br>
-
-
 
 # 反馈
 

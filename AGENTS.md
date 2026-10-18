@@ -7,6 +7,16 @@
 - `docs/REFACTOR_PLAN.md`：重构目标、技术选型、阶段划分与工作方式，动手前先读。
 - `README.md`、`docs/PUZZLE_GAME.md`：现有功能与玩法说明。
 
+## 开发
+
+- 环境：Node.js 22+、npm。
+- `npm install` 安装依赖。
+- `npm run dev` 启动 Vite 开发服务器。
+- `npm run build` 执行 TypeScript 类型检查并构建到 `dist/`。
+- `npm run preview` 预览构建结果。
+- `npm run typecheck`、`npm run lint`、`npm run format`、`npm run format:check` 分别做类型检查、ESLint、Prettier 格式化与检查。
+- `dist/` 是构建产物，不提交。
+
 ## 旧代码参考（只读）
 
 重构前的完整实现保存在 git tag `pre-refactor-2026-10`，并已检出到与主仓库同级的独立 worktree：

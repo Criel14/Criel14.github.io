@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+coverage/
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Test output
+test-results/
+playwright-report/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Logs
+*.log
