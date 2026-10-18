@@ -4,7 +4,7 @@
 >
 > 当前分支：`refactor/vite-ts`
 >
-> 状态：P0 文档已完成；P1 已实现初版，待按固定分组方案调整
+> 状态：P0 文档已完成，P1 已完成
 >
 > 标记：`[ ]` 未开始 / `[~]` 进行中 / `[x]` 已完成 / `[!]` 阻塞
 >
@@ -15,7 +15,7 @@
 | 阶段 | 内容                      | 依赖       | 状态  |
 | ---- | ------------------------- | ---------- | ----- |
 | P0   | 架构与任务文档            | —          | `[x]` |
-| P1   | 领域类型与 score 共享函数 | P0         | `[~]` |
+| P1   | 领域类型与 score 共享函数 | P0         | `[x]` |
 | P2   | appearance 纯逻辑         | P1         | `[ ]` |
 | P3   | session 纯逻辑            | P1         | `[ ]` |
 | P4   | stats 纯逻辑              | P1         | `[ ]` |
@@ -68,7 +68,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P1-1 重建领域类型
 
-- [~] 文件：`src/games/puzzle/types.ts`
+- [x] 文件：`src/games/puzzle/types.ts`
 - 内容：
   - 保留 `PuzzleSize`、`GameMode`、`MoveMode`、`Direction`、`Board`。
   - `MoveRecord.timeMs` 从 `number | null` 改为必填 `number`。
@@ -83,7 +83,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P1-2 score 共享函数
 
-- [~] 文件：`src/games/puzzle/core/score.ts`、`score.test.ts`
+- [x] 文件：`src/games/puzzle/core/score.ts`、`score.test.ts`
 - 内容：
   - `calculateTps(moveCount, durationMs)`：`durationMs <= 0` 返回 0。
   - `compareScores(a, b)`：`finishedAt` 升序，相同按 `id` 升序。

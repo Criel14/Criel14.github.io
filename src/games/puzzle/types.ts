@@ -10,11 +10,222 @@ export type MoveMode = 'click' | 'slide' | 'keyboard';
 /** 方块移动方向；不是空白块移动方向。 */
 export type Direction = 'U' | 'D' | 'L' | 'R';
 
-/** 棋盘按行优先展开，0 表示空白块。 */
+/**
+ * 棋盘按行优先展开，长度必须等于 size²。
+ * 元素是 0..size²-1 的完整排列；0 表示空白块，不参与曼哈顿距离。
+ */
 export type Board = readonly number[];
 
-/** 一次单块移动记录；timeMs 为从开局开始的累计毫秒数。 */
+/**
+ * 一次单块移动记录。
+ * timeMs 是相对本局创建时刻的毫秒数，必须 >= 0，并按数组顺序单调不减。
+ * 使用相对时间而非墙钟，避免系统时间调整破坏回放时间轴。
+ */
 export interface MoveRecord {
-  direction: Direction;
-  timeMs: number | null;
+  readonly direction: Direction;
+  readonly timeMs: number;
+}
+
+/** 固定分组编号：1–10；分组数量固定，不新增、不删除。 */
+export type GroupId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+
+/**
+ * 用户可见的成绩分组；固定 10 个，ID 为 1–10。
+ * 只允许修改名称，不允许新增、删除、排序或复用旧编号。
+ */
+export interface Group {
+  /** 固定编号 1–10；改名不改变 ID。 */
+  readonly id: GroupId;
+  /** 用户可见名称；允许重名，trim 后不能为空，最长 30 字符。 */
+  readonly name: string;
+}
+
+/** 游戏设置；只保存用户选择，不保存当前局进行状态。 */
+export interface GameSettings {
+  readonly size: PuzzleSize;
+  readonly gameMode: GameMode;
+  readonly moveMode: MoveMode;
+  /** 当前选中的分组编号。 */
+  readonly groupId: GroupId;
+  /** 固定 10 个分组，按 ID 1–10 排列；只允许修改 name。 */
+  readonly groups: readonly Group[];
+  readonly customCursor: boolean;
+  readonly minimalUi: boolean;
+}
+
+/**
+ * 已保存的一局成绩，只含无法重新计算的事实字段。
+ * tps、number、ao5/ao12、格式化时间、device 等派生或展示信息都不落库。
+ * groupId 是固定编号 1–10，分组不会新增或删除，因此不需要处理引用失效。
+ */
+export interface ScoreRecord {
+  /** 全局唯一；新成绩使用 crypto.randomUUID()，无该 API 时用带随机后缀的回退实现。 */
+  readonly id: string;
+  readonly size: PuzzleSize;
+  readonly gameMode: GameMode;
+  readonly moveMode: MoveMode;
+  /** 本局所属的固定分组编号 1–10。 */
+  readonly groupId: GroupId;
+  /** 有效用时，单位 ms，必须 > 0；normal 不含观察时间，blind 含观察时间。 */
+  readonly durationMs: number;
+  /** 第一次有效移动前的观察时间，单位 ms，必须 >= 0。 */
+  readonly observeMs: number;
+  /** 步数摘要；必须与对应 ReplayRecord.moves.length 一致。 */
+  readonly moveCount: number;
+  /** 本局打乱，即开局盘面；完成盘面由回放推演，不重复存储。 */
+  readonly scramble: Board;
+  /** 完成时刻，epoch ms。开局时刻由 finishedAt - durationMs 派生，不落库。 */
+  readonly finishedAt: number;
+}
+
+/** 与一条成绩对应的移动序列；与成绩摘要分开存储，统计页无需加载整条录像。 */
+export interface ReplayRecord {
+  readonly scoreId: string;
+  readonly moves: readonly MoveRecord[];
+}
+
+/**
+ * Session 状态机阶段。
+ * observing：尚无有效移动；running：已开始计时；solved：已复原并锁定棋盘。
+ * 无效移动不会改变阶段。
+ */
+export type SessionPhase = 'observing' | 'running' | 'solved';
+
+/**
+ * 创建一局所需的配置。
+ * createdAtEpochMs 是创建时的墙钟时间（epoch ms），只在结算时用于映射 finishedAt；
+ * 计时本身使用调用方注入的单调时钟（页面传 performance.now()）。
+ */
+export interface SessionConfig {
+  readonly size: PuzzleSize;
+  readonly gameMode: GameMode;
+  readonly moveMode: MoveMode;
+  /** 本局所属的固定分组编号 1–10。 */
+  readonly groupId: GroupId;
+  readonly scramble: Board;
+  readonly isRetry: boolean;
+  readonly retryOf?: string;
+  readonly createdAtEpochMs: number;
+}
+
+/** 一局进行中的完整状态；时间字段均为调用方注入的单调时钟毫秒值。 */
+export interface SessionState {
+  readonly config: SessionConfig;
+  readonly board: Board;
+  readonly moves: readonly MoveRecord[];
+  readonly phase: SessionPhase;
+  readonly createdAtMs: number;
+  readonly firstMoveAtMs: number | null;
+  readonly solvedAtMs: number | null;
+}
+
+/** 供 HUD 使用的只读视图；elapsedMs 与 tps 随 nowMs 变化，solved 后冻结。 */
+export interface SessionView {
+  readonly phase: SessionPhase;
+  /** 当前显示用时，单位 ms；normal 第一次移动前为 0。 */
+  readonly elapsedMs: number;
+  /** 第一次有效移动前的观察时间，单位 ms。 */
+  readonly observeMs: number;
+  /** 当前 TPS，使用 elapsedMs 派生。 */
+  readonly tps: number;
+  /** 仅 blind 模式 running 阶段为 true。 */
+  readonly hideNumbers: boolean;
+}
+
+/**
+ * 一局结束时的瞬时结果。
+ * 可以带 startedAt、manhattanDistance 等派生便利字段；
+ * 写入 ScoreRecord 时只保留事实字段，这些派生值不落库。
+ */
+export interface SessionResult {
+  readonly size: PuzzleSize;
+  readonly gameMode: GameMode;
+  readonly moveMode: MoveMode;
+  /** 本局所属的固定分组编号 1–10。 */
+  readonly groupId: GroupId;
+  readonly durationMs: number;
+  readonly observeMs: number;
+  readonly moveCount: number;
+  readonly scramble: Board;
+  readonly moves: readonly MoveRecord[];
+  readonly manhattanDistance: number;
+  readonly startedAt: number;
+  readonly finishedAt: number;
+  readonly isRetry: boolean;
+  readonly retryOf?: string;
+}
+
+/**
+ * 颜色主题。
+ * layerColors / layerFontColors 长度固定为 18，对应 L 形分层的层 1–18；
+ * 颜色统一为 #rrggbb。blankColor 允许 transparent 或 #rrggbb。
+ */
+export interface Theme {
+  readonly id: string;
+  readonly name: string;
+  readonly builtin: boolean;
+  readonly layerColors: readonly string[];
+  readonly layerFontColors: readonly string[];
+  readonly blankColor: string;
+}
+
+/** 棋盘尺寸比例；以实际格子边长为基准计算，不保存固定像素值。 */
+export interface BoardMetrics {
+  /** 字号 = 格子边长 × fontSizeRatio，范围 0–1。 */
+  readonly fontSizeRatio: number;
+  /** 间隙 = 格子边长 × gapRatio，范围 0–0.1。 */
+  readonly gapRatio: number;
+  /** 圆角 = 格子边长 × radiusRatio，范围 0–0.5。 */
+  readonly radiusRatio: number;
+}
+
+/** 外观状态；activeThemeId 必须能解析到 themes 中的主题，否则回退内置主题。 */
+export interface AppearanceState {
+  readonly activeThemeId: string;
+  readonly themes: readonly Theme[];
+  readonly metrics: BoardMetrics;
+}
+
+/** 统计页的成绩桶筛选；moveMode 不参与分桶。 */
+export interface ScoreFilter {
+  readonly size: PuzzleSize;
+  readonly gameMode: GameMode;
+  /** 固定分组编号 1–10，不是分组名称。 */
+  readonly groupId: GroupId;
+}
+
+/** 统计聚合结果；空桶时 count 为 0，其余字段为 null。时间单位均为 ms。 */
+export interface ScoreStats {
+  readonly count: number;
+  readonly bestTimeMs: number | null;
+  readonly averageTimeMs: number | null;
+  readonly bestStep: number | null;
+  readonly averageStep: number | null;
+  readonly bestTps: number | null;
+  readonly averageTps: number | null;
+  readonly bestAo5Ms: number | null;
+  readonly bestAo12Ms: number | null;
+  readonly averageObserveMs: number | null;
+}
+
+/** 单条成绩的高亮标记；并列时全部标记，null / 无效值不参与比较。 */
+export interface ScoreHighlight {
+  readonly scoreId: string;
+  readonly bestTime: boolean;
+  readonly worstTime: boolean;
+  readonly bestStep: boolean;
+  readonly worstStep: boolean;
+  readonly bestTps: boolean;
+  readonly worstTps: boolean;
+  readonly bestAo5: boolean;
+  readonly worstAo5: boolean;
+  readonly bestAo12: boolean;
+  readonly worstAo12: boolean;
+}
+
+/** 图表数据；labels 为派生编号，timeSeconds / steps 与 labels 一一对应。 */
+export interface ChartSeries {
+  readonly labels: readonly number[];
+  readonly timeSeconds: readonly number[];
+  readonly steps: readonly number[];
 }
