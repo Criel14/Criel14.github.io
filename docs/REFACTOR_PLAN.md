@@ -140,4 +140,6 @@
 
 - 现有功能说明：`README.md`、`docs/PUZZLE_GAME.md`
 - 旧版本基线：git tag `pre-refactor-2026-10`
+- 旧代码只读 worktree：`D:\Project\Criel14.github.io-legacy`（detached HEAD，指向基线 tag；供重构期间随时检索旧实现，不修改、不提交）
+  - 缺失时重建：`git worktree add ../Criel14.github.io-legacy pre-refactor-2026-10 --detach`
 - 重构分支：`refactor/vite-ts`
