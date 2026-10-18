@@ -17,7 +17,7 @@
 - **纯逻辑优先**。`core` 不碰 DOM / localStorage；`data` 负责持久化与校验；`ui` 只做 DOM；`pages` 负责组装。
 - **成绩只存事实**。`tps`、`number`、`ao5`、`ao12`、时间格式化全部读时派生。
 - **页面间不通过 localStorage 传状态**。回放、重玩使用 URL 参数 + score id。
-- **外观保留现有视觉逻辑**：L 形 18 层配色、两套内置预设；但拆成 `Theme` / `BoardMetrics` / `AppearanceState`。
+- **外观统一到 `Theme`**：每个主题包含一种着色模式（降阶 / 按行 / 固定色）和自带的字号、间隙、圆角；内置先保留两套降阶预设。
 - **计时使用单调时钟 + 显式 session 状态机**；回放使用时间轴 + `requestAnimationFrame`。
 - **不引入 UI 框架、状态库、插件系统**。项目规模不大，边界清晰比抽象层数更重要。
 
@@ -29,6 +29,7 @@
 - 数据模型只保存事实，派生值只有一个计算入口。
 - 页面可独立加载，状态可从 URL 恢复；刷新、后退、分享链接行为可预期。
 - 旧代码只作为行为参考，不复制旧实现中的历史 workaround。
+- 外观支持降阶、按行、固定色三种着色模式；每个主题独立保存颜色和尺寸比例。
 - 保持运行时轻量：无框架，图表按需加载，不依赖运行时 CDN。
 
 ### 非目标
@@ -66,22 +67,23 @@
 
 ## 3. 领域词汇
 
-| 术语              | 含义                                                       |
-| ----------------- | ---------------------------------------------------------- |
-| `PuzzleSize`      | 棋盘阶数，2–10                                             |
-| `Board`           | 行优先展开的一维数组，`0` 是空白块                         |
-| `GameMode`        | `normal` 普通模式 / `blind` 盲玩模式                       |
-| `MoveMode`        | `click` 点击 / `slide` 滑动 / `keyboard` 键盘              |
-| `Direction`       | 方块移动方向，不是空白块移动方向                           |
-| `Session`         | 从创建打乱到复原的一局游戏                                 |
-| `ScoreRecord`     | 已保存的一局成绩，只含事实字段                             |
-| `ReplayRecord`    | 与某条成绩对应的移动序列                                   |
-| `Bucket`          | `size + gameMode + groupId` 组成的一个成绩分组             |
-| `GroupId`         | 固定分组编号 1–10；成绩、筛选和 URL 使用编号，不随名称变化 |
-| `Group`           | 用户可见的成绩分组，固定 10 个，ID 为 1–10；只允许修改名称 |
-| `Theme`           | 颜色主题：18 层背景色、18 层字体色、空白格颜色             |
-| `BoardMetrics`    | 棋盘的尺寸比例：字号、间隙、圆角                           |
-| `AppearanceState` | 当前主题 + 主题列表 + 尺寸比例                             |
+| 术语              | 含义                                                                |
+| ----------------- | ------------------------------------------------------------------- |
+| `PuzzleSize`      | 棋盘阶数，2–10                                                      |
+| `Board`           | 行优先展开的一维数组，`0` 是空白块                                  |
+| `GameMode`        | `normal` 普通模式 / `blind` 盲玩模式                                |
+| `MoveMode`        | `click` 点击 / `slide` 滑动 / `keyboard` 键盘                       |
+| `Direction`       | 方块移动方向，不是空白块移动方向                                    |
+| `Session`         | 从创建打乱到复原的一局游戏                                          |
+| `ScoreRecord`     | 已保存的一局成绩，只含事实字段                                      |
+| `ReplayRecord`    | 与某条成绩对应的移动序列                                            |
+| `Bucket`          | `size + gameMode + groupId` 组成的一个成绩分组                      |
+| `GroupId`         | 固定分组编号 1–10；成绩、筛选和 URL 使用编号，不随名称变化          |
+| `Group`           | 用户可见的成绩分组，固定 10 个，ID 为 1–10；只允许修改名称          |
+| `ColorMode`       | 主题的着色模式：降阶、按行或固定色，包含色板、空白色、字体色        |
+| `Theme`           | 统一外观入口：名称 + `ColorMode` + `BoardMetrics`，内置主题不可修改 |
+| `BoardMetrics`    | 某个主题自带的字号、间隙、圆角比例，用户可调整                      |
+| `AppearanceState` | 当前主题 + 主题列表；尺寸比例保存在各自主题中                       |
 
 ## 4. 数据模型
 
@@ -146,17 +148,41 @@ export interface ReplayRecord {
   moves: readonly MoveRecord[];
 }
 
-export interface Theme {
-  id: string;
-  name: string;
-  builtin: boolean;
-  /** 18 个元素，对应层 1–18。 */
-  layerColors: readonly string[];
-  /** 18 个元素，对应层 1–18。 */
-  layerFontColors: readonly string[];
+/** 着色模式对象共有的字段。 */
+interface ColorModeFields {
+  /**
+   * 调色板长度由 mode 决定：
+   * - layer：18，索引 0–17 对应层 1–18；
+   * - row：10，索引 0–9 对应数字块原本所属的第 1–10 行；
+   * - fixed：99，索引 0–98 对应数字 1–99。
+   */
+  palette: readonly string[];
+
+  /** 空白格背景色；默认 transparent。 */
   blankColor: string;
+
+  /** 'auto' 按背景亮度自动选黑/白；否则为 #rrggbb。 */
+  fontColor: string;
 }
 
+/** 降阶：现有 L 形分层，颜色绑定数字块。 */
+export interface LayerColorMode extends ColorModeFields {
+  mode: 'layer';
+}
+
+/** 按行：按数字块原本所属行着色，颜色跟随数字块。 */
+export interface RowColorMode extends ColorModeFields {
+  mode: 'row';
+}
+
+/** 固定色：每个数字单独着色，与阶数和位置无关。 */
+export interface FixedColorMode extends ColorModeFields {
+  mode: 'fixed';
+}
+
+export type ColorMode = LayerColorMode | RowColorMode | FixedColorMode;
+
+/** 某个主题自带的尺寸比例；用户可调整。 */
 export interface BoardMetrics {
   /** 字号 = 实际格子边长 × fontSizeRatio，范围 0–1。 */
   fontSizeRatio: number;
@@ -166,10 +192,19 @@ export interface BoardMetrics {
   radiusRatio: number;
 }
 
+/** 统一外观入口：颜色模式和尺寸比例都属于主题。 */
+export interface Theme {
+  id: string;
+  name: string;
+  builtin: boolean;
+  color: ColorMode;
+  metrics: BoardMetrics;
+}
+
+/** 外观状态只保存当前主题和主题列表。 */
 export interface AppearanceState {
   activeThemeId: string;
   themes: readonly Theme[];
-  metrics: BoardMetrics;
 }
 ```
 
@@ -185,9 +220,10 @@ export interface AppearanceState {
 - `Group.name` 允许重名；`trim()` 后不能为空，长度不超过 30；非法/损坏名称显示时回退为 `G{id}`。
 - `ScoreRecord.groupId`、`GameSettings.groupId`、`ScoreFilter.groupId` 必须是 1–10 的整数。分组固定存在，因此不需要处理“分组被删除”的引用失效。
 - `ScoreRecord.id` 全局唯一；新成绩用 `crypto.randomUUID()`，无该 API 时使用带随机后缀的回退实现。
-- `Theme.layerColors` / `layerFontColors` 长度固定为 18；颜色统一为 `#rrggbb`。`blankColor` 允许 `transparent` 或 `#rrggbb`。
-- `AppearanceState.activeThemeId` 必须能解析到某个主题；否则回退到内置主题。
-- `BoardMetrics` 必须在约定范围内；非法值回退默认值。
+- `Theme.color.palette` 长度由 mode 决定：layer 18、row 10、fixed 99；`palette` 颜色统一为 `#rrggbb`，`blankColor` 允许 `transparent` 或 `#rrggbb`，`fontColor` 允许 `auto` 或 `#rrggbb`。
+- `Theme.metrics` 必须在约定范围内；非法值回退 `DEFAULT_METRICS`。
+- `AppearanceState.themes` 至少包含两套内置主题；`activeThemeId` 必须能解析到某个主题，否则回退第一个内置主题。
+- 内置主题不可修改、不可删除；自定义主题可以编辑颜色和 metrics，UI 第一版保留 3 个槽位。
 - **不存储** `tps`、`number`、`ao5`、`ao12`、`dateTime` 字符串、`device`。
 
 ## 5. 存储
@@ -608,42 +644,48 @@ function getTileLayer(tile: number, size: PuzzleSize): number {
 ```
 
 - 最大层数：`2 * size - 2`；2×2 为 2 层，10×10 为 18 层。
-- 主题固定提供 18 层颜色；当前阶数只使用前 `2*size-2` 层。
+- 降阶模式的 `palette` 固定 18 色；当前阶数只使用前 `2*size-2` 层。
 - 颜色绑定的是方块数字，不是方块当前位置；打乱后颜色跟随数字块移动。
-- `tile === 0` 使用 `Theme.blankColor`；默认 `transparent`，让棋盘背景透出，不强行改成旧版的 `#f0f0f0`。
+- `tile === 0` 使用 `theme.color.blankColor`；默认 `transparent`，让棋盘背景透出，不强行改成旧版的 `#f0f0f0`。
 
-### 10.2 Theme / BoardMetrics / AppearanceState
+### 10.2 Theme / ColorMode / BoardMetrics
 
-- `Theme`：只负责颜色。
-- `BoardMetrics`：只负责字号、间隙、圆角比例。
-- `AppearanceState`：当前主题、主题列表、尺寸比例。
-- 内置主题不可修改、不可删除；自定义主题以列表保存，UI 第一版仍可只展示 3 个槽位。
-- 内置主题：
-  - `rainbow`：旧“预设1 / 彩虹”，高饱和。
-  - `rainbow-soft`：旧“预设2 / 彩虹微调”，低饱和，间隙 0、圆角 0.01。
-- 两套内置主题的字体色都沿用旧版白色；旧代码里的全黑字体配置未启用，不复活。
+- `Theme` 是统一外观入口：
+  - `color: ColorMode`：着色模式、色板、空白色、字体色；
+  - `metrics: BoardMetrics`：字号、间隙、圆角，按主题保存。
+- 一个主题只对应一种着色模式，不做“一个主题支持多种模式”；切换模式就是切换主题。
+- 内置主题先保留两套降阶预设：
+  - `rainbow`：旧“预设1 / 彩虹”，高饱和，metrics 为 `0.5 / 0.03 / 0.04`。
+  - `rainbow-soft`：旧“预设2 / 彩虹微调”，低饱和，metrics 为 `0.5 / 0 / 0.01`。
+- 按行、固定色当前只作为自定义主题可选的模式，不提供内置预设。
+- 两套内置主题的字体色都沿用旧版白色；按行/固定色默认 `fontColor: 'auto'`，根据背景亮度自动选择黑/白。
+- `blankColor` 默认 `transparent`，让棋盘背景透出。
+- 内置主题不可修改、不可删除；用户要调整颜色或 metrics 时，复制为自定义主题再编辑。
 - 修改主题时深拷贝，禁止原地修改常量。
 
-### 10.3 应用方式
+### 10.3 取色与渲染
 
-- `ui/board-style.ts` 把主题和比例写成 CSS 变量：
-  - `--layer-color-1` … `--layer-color-18`
-  - `--layer-font-color-1` … `--layer-font-color-18`
-  - `--blank-color`
-  - `--tile-font-ratio`
-  - `--tile-gap-ratio`
-  - `--tile-radius-ratio`
-  - `--cell-size`
-- 每个 tile 只设置 `data-layer="n"`；CSS 通过变量取色。换主题只更新变量，不重建 100 个 tile。
+- `getTileVisual(tile, size, theme)` 统一返回 `{ background, color }`：
+  - 降阶：`getTileLayer(tile, size) - 1` 取 `palette`；
+  - 按行：`Math.floor((tile - 1) / size)` 取 `palette`，颜色跟随数字块原本所属行；
+  - 固定色：`tile - 1` 取 `palette`，数字与颜色永久绑定；
+  - 空白块使用 `theme.color.blankColor`，字体色为 `transparent`。
+- `fontColor === 'auto'` 时由背景亮度自动选择黑/白；否则使用配置的 `#rrggbb`。
+- `ui/board-view.ts` 给每个 tile 设置 `--tile-bg` / `--tile-fg`；CSS 使用这两个变量，不关心当前是哪种模式。
+- `ui/board-style.ts` 从 `theme.metrics` 设置 `--tile-font-ratio`、`--tile-gap-ratio`、`--tile-radius-ratio` 和 `--blank-color`。
 - `--cell-size` 由 board-view 用实际棋盘宽度 / `size` 计算，并用 `ResizeObserver` 更新；不再使用 `27/30`、`20/25` 这类魔法数。
+- 换主题或修改 metrics 只更新 CSS 变量和 tile 颜色，不重建 tile。
 - 颜色选择器使用原生 `<input type="color">`，不引入 jscolor。
 
 ### 10.4 设置交互
 
 - 外观编辑实时预览，显式保存；保存外观不重开一局。
 - 运行中禁止打开设置；只有 `observing` / `solved` 状态可编辑。
-- 自定义光标、极简 UI 属于 `GameSettings`，不属于 `Theme`。
+- 设置页编辑当前自定义主题的着色模式、色板、空白色、字体色和 metrics。
+- 内置主题只读；用户修改内置主题时，先复制成自定义主题，再编辑副本。
+- 自定义主题第一版展示 3 个 UI 槽位；数据模型允许列表扩展。
 - 分组固定 10 个（ID 1–10），设置页只允许修改名称，不提供新增/删除/排序；清空分组数据在成绩页执行。
+- 自定义光标、极简 UI 属于 `GameSettings`，不属于 `Theme`。
 - 预设加载/自定义方案加载只修改内存状态；保存后才写 `puzzle.v2.appearance`。
 
 ## 11. 模块边界与目录
@@ -711,7 +753,7 @@ types ← core ← ui   ← pages
 - `core/appearance/index.ts` 统一导出 appearance 的公共函数。
 - 其他 core 模块直接按文件 import，不做大而全的 barrel。
 - `data/*-store.ts` 只导出 repository 函数；页面不直接操作 localStorage。
-- `ui/board-view.ts` 不关心成绩、session、统计，只接收 `Board` + `Theme` + `BoardMetrics`。
+- `ui/board-view.ts` 不关心成绩、session、统计，只接收 `Board` + `Theme`；`Theme` 已包含 metrics。
 
 ## 12. URL 契约
 
@@ -749,34 +791,38 @@ types ← core ← ui   ← pages
 - session：normal/blind 计时、观察时间、无效移动、整行多步、复原锁定、重玩不保存。
 - stats：空桶、单条、算术平均、去尾 ao、5 分钟边界、并列高亮、删除后重编号、清空分组后为空。
 - replay：0 步、正常回放、盲玩偏移、非法 move、倍速切换、暂停恢复、seek 边界。
-- appearance：2–10 层映射、18 色校验、两套预设不可变、比例 clamp、主题切换不重建棋盘。
+- appearance：2–10 层映射、三种着色模式取色、两套内置主题不可变、主题级 metrics clamp、自定义主题复制/删除、主题切换不重建棋盘。
 - data：新键读写、成绩+录像写入顺序、固定 10 组与改名、按分组清空成绩和录像、旧键不读取、清理旧键。
 
 ## 14. 决策记录
 
-| 决策       | 选择                            | 理由                                                    |
-| ---------- | ------------------------------- | ------------------------------------------------------- |
-| 旧数据     | 不迁移、不兼容                  | 站点已无用户；减少历史特例和迁移代码                    |
-| 存储键     | `puzzle.v2.*` 新命名空间        | 与旧键彻底隔离，可安全回滚旧页面                        |
-| 成绩模型   | 只存事实，派生值读时算          | 消除 time/tps/ao/number 不一致                          |
-| 平均       | 算术平均；ao 才用去尾平均       | 数学语义清晰，旧数据已丢弃                              |
-| 分组       | 固定 10 组，ID 1–10，仅允许改名 | 避免自定义分组的引用完整性和管理 UI；分组本身占存储很小 |
-| 分组清空   | 只清空成绩与录像，不删除分组    | 分组是固定结构，名称保留；按 groupId 跨 size/mode 执行  |
-| 录像存储   | 与成绩摘要分开                  | 统计页不加载 moves，写入更小                            |
-| 页面状态   | URL 参数 + repository           | 去掉 `currentScore` 过期与配置错位                      |
-| 计时       | `performance.now()`，不做暂停   | 后台不继续累计 tick 误差；语义更接近真实                |
-| 回放       | 时间轴 + rAF                    | 倍速、暂停、seek 都可用同一套状态                       |
-| 外观       | Theme / BoardMetrics 分离       | 颜色和尺寸可独立扩展                                    |
-| 颜色选择器 | 原生 `<input type="color">`     | 无额外依赖，旧数据已丢弃                                |
-| 图表       | ECharts 懒加载                  | 统计页才加载；core 与渲染解耦                           |
-| 运行中设置 | 禁止                            | 避免改外观/设置影响当前局计时与公平性                   |
-| 存储选型   | 同步 localStorage + repository  | 当前数据量小；未来可换 IndexedDB                        |
+| 决策       | 选择                                     | 理由                                                    |
+| ---------- | ---------------------------------------- | ------------------------------------------------------- |
+| 旧数据     | 不迁移、不兼容                           | 站点已无用户；减少历史特例和迁移代码                    |
+| 存储键     | `puzzle.v2.*` 新命名空间                 | 与旧键彻底隔离，可安全回滚旧页面                        |
+| 成绩模型   | 只存事实，派生值读时算                   | 消除 time/tps/ao/number 不一致                          |
+| 平均       | 算术平均；ao 才用去尾平均                | 数学语义清晰，旧数据已丢弃                              |
+| 分组       | 固定 10 组，ID 1–10，仅允许改名          | 避免自定义分组的引用完整性和管理 UI；分组本身占存储很小 |
+| 分组清空   | 只清空成绩与录像，不删除分组             | 分组是固定结构，名称保留；按 groupId 跨 size/mode 执行  |
+| 录像存储   | 与成绩摘要分开                           | 统计页不加载 moves，写入更小                            |
+| 页面状态   | URL 参数 + repository                    | 去掉 `currentScore` 过期与配置错位                      |
+| 计时       | `performance.now()`，不做暂停            | 后台不继续累计 tick 误差；语义更接近真实                |
+| 回放       | 时间轴 + rAF                             | 倍速、暂停、seek 都可用同一套状态                       |
+| 外观       | 每个 Theme 内含 ColorMode + BoardMetrics | 颜色和尺寸随主题切换，用户可自定义；避免全局状态分叉    |
+| 着色模式   | 降阶 / 按行 / 固定色                     | 覆盖分层、按行、逐数字三种需求；一个主题只用一种模式    |
+| 按行       | 按数字块原本所属行                       | 颜色跟随数字块，移动时不闪色                            |
+| 内置预设   | 先保留两套降阶                           | 复刻旧视觉；按行/固定色的默认预设后续再定               |
+| 颜色选择器 | 原生 `<input type="color">`              | 无额外依赖，旧数据已丢弃                                |
+| 图表       | ECharts 懒加载                           | 统计页才加载；core 与渲染解耦                           |
+| 运行中设置 | 禁止                                     | 避免改外观/设置影响当前局计时与公平性                   |
+| 存储选型   | 同步 localStorage + repository           | 当前数据量小；未来可换 IndexedDB                        |
 
 ## 15. 后续扩展点
 
 以下不阻塞当前实现：
 
 - 分组数量扩展（超过 10 组）需要 schema 迁移；当前固定 10 组。
+- 更多内置预设（按行/固定色）与预设管理；当前只保留两套降阶内置主题。
 - 成绩/设置导入导出 JSON。
 - 数据量增大后把 repository 切换到 IndexedDB。
 - 成绩保存 `themeId`，实现“按当时主题回放”。

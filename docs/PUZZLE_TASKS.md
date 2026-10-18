@@ -104,82 +104,99 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ## P2 appearance 纯逻辑
 
+### P2-0 主题类型重构
+
+- [ ] 文件：`src/games/puzzle/types.ts`
+- 内容：
+  - 新增共享字段接口 `ColorModeFields`（内部），以及 `LayerColorMode`、`RowColorMode`、`FixedColorMode`、`ColorMode`；不引入 `ColorModeKind`。
+  - `Theme` 改为统一入口：`id`、`name`、`builtin`、`color: ColorMode`、`metrics: BoardMetrics`。
+  - `AppearanceState` 移除 `metrics`，只保留 `activeThemeId`、`themes`。
+  - `BoardMetrics` 保留，作为主题内的尺寸比例类型。
+- 测试/验收：
+  - `npm run typecheck` 通过。
+  - 现有 board/moves/scramble/score 测试不回归。
+- 依赖：P1-1。
+
 ### P2-1 层算法
 
 - [ ] 文件：`src/games/puzzle/core/appearance/layers.ts`、`layers.test.ts`
 - 内容：
   - `getTileLayer(tile, size)`：保留旧版 L 形公式；`tile <= 0` 或越界返回 0。
-  - `getLayerCount(size)`：返回 `2 * size - 2`。
+  - `getLayerCount(size)`：返回 `2 * size - 2`；非法 size 返回 0。
   - `isTileInLayerRange` / `getLayerPaletteIndex` 等小工具（按需）。
 - 测试：
   - 2–10 阶所有方块逐一遍历，层号在 `1..2*size-2`。
   - 空白块 0 返回 0。
   - 4×4 的层分布与旧实现一致。
   - 非法 tile、越界 size 不抛异常。
-- 依赖：P1-1。
+- 依赖：P2-0。
 
-### P2-2 内置主题与默认比例
+### P2-2 内置主题与默认尺寸
 
 - [ ] 文件：`src/games/puzzle/core/appearance/presets.ts`、`presets.test.ts`
 - 内容：
-  - `BUILTIN_THEMES`：两套旧预设，完整保留 18 层背景色和字体色。
-  - `rainbow`：旧预设1，高饱和；`rainbow-soft`：旧预设2，低饱和，间隙 0、圆角 0.01。
-  - 两套字体色均为旧版白色；不启用旧代码里的全黑字体配置。
-  - `blankColor` 默认 `transparent`，让棋盘背景透出。
-  - `DEFAULT_METRICS`：字号 0.5、间隙 0.03、圆角 0.04。
+  - `BUILTIN_THEMES`：只保留旧代码的两套降阶主题 `rainbow`、`rainbow-soft`，完整保留 18 层背景色和 metrics。
+  - 两套主题的 `color.mode` 均为 `layer`，`palette` 为旧配置的 1–18 层颜色；`blankColor: 'transparent'`，`fontColor: '#ffffff'`。
+  - `rainbow` 的 metrics 为 `0.5 / 0.03 / 0.04`；`rainbow-soft` 为 `0.5 / 0 / 0.01`。
+  - `DEFAULT_METRICS` 取 `rainbow` 的 metrics，作为新建自定义主题和损坏回退值。
+  - 按行/固定色不作为内置预设；后续再定默认色板。
   - 所有常量 `Object.freeze` / 只读，导出前深拷贝。
 - 测试：
-  - 两套主题各有 18 个背景色、18 个字体色。
-  - 颜色均为合法 `#rrggbb`。
-  - 修改返回的克隆不会污染常量。
-  - 预设2 的间隙/圆角与旧实现一致。
-- 依赖：P1-1。
+  - 两套主题各有 18 个颜色，颜色均为合法 `#rrggbb`。
+  - 字体色均为白色，`blankColor` 为 `transparent`。
+  - 两套 metrics 与旧实现一致。
+  - 冻结和克隆隔离。
+- 依赖：P2-0。
 
-### P2-3 主题读取与克隆
+### P2-3 取色与主题克隆
 
 - [ ] 文件：`src/games/puzzle/core/appearance/theme.ts`、`theme.test.ts`
 - 内容：
-  - `getTileColor(tile, size, theme)`：空白块返回 `blankColor`，非空白按层取色。
-  - `getTileFontColor(tile, size, theme)`：空白块返回透明或 `blankColor` 对应策略。
-  - `isValidHexColor(value)`：用于层颜色。
-  - `isValidBlankColor(value)`：允许 `transparent` 或 `#rrggbb`。
-  - `cloneTheme(theme)`：深拷贝数组，禁止共享引用。
-  - `createCustomTheme(name, colors, fontColors, blankColor)`（按需）。
+  - `getTileVisual(tile, size, theme)`：返回 `{ background, color }`；空白块返回 `blankColor` 和 `transparent`。
+  - 按 `theme.color.mode` 取色：降阶 `getTileLayer - 1`；按行 `Math.floor((tile - 1) / size)`；固定色 `tile - 1`。
+  - `fontColor === 'auto'` 时按背景亮度选择黑/白，否则使用主题配置的字体色。
+  - `getTileColor` / `getTileFontColor` 作为底层单测入口（按需）。
+  - `isValidHexColor`、`isValidBlankColor`、`cloneTheme`。
+  - `createCustomTheme` 暂不实现，等 UI 需要时再加。
 - 测试：
-  - 空白块、非法 tile、缺失层颜色回退。
+  - 降阶、按行、固定色三种模式的取色。
+  - 空白块、非法 tile、缺失色板项回退。
+  - 自动字体色对深/浅背景的判定。
   - 克隆后修改数组不影响原主题。
-  - 非法 hex 判定。
+  - 非法 hex / blankColor 判定。
 - 依赖：P2-1、P2-2。
 
-### P2-4 尺寸比例
+### P2-4 主题尺寸比例
 
 - [ ] 文件：`src/games/puzzle/core/appearance/metrics.ts`、`metrics.test.ts`
 - 内容：
   - `DEFAULT_METRICS` 或复用 presets。
   - `clampRatio(value, min, max)`。
   - `normalizeMetrics(raw)`：非数字、NaN、Infinity、越界值回退/夹取。
-  - `toCssVariables(theme, metrics)`：返回纯对象，不碰 DOM。
+  - `toCssVariables(theme)`：读取 `theme.metrics` 和 `theme.color.blankColor`，返回纯对象，不碰 DOM。
 - 测试：
   - 字号 0–1、间隙 0–0.1、圆角 0–0.5 的边界。
   - `NaN` / `Infinity` / 字符串输入（防御性）回退。
-  - CSS 变量键名与值正确。
-- 依赖：P1-1、P2-2。
+  - CSS 变量键名与值正确，且来自传入主题的 metrics。
+- 依赖：P2-0、P2-2。
 
 ### P2-5 外观状态与公共入口
 
 - [ ] 文件：`src/games/puzzle/core/appearance/appearance.ts`、`appearance.test.ts`、`index.ts`
 - 内容：
-  - `createDefaultAppearance()`：内置主题 + 默认比例 + 3 个空自定义槽位（数据模型允许列表扩展）。
+  - `createDefaultAppearance()`：两套内置主题 + 默认激活 `rainbow`；不生成空 Theme 占位。
   - `getActiveTheme(appearance)`：找不到时回退第一个内置主题。
   - `cloneAppearance(appearance)`。
   - `upsertCustomTheme`、`removeCustomTheme`、`setActiveTheme`：纯函数，返回新状态。
-  - 内置主题不可删除、不可覆盖。
+  - 内置主题不可删除、不可覆盖；自定义主题携带自己的颜色模式和 metrics。
+  - `CUSTOM_THEME_SLOT_COUNT = 3` 供 UI 展示空槽位，不写入 `themes`。
 - 测试：
-  - activeThemeId 失效回退。
-  - 新增/更新/删除自定义主题。
+  - 默认状态只有两套内置主题，activeThemeId 失效回退。
+  - 新增/更新/删除自定义主题；自定义主题可带 row/fixed 模式和 metrics。
   - 删除当前主题后回退。
+  - 内置主题保护。
   - 克隆隔离。
-- 依赖：P2-1–P2-4。
+- 依赖：P2-0–P2-4。
 
 ---
 
@@ -348,11 +365,13 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
   - 各存储信封类型。
   - `isScoreRecord`、`isReplayRecord`、`isGameSettings`、`isAppearanceState` 等守卫。
   - 校验固定 10 组、`GroupId` 为 1–10、`groupId` 在范围内；名称允许重名。
+  - 校验 `Theme.color.mode` 对应的 palette 长度（18/10/99）、颜色格式、`fontColor` / `blankColor`、`Theme.metrics` 范围。
   - 非法记录跳过策略。
 - 测试：
   - 合法/非法 score、replay、settings、appearance。
   - 缺字段、错误类型、越界 size、非法颜色。
   - 分组数量/ID 非法、`groupId` 越界、损坏名称回退。
+  - 主题模式/色板长度/metrics 非法。
   - 数组里混入坏记录时只过滤坏记录。
 - 依赖：P1-1、P6-1。
 
@@ -378,13 +397,14 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 - 内容：
   - `loadAppearance` / `saveAppearance`。
   - activeThemeId 失效回退内置主题。
-  - 内置主题不可被覆盖/删除。
-  - 自定义主题列表保留；非法主题过滤。
-  - 比例 clamp。
+  - 内置主题不可被覆盖/删除；自定义主题列表保留。
+  - 按 `theme.color.mode` 校验 palette 长度（18/10/99）、颜色、`fontColor`、`blankColor`。
+  - 每个主题的 metrics 独立 clamp；非法值回退 `DEFAULT_METRICS`。
+  - 非法主题过滤。
 - 测试：
-  - 首次加载默认外观。
-  - 保存/读回自定义主题。
-  - 损坏主题过滤且不崩溃。
+  - 首次加载默认外观（两套内置主题）。
+  - 保存/读回自定义主题（含 row/fixed 模式与 metrics）。
+  - 损坏模式/色板/metrics 过滤或回退，不崩溃。
   - 内置主题不可删除。
 - 依赖：P2-5、P6-1、P6-2。
 
@@ -440,14 +460,16 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 - [ ] 文件：`src/games/puzzle/ui/board-view.ts`、`board-style.ts`、`styles/board.css`
 - 内容：
-  - `createBoardView({ root, size, theme, metrics, interactive })`。
-  - `update(board)`、`setTheme(theme)`、`setMetrics(metrics)`、`destroy()`。
-  - 每个 tile 设置 `data-layer`，CSS 通过 `--layer-color-N` 取色。
+  - `createBoardView({ root, size, theme, interactive })`。
+  - `update(board)`、`setTheme(theme)`、`destroy()`；metrics 已包含在 theme 中。
+  - 每个 tile 通过 `getTileVisual` 设置 `--tile-bg` / `--tile-fg`；CSS 不区分着色模式。
+  - `board-style` 从 `theme.metrics` 设置 `--tile-font-ratio`、`--tile-gap-ratio`、`--tile-radius-ratio`、`--blank-color`。
   - 事件委托：click / mouseover / touchstart / touchmove 统一绑定在 board 容器。
   - `ResizeObserver` 计算 `--cell-size`。
   - 只读模式用于成绩详情和回放。
 - 测试/验收：
-  - 主题切换只更新 CSS 变量，不重建 tile。
+  - 主题切换/修改 metrics 只更新 CSS 变量和 tile 颜色，不重建 tile。
+  - 三种着色模式的 tile 颜色正确。
   - 2–10 阶布局正确。
   - 不使用每 tile 独立监听器。
   - `destroy` 后监听器和 observer 释放。
@@ -507,10 +529,12 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 - [ ] 文件：`pages/game.ts`、`ui/dialog.ts`、`styles/game.css`
 - 内容：
   - 游戏设置：阶数、模式、操作模式、分组选择；分组名称编辑（固定 10 组，不增删，允许重名）。
-  - 外观：18 层背景色/字体色、空白色、字号/间隙/圆角、内置预设、3 个自定义槽。
+  - 外观：两套内置降阶主题；自定义主题支持降阶/按行/固定色三种模式。
+  - 色板编辑：降阶 18 色、按行 10 色、固定色 99 色；空白色、字体色（auto 或固定色）。
+  - 每个主题独立编辑字号/间隙/圆角；内置主题只读，修改时复制为自定义主题。
   - 原生 `<input type="color">`；实时预览；显式保存。
   - 保存外观不重开一局；运行中禁用设置入口。
-- 验收：改色/改比例实时预览；保存后刷新仍生效；不影响当前局；分组改名后 HUD 和成绩页显示新名称。
+- 验收：三种模式切换/改色/改比例实时预览；自定义主题保存后刷新仍生效；内置主题不被修改；不影响当前局；分组改名后 HUD 和成绩页显示新名称。
 - 依赖：P2、P6-3、P6-4、P8-2。
 
 ### P8-5 光标、极简 UI 与可访问性
@@ -529,6 +553,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 - [ ] 文件：`tests/e2e/game.spec.ts`
 - 内容：
   - 加载页面、切阶数、三种输入各完成一局、盲玩隐藏、成绩保存。
+  - 切换内置/自定义主题，刷新后主题与 metrics 保留。
   - 分组改名后刷新，HUD 和成绩页显示新名称。
   - 刷新后设置与成绩保留。
 - 验收：Playwright 通过；用户手动验收。
@@ -632,7 +657,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 - [ ] 文件：`README.md`、`docs/PUZZLE_GAME.md`、`docs/REFACTOR_PLAN.md`、`docs/PUZZLE_TASKS.md`
 - 内容：
-  - 更新拼图功能说明、存储键、URL 参数、固定分组与清空分组数据规则、开发命令。
+  - 更新拼图功能说明、存储键、URL 参数、固定分组与清空分组数据规则、三种着色模式与主题级 metrics、开发命令。
   - 标记任务完成状态。
   - 记录实际实现与本文档的差异。
 - 验收：文档与新实现一致。
@@ -657,7 +682,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
     - 2×2 / 4×4 / 10×10。
     - normal / blind。
     - click / slide / keyboard。
-    - 主题切换、预设加载、自定义方案保存。
+    - 内置降阶预设、三种着色模式、自定义主题复制/保存、主题级字号/间隙/圆角。
     - 成绩保存、统计、详情、删除。
     - 回放播放/暂停/倍速/seek、重玩不保存。
     - 刷新、URL 分享、浏览器后退。
@@ -679,7 +704,8 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 - [ ] 成绩保存后刷新仍在；重玩同一打乱不新增成绩。
 - [ ] 成绩页筛选、统计、高亮、详情、删除、清空分组正确；删除后不刷新页面也更新。
 - [ ] 回放播放/暂停/上下一步/倍速/进度条正确；倍速变化不跳时间轴。
-- [ ] 主题切换实时预览，保存后刷新仍生效；切换主题不重开一局。
+- [ ] 两套内置降阶主题可切换；自定义主题支持降阶/按行/固定色，颜色和 metrics 保存后刷新仍生效；切换主题不重开一局。
+- [ ] 修改内置主题时先生成自定义副本，内置主题本身保持不变。
 - [ ] 旧数据不读取；清理按钮只删旧键，不影响新数据。
 - [ ] 移动端横屏可用；键盘可完成一局；无控制台错误。
 
