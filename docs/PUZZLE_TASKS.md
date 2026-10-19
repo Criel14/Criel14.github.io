@@ -4,7 +4,7 @@
 >
 > 当前分支：`refactor/vite-ts`
 >
-> 状态：P0–P2 已完成，P3 待开始
+> 状态：P0–P3 已完成，P4 待开始
 >
 > 标记：`[ ]` 未开始 / `[~]` 进行中 / `[x]` 已完成 / `[!]` 阻塞
 >
@@ -17,7 +17,7 @@
 | P0   | 架构与任务文档            | —          | `[x]` |
 | P1   | 领域类型与 score 共享函数 | P0         | `[x]` |
 | P2   | appearance 纯逻辑         | P1         | `[x]` |
-| P3   | session 纯逻辑            | P1         | `[ ]` |
+| P3   | session 纯逻辑            | P1         | `[x]` |
 | P4   | stats 纯逻辑              | P1         | `[ ]` |
 | P5   | replay 纯逻辑             | P1         | `[ ]` |
 | P6   | data 层与旧数据清理       | P1–P5      | `[ ]` |
@@ -204,7 +204,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P3-1 创建与移动
 
-- [ ] 文件：`src/games/puzzle/core/session.ts`、`session.test.ts`
+- [x] 文件：`src/games/puzzle/core/session.ts`、`session.test.ts`
 - 内容：
   - `createSession(config, createdAtMs)`：校验 `size`、`scramble`、`groupId`、`createdAtEpochMs`；非法输入抛错或返回明确错误（二选一，保持全项目一致）。
   - `moveByDirection(state, direction, atMs)`：键盘单步；非法方向 no-op。
@@ -222,7 +222,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P3-2 视图与结果
 
-- [ ] 文件：`src/games/puzzle/core/session.ts`、`session.test.ts`
+- [x] 文件：`src/games/puzzle/core/session.ts`、`session.test.ts`
 - 内容：
   - `getSessionView(state, nowMs)`：返回 `phase`、`elapsedMs`、`observeMs`、`tps`、`hideNumbers`。
   - normal：第一次移动前 elapsed 0；之后从 `firstMoveAtMs` 计时。

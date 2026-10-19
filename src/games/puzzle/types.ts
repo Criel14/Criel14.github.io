@@ -143,13 +143,17 @@ export interface SessionResult {
   readonly moveMode: MoveMode;
   /** 本局所属的固定分组编号 1–10。 */
   readonly groupId: GroupId;
+  /** 有效用时，单位 ms；normal 不含观察时间，blind 含观察时间。 */
   readonly durationMs: number;
+  /** 第一次有效移动前的观察时间，单位 ms。 */
   readonly observeMs: number;
   readonly moveCount: number;
   readonly scramble: Board;
   readonly moves: readonly MoveRecord[];
   readonly manhattanDistance: number;
+  /** 开局时刻，epoch ms；normal 为首次移动时刻，blind 为创建时刻。 */
   readonly startedAt: number;
+  /** 完成时刻，epoch ms。 */
   readonly finishedAt: number;
   readonly isRetry: boolean;
   readonly retryOf?: string;

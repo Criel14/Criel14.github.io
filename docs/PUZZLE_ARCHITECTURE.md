@@ -1,6 +1,6 @@
 # 数字华容道重构架构
 
-> 状态：设计已确认，待实现
+> 状态：P0–P3 已实现，P4 待开始
 >
 > 分支：`refactor/vite-ts`
 >
@@ -423,10 +423,11 @@ getSessionResult(state: SessionState): SessionResult | null;
 - `normal`
   - 第一次有效移动前：`elapsedMs = 0`。
   - 第一次有效移动后：`elapsedMs = min(nowMs, solvedAtMs) - firstMoveAtMs`。
-  - `observeMs = firstMoveAtMs - createdAtMs`。
+  - 第一次移动前 `observeMs` 返回当前观察时长；之后固定为 `firstMoveAtMs - createdAtMs`。
 - `blind`
   - `elapsedMs = min(nowMs, solvedAtMs) - createdAtMs`，包含观察时间。
-  - `observeMs = firstMoveAtMs - createdAtMs`。
+  - 第一次移动前 `observeMs` 返回当前观察时长；之后固定为 `firstMoveAtMs - createdAtMs`。
+- 所有时间差最小为 0；`nowMs` 早于 `createdAtMs` 或传入非法值时按 0 处理，不回写状态。
 - `tps` 使用当前 `elapsedMs` 计算。
 - 页面用 `performance.now()` 作为 `createdAtMs` / `atMs` / `nowMs`；`createdAtEpochMs` 只在创建时取一次 `Date.now()`。
 - 不做暂停。页面切到后台时 rAF 停止，但墙钟继续；回到前台后 `getSessionView` 自动追上。
@@ -446,8 +447,9 @@ getSessionResult(state: SessionState): SessionResult | null;
 
 - `getSessionResult` 只在 `solved` 时返回结果，否则返回 `null`。
 - `durationMs`：normal 为 `solvedAtMs - firstMoveAtMs`；blind 为 `solvedAtMs - createdAtMs`。
-- `startedAt`：normal 为 `createdAtEpochMs + firstMoveAtMs`；blind 为 `createdAtEpochMs`。
-- `finishedAt = createdAtEpochMs + solvedAtMs`。
+- `startedAt`：normal 为 `createdAtEpochMs + (firstMoveAtMs - createdAtMs)`；blind 为 `createdAtEpochMs`。
+- `finishedAt = createdAtEpochMs + (solvedAtMs - createdAtMs)`。
+- `createdAtMs`、`firstMoveAtMs`、`solvedAtMs` 都是单调时钟值；映射到 epoch 时必须先减去 `createdAtMs`，不能把 `performance.now()` 的起始值直接加到 `createdAtEpochMs` 上。
 - `moveCount = moves.length`。
 - `manhattanDistance` 由初始 `scramble` 计算，不随移动变化。
 - `isRetry` 结果不写入成绩；core 只标记，页面决定不保存。
