@@ -1,24 +1,26 @@
 # 数字华容道重构架构
 
-> 状态：P0–P4 已实现，P5 待开始
+> 状态：P0–P4 已实现，P5 待开始；P5/P6 的详细设计已拆分到独立文档
 >
 > 分支：`refactor/vite-ts`
 >
 > 范围：拼图模块（`puzzle-game`）；贪吃蛇不在本文范围
 >
-> 配套文档：`docs/PUZZLE_TASKS.md`、`docs/REFACTOR_PLAN.md`、`docs/PUZZLE_GAME.md`
+> 配套文档：`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`、`docs/PUZZLE_TASKS.md`、`docs/REFACTOR_PLAN.md`、`docs/PUZZLE_GAME.md`
 >
-> 注意：`docs/PUZZLE_GAME.md` 描述的是旧版行为和历史数据格式，仅作功能参考；新实现的存储格式、模块边界以本文为准。
+> 注意：`docs/PUZZLE_GAME.md` 描述的是旧版行为和历史数据格式，仅作功能参考；回放细节以 `docs/PUZZLE_REPLAY.md` 为准，存储细节以 `docs/PUZZLE_STORAGE.md` 为准，本文保留架构级约束。
 
 ## 0. 决策摘要
 
-- **旧数据不迁移、不兼容**。启用 `puzzle.v2.*` 新存储键；旧键只提供显式清理入口。
+- **旧数据不迁移、不兼容**。旧键只提供显式清理入口，新实现不读取旧成绩、旧配置和旧录像。
+- **存储分层**：设置、外观继续用 localStorage；成绩列表和录像使用 IndexedDB（`puzzle.v2`），利用索引查询和原子事务。详见 `docs/PUZZLE_STORAGE.md`。
+- **录像紧凑编码**：core / UI 使用 `ReplayRecord`，IndexedDB 中由 data 层编码为 `directions + timeDeltas`，读取时解码。
 - **分组固定为 10 个**。`GroupId` 固定为 1–10，只允许修改名称；不新增、不删除分组，只提供按分组清空成绩。
-- **纯逻辑优先**。`core` 不碰 DOM / localStorage；`data` 负责持久化与校验；`ui` 只做 DOM；`pages` 负责组装。
+- **纯逻辑优先**。`core` 不碰 DOM / localStorage / IndexedDB；`data` 负责持久化与校验；`ui` 只做 DOM；`pages` 负责组装。
 - **成绩只存事实**。`tps`、`number`、`ao5`、`ao12`、时间格式化全部读时派生。
 - **页面间不通过 localStorage 传状态**。回放、重玩使用 URL 参数 + score id。
 - **外观统一到 `Theme`**：每个主题包含一种着色模式（降阶 / 按行 / 固定色）和自带的字号、间隙、圆角；内置先保留两套降阶预设。
-- **计时使用单调时钟 + 显式 session 状态机**；回放使用时间轴 + `requestAnimationFrame`。
+- **计时使用单调时钟 + 显式 session 状态机**；回放使用时间轴 + `requestAnimationFrame`，详见 `docs/PUZZLE_REPLAY.md`。
 - **不引入 UI 框架、状态库、插件系统**。项目规模不大，边界清晰比抽象层数更重要。
 
 ## 1. 目标与非目标
@@ -208,6 +210,8 @@ export interface AppearanceState {
 }
 ```
 
+`ReplayRecord` 是 core / UI 的运行时类型。IndexedDB 中不直接存这个对象，而是由 data 层编码为 `StoredReplayV2`（`directions` + `timeDeltas`），读取时再解码。存储格式见 `docs/PUZZLE_STORAGE.md`，回放语义见 `docs/PUZZLE_REPLAY.md`。
+
 ### 4.1 不变量
 
 - `Board` 必须是 `0..size²-1` 的完整排列，长度等于 `size²`。
@@ -228,31 +232,50 @@ export interface AppearanceState {
 
 ## 5. 存储
 
-### 5.1 键
+> 详细设计、DB schema、repository API 与错误处理见 `docs/PUZZLE_STORAGE.md`。本节只保留架构级约束。
 
-| 键                           | 内容                                    |
-| ---------------------------- | --------------------------------------- |
-| `puzzle.v2.meta`             | `{ version: 2; createdAt: number }`     |
-| `puzzle.v2.settings`         | `{ version: 2; data: GameSettings }`    |
-| `puzzle.v2.appearance`       | `{ version: 2; data: AppearanceState }` |
-| `puzzle.v2.scores`           | `{ version: 2; items: ScoreRecord[] }`  |
-| `puzzle.v2.replay.<scoreId>` | `{ version: 2; data: ReplayRecord }`    |
+### 5.1 存储分层
 
-- 所有键统一使用 `puzzle.v2.` 前缀。
-- 成绩摘要与录像分开：统计页只加载 `puzzle.v2.scores`；回放页只加载一条 replay。
-- `version` 用于未来 schema 迁移；当前不做旧版本迁移。
+| 数据 | 存储 | 位置 |
+| --- | --- | --- |
+| 游戏设置 | localStorage | `puzzle.v2.settings`，`{ version: 2, data: GameSettings }` |
+| 外观主题 | localStorage | `puzzle.v2.appearance`，`{ version: 2, data: AppearanceState }` |
+| 成绩摘要 | IndexedDB | DB `puzzle.v2` → store `scores`，主键 `id` |
+| 录像 | IndexedDB | DB `puzzle.v2` → store `replays`，主键 `scoreId` |
+
+IndexedDB 索引：
+
+- `scores.by-bucket: [size, gameMode, groupId]`：统计页只加载目标桶。
+- `scores.by-group: groupId`：按分组计数和清空。
+
+不再使用 `puzzle.v2.meta`；localStorage envelope 自带 `version`，IndexedDB 使用 `DB_VERSION`。之前计划中的 `puzzle.v2.scores`、`puzzle.v2.replay.<scoreId>` 也已取消（v2 未上线，不做迁移）。
 
 ### 5.2 读写规则
 
-- 所有读取都经过 schema 校验；非法记录跳过并记录一次警告，不让整页崩溃。
-- 缺失键返回默认值：默认设置、默认外观、空成绩列表。
-- 写入失败（配额不足、存储不可用）返回明确错误，UI 显示非阻塞提示；当前成绩保留在内存中，允许重试。
-- 新增成绩时**先写 replay，再写 scores**；如果 scores 写失败，删除刚写入的 replay。
-- 删除成绩时**先删 scores，再删 replay**；replay 删除失败只留下孤立数据，不影响统计，可在后续清理。
-- 按分组清空时**先删除该组全部 scores，再删除对应 replay**；保留分组与名称，replay 删除失败只留下孤立数据。
-- 不做多标签页实时同步；如以后需要，可在 data 层订阅 `storage` 事件。
+- 设置、外观：同步读写；缺失或损坏时回退默认值；写入失败显示非阻塞提示。
+- 成绩、录像：异步 repository；新增、删除、按桶/按组清空都在**同一个 IndexedDB 事务**中完成，不再需要写入顺序和回滚逻辑。
+- 统计页只调用 `listScoresByBucket(filter)`，不加载录像；回放页只加载一条成绩和一条录像。
+- 所有读取都经过 schema 校验；非法成绩跳过，非法/缺失录像返回 `null`，不让整页崩溃。
+- 写入失败（配额不足、IndexedDB 不可用、blocked）返回明确的 `DataStoreError`；当前结果保留在内存中，允许重试。
+- 不做多标签页实时同步；IndexedDB 事务本身安全，页面刷新后可见其他标签页的修改。
 
-### 5.3 旧数据
+### 5.3 录像编码
+
+core / UI 使用 `ReplayRecord { scoreId, moves }`；IndexedDB 中由 data 层编码为 `StoredReplayV2`：
+
+```ts
+interface StoredReplayV2 {
+  scoreId: string;
+  directions: string;      // 每字符一步：U/D/L/R
+  timeDeltas: readonly number[]; // 与 directions 等长，非负增量
+}
+```
+
+- 解码后恢复为 `MoveRecord[]`，时间由增量累加得到。
+- 步数上限 `MAX_REPLAY_MOVES = 100_000`。
+- 不存储每一帧的棋盘；回放时间轴由 scramble + moves 派生。
+
+### 5.4 旧数据
 
 旧键 `config`、`scores`、`currentScore`、`currentScoreList` **不再读取**。
 
@@ -265,10 +288,15 @@ clearLegacyData(): void;
 
 - 不自动删除；在设置页“维护”区域或开发时手动调用。
 - GitHub Pages 与 Netlify 是不同 origin，需要分别在对应域名下清理。
+- v2 尚未上线，不存在从旧 v2 localStorage 键迁移到 IndexedDB 的逻辑。
 
-### 5.4 存储选型
+### 5.5 存储选型
 
-当前使用同步 `localStorage`，通过 `data/storage.ts` 的 `Storage` 接口访问。若未来成绩/录像体积超出配额，可在 data 层替换为 IndexedDB，页面只依赖 repository 接口，不直接操作存储。
+- 设置、外观继续使用同步 `localStorage`：数据小、启动即用。
+- 成绩、录像使用 IndexedDB：配额更大、支持索引查询和跨 store 原子事务。
+- IndexedDB 通过 `idb` 轻量封装；单元测试使用 `fake-indexeddb`。
+- 页面只依赖 repository 接口，不直接操作 localStorage / IndexedDB。
+- 当前不做 localStorage 降级存储，避免两套数据源和迁移问题。
 
 ## 6. 派生值
 
@@ -472,6 +500,7 @@ assignNumbers(scores): Array<{ score: ScoreRecord; number: number }>;
 - 先过滤，再排序，再编号。
 - `filter` 使用固定编号 `GroupId`；显示名称由 settings 中的 groups 解析，筛选和存储都不使用名称。
 - 统计页、详细页、删除操作都使用同一套排序/编号规则。
+- 数据层通过 IndexedDB 的 `by-bucket` 索引只加载目标桶；`filterScoresByBucket` 仍用于内存数据和测试。
 
 ### 8.2 聚合
 
@@ -550,9 +579,12 @@ buildChartSeries(scores): ChartSeries;
 - `group` 使用固定编号 1–10；页面显示对应 `Group.name`，改名不影响已分享链接。
 - 选中成绩放 URL：`&score=<id>`，详情用原生 `<dialog>`。
 - 筛选变化使用 `history.pushState`；浏览器前进/后退可恢复。
+- 筛选切换会异步查询 IndexedDB；页面需忽略过期请求，避免旧结果覆盖新筛选。
 - 不再写 `currentScoreList`，不再通过 `config` 保存统计筛选。
 
 ## 9. Replay
+
+> 详细设计、取帧规则、播放器边界和长录像测试见 `docs/PUZZLE_REPLAY.md`。
 
 ### 9.1 时间轴
 
@@ -578,7 +610,8 @@ interface ReplayTimeline {
 }
 
 buildReplayTimeline(score: ScoreRecord, replay: ReplayRecord): ReplayTimeline;
-getFrameAt(timeline: ReplayTimeline, positionMs: number): ReplayFrame;
+getFrameIndexAt(timeline: ReplayTimeline, positionMs: number): number;
+getFrameAt(timeline: ReplayTimeline, positionMs: number): ReplayFrame | null;
 ```
 
 构建规则：
@@ -587,10 +620,11 @@ getFrameAt(timeline: ReplayTimeline, positionMs: number): ReplayFrame;
 2. 逐步应用 `replay.moves`，每一步生成一帧。
 3. `normal` 的播放时间：`max(0, move.timeMs - score.observeMs)`。
 4. `blind` 的播放时间：`move.timeMs`（包含观察时间）。
-5. 时间必须单调不减；非法时间 clamp 到上一帧时间并记录 issue。
-6. 方向非法、盘面损坏、`moveCount` 与 moves 长度不一致时记录 issue；遇到无法继续的非法移动就停止构建，不猜测后续状态。
-7. `durationMs` 以 `score.durationMs` 为准，并保证不小于最后一帧时间；超出时 clamp。
-8. `getFrameAt` 用二分查找；位置在首帧前返回首帧，在末帧后返回末帧。
+5. 时间必须单调不减；非法时间 clamp 到上一帧时间并记录 `non-monotonic-time`。
+6. `moveCount` 与 moves 长度不一致时记录 `move-count-mismatch`，但仍用实际 moves 构建；方向非法或当前盘面无法执行时记录 `invalid-move`，保留已构建帧并停止。
+7. 初始盘面/阶数非法时记录 `invalid-board`，返回空时间轴（`frames: []`、`durationMs: 0`），不抛异常。
+8. `durationMs` 以 `score.durationMs` 为准，并保证不小于最后一帧时间。
+9. `getFrameIndexAt` / `getFrameAt` 用二分查找；空时间轴返回 `-1` / `null`，位置在首帧前返回首帧，在末帧后返回末帧。`positionMs = 0` 显示打乱帧。
 
 ### 9.2 播放器
 
@@ -606,25 +640,31 @@ interface PlaybackState {
 const PLAYBACK_SPEEDS = [0.125, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4, 5, 10];
 
 createPlayback(timeline): PlaybackState;
-play(state, nowMs): PlaybackState;
-pause(state, nowMs): PlaybackState;
+play(state, timeline, nowMs): PlaybackState;
+pause(state, timeline, nowMs): PlaybackState;
 seekToFrame(state, timeline, index, nowMs): PlaybackState;
 stepBy(state, timeline, delta, nowMs): PlaybackState;
-setSpeed(state, speed, nowMs): PlaybackState;
+setSpeed(state, timeline, speed, nowMs): PlaybackState;
 updatePlayback(state, timeline, nowMs): {
   state: PlaybackState;
-  frame: ReplayFrame;
+  frame: ReplayFrame | null;
   finished: boolean;
 };
 ```
 
 - 播放位置用 `positionMs`，不是 `setInterval` 逐帧推进。
-- 倍速变化时先更新到当前时刻，再重设锚点；不能让时间轴整体跳变。
-- 播放到 `durationMs` 自动停止，停在最后一帧。
+- 倍速变化时先结算当前位置、重设锚点，再应用新速度；不能让时间轴整体跳变。
+- 播放到 `durationMs` 自动停止，停在最后一帧；再次 `play` 从头开始。
 - 上一步/下一步按帧索引移动，边界 clamp；UI 在边界禁用按钮。
+- `seekToFrame` / `stepBy` 会暂停播放。
 - UI 用 `requestAnimationFrame` 调用 `updatePlayback`；暂停/结束/页面隐藏时停止循环。
+- 空时间轴 `frame = null`、`finished = true`，页面显示空状态。
 
-### 9.3 URL 与重玩
+### 9.3 存储编码
+
+IndexedDB 中由 data 层存为 `StoredReplayV2 { scoreId, directions, timeDeltas }`，读取时解码为 `ReplayRecord`。core 不感知存储编码。详见 `docs/PUZZLE_STORAGE.md`。
+
+### 9.4 URL 与重玩
 
 - 回放：`replay.html?score=<id>`。
 - 重玩：`puzzle.html?retry=<id>`。
@@ -714,8 +754,11 @@ src/games/puzzle/
 │     ├─ appearance.ts
 │     └─ index.ts
 ├─ data/
-│  ├─ storage.ts
+│  ├─ local-storage.ts
+│  ├─ db.ts
+│  ├─ errors.ts
 │  ├─ schema.ts
+│  ├─ replay-codec.ts
 │  ├─ settings-store.ts
 │  ├─ appearance-store.ts
 │  ├─ score-store.ts
@@ -747,16 +790,19 @@ types ← core ← ui   ← pages
 ```
 
 - `core` 不得 import `data`、`ui`、`pages`。
-- `data` 不得 import `ui`、`pages`，不得访问 `document` / `window`（存储注入除外）。
+- `data` 不得 import `ui`、`pages`，不得访问 `document` / `window`；localStorage / IndexedDB 只能通过 data 层的适配器访问。
 - `ui` 不得 import `data`；需要数据时由 `pages` 传入。
 - `pages` 是唯一允许同时 import `core` / `data` / `ui` 的层。
+- `pages` 负责 await 异步 repository，并处理 loading / 存储错误。
 - 禁止循环依赖。
 
 ### 11.2 公共 API
 
 - `core/appearance/index.ts` 统一导出 appearance 的公共函数。
 - 其他 core 模块直接按文件 import，不做大而全的 barrel。
-- `data/*-store.ts` 只导出 repository 函数；页面不直接操作 localStorage。
+- `data/*-store.ts` 只导出 repository 函数；页面不直接操作 localStorage / IndexedDB。
+- 设置、外观 repository 为同步 API；成绩、录像 repository 为异步 API。
+- `data/db.ts`、`data/local-storage.ts`、`data/replay-codec.ts` 属于 data 层内部实现，页面不直接 import。
 - `ui/board-view.ts` 不关心成绩、session、统计，只接收 `Board` + `Theme`；`Theme` 已包含 metrics。
 
 ## 12. URL 契约
@@ -778,7 +824,7 @@ types ← core ← ui   ← pages
 ## 13. 测试策略
 
 - **core**：Vitest 单元测试；时间、随机源、棋盘全部通过参数注入；不依赖 DOM。
-- **data**：使用内存 `Storage` 实现测试；覆盖缺键、损坏 JSON、非法记录、配额错误、写入顺序。
+- **data**：localStorage 适配器用内存 `Storage` 测试；IndexedDB repository 用 `fake-indexeddb` 测试；覆盖缺键、损坏 JSON、非法记录、配额/不可用错误、索引查询、原子事务。
 - **ui**：纯格式化函数可单测；board-view / 页面交互以 Playwright 冒烟测试为主，避免为了 DOM 测试引入额外运行时。
 - **测试命名**：中文描述，和现有 `board.test.ts` / `moves.test.ts` 保持一致。
 - **每次提交前**：
@@ -794,21 +840,21 @@ types ← core ← ui   ← pages
 
 - session：normal/blind 计时、观察时间、无效移动、整行多步、复原锁定、重玩不保存。
 - stats：空桶、单条、算术平均、去尾 ao、5 分钟边界、并列高亮、删除后重编号、清空分组后为空。
-- replay：0 步、正常回放、盲玩偏移、非法 move、倍速切换、暂停恢复、seek 边界。
+- replay：0 步、正常回放、盲玩偏移、非法 move、倍速切换、暂停恢复、seek 边界、10×10 约 3,000 步长录像。
 - appearance：2–10 层映射、三种着色模式取色、两套内置主题不可变、主题级 metrics clamp、自定义主题复制/删除、主题切换不重建棋盘。
-- data：新键读写、成绩+录像写入顺序、固定 10 组与改名、按分组清空成绩和录像、旧键不读取、清理旧键。
+- data：localStorage 设置/外观读写、IndexedDB 原子事务、`by-bucket` / `by-group` 索引、按桶/组/全部清空、录像编码往返、固定 10 组与改名、旧键不读取、清理旧键。
 
 ## 14. 决策记录
 
 | 决策       | 选择                                     | 理由                                                    |
 | ---------- | ---------------------------------------- | ------------------------------------------------------- |
 | 旧数据     | 不迁移、不兼容                           | 站点已无用户；减少历史特例和迁移代码                    |
-| 存储键     | `puzzle.v2.*` 新命名空间                 | 与旧键彻底隔离，可安全回滚旧页面                        |
+| 存储分层   | localStorage（设置/外观）+ IndexedDB（成绩/录像） | 小数据同步读写；大数据支持索引、配额和原子事务 |
 | 成绩模型   | 只存事实，派生值读时算                   | 消除 time/tps/ao/number 不一致                          |
 | 平均       | 算术平均；ao 才用去尾平均                | 数学语义清晰，旧数据已丢弃                              |
 | 分组       | 固定 10 组，ID 1–10，仅允许改名          | 避免自定义分组的引用完整性和管理 UI；分组本身占存储很小 |
 | 分组清空   | 只清空成绩与录像，不删除分组             | 分组是固定结构，名称保留；按 groupId 跨 size/mode 执行  |
-| 录像存储   | 与成绩摘要分开                           | 统计页不加载 moves，写入更小                            |
+| 录像存储   | 与成绩摘要分开，IndexedDB 紧凑编码       | 统计页不加载 moves；长录像体积更小、读取更快            |
 | 页面状态   | URL 参数 + repository                    | 去掉 `currentScore` 过期与配置错位                      |
 | 计时       | `performance.now()`，不做暂停            | 后台不继续累计 tick 误差；语义更接近真实                |
 | 回放       | 时间轴 + rAF                             | 倍速、暂停、seek 都可用同一套状态                       |
@@ -819,19 +865,21 @@ types ← core ← ui   ← pages
 | 颜色选择器 | 原生 `<input type="color">`              | 无额外依赖，旧数据已丢弃                                |
 | 图表       | ECharts 懒加载                           | 统计页才加载；core 与渲染解耦                           |
 | 运行中设置 | 禁止                                     | 避免改外观/设置影响当前局计时与公平性                   |
-| 存储选型   | 同步 localStorage + repository           | 当前数据量小；未来可换 IndexedDB                        |
+| 存储选型   | localStorage + IndexedDB + repository    | 设置小且需同步；成绩/录像大且需要索引和原子事务         |
+| IDB 封装   | `idb` + `fake-indexeddb`                 | 轻量、类型完整；避免手写事务/请求封装；测试可覆盖事务和索引 |
 
 ## 15. 后续扩展点
 
 以下不阻塞当前实现：
 
-- 分组数量扩展（超过 10 组）需要 schema 迁移；当前固定 10 组。
+- 分组数量扩展（超过 10 组）需要 IndexedDB / localStorage schema 迁移；当前固定 10 组。
 - 更多内置预设（按行/固定色）与预设管理；当前只保留两套降阶内置主题。
-- 成绩/设置导入导出 JSON。
-- 数据量增大后把 repository 切换到 IndexedDB。
+- 成绩 / 录像 / 设置导入导出 JSON。
+- 长录像时间轴改为 checkpoint / 按需物化盘面；当前保留完整帧。
 - 成绩保存 `themeId`，实现“按当时主题回放”。
 - 限时观察、暂停模式等新规则。
 - 国际化 typed messages。
 - 自定义光标改为 SVG data URI。
 - 图表库替换为 uPlot 或自绘 SVG。
+- 使用 `navigator.storage.persist()` 申请持久化存储。
 - 多标签页同步、可访问性增强。

@@ -4,7 +4,7 @@
 >
 > 当前分支：`refactor/vite-ts`
 >
-> 状态：P0–P4 已完成，P5 待开始
+> 状态：P0–P4 已完成，P5 待开始；P5/P6 详细设计见 `docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`
 >
 > 标记：`[ ]` 未开始 / `[~]` 进行中 / `[x]` 已完成 / `[!]` 阻塞
 >
@@ -20,7 +20,7 @@
 | P3   | session 纯逻辑            | P1         | `[x]` |
 | P4   | stats 纯逻辑              | P1         | `[x]` |
 | P5   | replay 纯逻辑             | P1         | `[ ]` |
-| P6   | data 层与旧数据清理       | P1–P5      | `[ ]` |
+| P6   | localStorage + IndexedDB 数据层与旧数据清理 | P1–P5 | `[ ]` |
 | P7   | 共享 UI 基础              | P2、P6     | `[ ]` |
 | P8   | 游戏页                    | P3、P6、P7 | `[ ]` |
 | P9   | 成绩页                    | P4、P6、P7 | `[ ]` |
@@ -59,7 +59,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 ### P0-3 更新重构计划
 
 - [x] 文件：`docs/REFACTOR_PLAN.md`
-- 内容：删除旧数据兼容策略，改为 `puzzle.v2.*` 新键、不迁移旧数据；补充新文档入口。
+- 内容：删除旧数据兼容策略，改为 localStorage（设置/外观）+ IndexedDB（成绩/录像）的新存储方案、不迁移旧数据；补充新文档入口。
 - 验收：重构计划与架构文档不矛盾。
 
 ---
@@ -298,15 +298,20 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 - 内容：
   - `buildReplayTimeline(score, replay)`：第 0 帧为 scramble；逐步应用 moves。
   - normal 时间偏移 `observeMs`；blind 不偏移。
-  - 时间单调 clamp；非法方向、棋盘损坏、moveCount 不一致写入 issues 并停止。
-  - `durationMs` 以 score 为准，且不小于最后一帧。
-  - `getFrameAt(timeline, positionMs)` 二分查找，首尾 clamp。
+  - `invalid-board`：返回空时间轴（`frames: []`、`durationMs: 0`），不抛异常。
+  - `move-count-mismatch`：记录 issue，继续用实际 moves 构建。
+  - `invalid-move`：记录 issue，保留已构建帧并停止。
+  - `non-monotonic-time`：时间 clamp 到上一帧并继续。
+  - `durationMs = max(score.durationMs, 最后一帧.timeMs)`。
+  - `getFrameIndexAt` / `getFrameAt` 二分查找；空时间轴返回 `-1` / `null`；`positionMs = 0` 显示打乱帧。
+  - 详细规则见 `docs/PUZZLE_REPLAY.md`。
 - 测试：
   - 0 步成绩只有首帧。
   - normal/blind 时间轴差异。
-  - 非法 moves、moveCount 不一致。
-  - 时间倒退 clamp。
-  - 首帧前/末帧后查找。
+  - 初始盘面损坏、非法 moves、moveCount 不一致。
+  - 时间倒退、负数、NaN clamp。
+  - `durationMs` 小于最后一帧时取最后一帧。
+  - 首帧前/末帧后/中间/时间并列/空时间轴查找。
 - 依赖：P1-1、P1-2。
 
 ### P5-2 播放器状态机
@@ -315,70 +320,80 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 - 内容：
   - `PLAYBACK_SPEEDS`：0.125–10 的旧倍速列表。
   - `createPlayback`、`play`、`pause`、`seekToFrame`、`stepBy`、`setSpeed`、`updatePlayback`。
+  - `play` / `pause` / `setSpeed` 也接收 timeline，保证 `positionMs` 始终在 `[0, durationMs]`。
   - 用 `positionMs` + 锚点，不逐帧 interval。
-  - 倍速变化先更新位置再重设锚点。
-  - 到末尾自动停止。
+  - 倍速变化先结算当前位置、重设锚点，再应用新速度。
+  - 到末尾自动暂停；再次 `play` 从头开始。
+  - 空时间轴返回 `frame: null`、`finished: true`。
 - 测试：
   - 播放/暂停/恢复不跳时间。
   - 1x→10x、10x→0.5x 不整体缩放历史时间。
   - seek/step 边界。
-  - 末尾自动暂停。
+  - 末尾自动暂停、再次播放从头开始。
   - 非播放状态 update 不推进。
+  - 空时间轴、非法 `nowMs` 不产生 NaN。
 - 依赖：P5-1。
 
-### P5-3 回放集成与边界测试
+### P5-3 回放集成与长录像测试
 
-- [ ] 文件：`src/games/puzzle/core/replay.test.ts`（或新增集成测试）
-- 内容：把 timeline 与 playback 串起来，覆盖真实成绩形态。
+- [ ] 文件：`src/games/puzzle/core/replay-integration.test.ts`
+- 内容：把 timeline 与 playback 串起来，覆盖真实成绩形态和长录像边界。
 - 测试：
   - normal 4×4 完整回放，关键时间点帧正确。
   - blind 回放包含观察等待。
   - 0 步、最后一步、seek 到中间后继续播放。
-  - issues 不为空时 UI 可提示但不崩溃。
+  - 10×10、约 3,000 步长录像：帧数、最终盘面、seek、播放到末尾。
+  - issues 不为空时 timeline 和 playback 仍可正常运行。
 - 依赖：P5-1、P5-2。
 
 ---
 
-## P6 data 层与旧数据清理
+## P6 data 层（localStorage + IndexedDB）与旧数据清理
 
-### P6-1 存储适配器
+### P6-1 localStorage 适配器与 IndexedDB 初始化
 
-- [ ] 文件：`src/games/puzzle/data/storage.ts`、`storage.test.ts`
+- [ ] 文件：`src/games/puzzle/data/local-storage.ts`、`local-storage.test.ts`、`db.ts`、`db.test.ts`、`errors.ts`
 - 内容：
+  - 安装 `idb`（运行时）与 `fake-indexeddb`（开发测试）。
   - `Storage` 接口：`get`、`set`、`remove`、`keys`。
   - `createLocalStorage()` 与 `createMemoryStorage()`。
-  - `readJson` / `writeJson`：JSON 解析失败、配额错误、存储不可用返回明确结果。
-  - `ensureMeta()`：首次访问创建 `puzzle.v2.meta`，记录 version 与 createdAt。
-  - 统一 `puzzle.v2.` 前缀。
+  - `readJson` / `writeJson`：JSON 解析失败、配额错误、存储不可用转换为 `DataStoreError`。
+  - `DataStoreError` 与错误码：`unavailable` / `blocked` / `quota` / `validation` / `corrupt` / `unknown`。
+  - IndexedDB：`DB_NAME = 'puzzle.v2'`、`DB_VERSION = 1`，打开连接、创建 `scores` / `replays` store 和索引。
+  - `closeDB()`、`deletePuzzleDB()` 用于测试/维护；监听 `blocked` / `blocking` / `terminated`。
+  - 不再创建 `puzzle.v2.meta`。
 - 测试：
   - 内存存储读写/删除。
   - 损坏 JSON 不抛到页面层。
   - 配额/不可用模拟。
+  - IndexedDB 首次打开创建 store/index；关闭和删除数据库。
 - 依赖：P1-1。
 
-### P6-2 schema 与类型守卫
+### P6-2 schema 与录像编码
 
-- [ ] 文件：`src/games/puzzle/data/schema.ts`、`schema.test.ts`
+- [ ] 文件：`src/games/puzzle/data/schema.ts`、`schema.test.ts`、`replay-codec.ts`、`replay-codec.test.ts`
 - 内容：
-  - `STORAGE_KEYS` 常量。
-  - `SCHEMA_VERSION = 2`。
-  - 各存储信封类型。
+  - `STORAGE_KEYS = { settings, appearance }`；`SCHEMA_VERSION = 2`（localStorage envelope）。
+  - localStorage envelope 类型：`{ version: 2, data: ... }`。
   - `isScoreRecord`、`isReplayRecord`、`isGameSettings`、`isAppearanceState` 等守卫。
   - 校验固定 10 组、`GroupId` 为 1–10、`groupId` 在范围内；名称允许重名。
   - 校验 `Theme.color.mode` 对应的 palette 长度（18/10/99）、颜色格式、`fontColor` / `blankColor`、`Theme.metrics` 范围。
-  - 非法记录跳过策略。
+  - `StoredReplayV2 { scoreId, directions, timeDeltas }` 类型守卫。
+  - `encodeReplay` / `decodeReplay`：方向字符串、时间增量、非负安全整数、累计时间、`MAX_REPLAY_MOVES = 100_000`。
+  - 非法记录跳过策略；解码失败返回 `null`。
 - 测试：
   - 合法/非法 score、replay、settings、appearance。
   - 缺字段、错误类型、越界 size、非法颜色。
   - 分组数量/ID 非法、`groupId` 越界、损坏名称回退。
   - 主题模式/色板长度/metrics 非法。
-  - 数组里混入坏记录时只过滤坏记录。
+  - 录像往返一致（0 / 1 / 3,000 / 10,000 步）；非法方向、长度不一致、负 delta、超上限。
 - 依赖：P1-1、P6-1。
 
-### P6-3 设置存储
+### P6-3 设置存储（localStorage）
 
 - [ ] 文件：`src/games/puzzle/data/settings-store.ts`、`settings-store.test.ts`
 - 内容：
+  - 使用 `local-storage.ts` 同步读写 `puzzle.v2.settings`。
   - 默认设置：size 4、normal、slide、无自定义光标、非极简 UI。
   - 默认固定 10 个分组，ID 1–10，名称 G1–G10；只允许修改 `Group.name`，不新增、不删除、不排序；允许重名。
   - `loadSettings` / `saveSettings`。
@@ -391,10 +406,11 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
   - 损坏/缺失分组补齐后 ID 不变。
 - 依赖：P6-1、P6-2。
 
-### P6-4 外观存储
+### P6-4 外观存储（localStorage）
 
 - [ ] 文件：`src/games/puzzle/data/appearance-store.ts`、`appearance-store.test.ts`
 - 内容：
+  - 使用 `local-storage.ts` 同步读写 `puzzle.v2.appearance`。
   - `loadAppearance` / `saveAppearance`。
   - activeThemeId 失效回退内置主题。
   - 内置主题不可被覆盖/删除；自定义主题列表保留。
@@ -408,22 +424,27 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
   - 内置主题不可删除。
 - 依赖：P2-5、P6-1、P6-2。
 
-### P6-5 成绩与录像存储
+### P6-5 成绩与录像存储（IndexedDB）
 
 - [ ] 文件：`src/games/puzzle/data/score-store.ts`、`replay-store.ts`、`score-store.test.ts`
 - 内容：
-  - `listScores`、`getScoreById`、`addScore`、`removeScore`、`clearScores`、`clearScoresByGroup(groupId)`。
-  - `loadReplay`、`saveReplay`、`removeReplay`。
-  - `addScore` 先写 replay 再写 scores；scores 失败时回滚 replay。
-  - 删除先 scores 再 replay；孤立 replay 可清理。
-  - `clearScoresByGroup` 删除该 `groupId` 下所有 `size + gameMode` 的成绩与 replay，保留分组和名称。
+  - `listScoresByBucket(filter)`：使用 `by-bucket` 索引，只加载目标桶。
+  - `getScoreById(id)`、`addScoreWithReplay(score, replay)`、`removeScore(id)`。
+  - `countScoresByBucket(filter)`、`countScoresByGroup(groupId)`、`countAllScores()`。
+  - `clearScoresByBucket(filter)`、`clearScoresByGroup(groupId)`、`clearAllScores()`。
+  - `loadReplay(scoreId)`：读取 `replays` store，解码为 `ReplayRecord`。
+  - 新增/删除/清空都在同一个 IndexedDB 事务中完成，不再需要写入顺序和回滚。
+  - 写入前校验 `score.id === replay.scoreId`、`score.moveCount === replay.moves.length`。
+  - 不公开独立 `saveReplay` / `removeReplay`，避免孤立录像。
   - 不写 `tps`、`number`、`ao` 等派生字段。
-- 测试：
-  - 新增/读取/删除/清空。
-  - 按分组清空只删除目标组，其他组保留；replay 一并删除。
-  - 写入顺序与失败回滚。
-  - 孤立 replay 清理。
-  - 损坏记录过滤。
+- 测试（`fake-indexeddb`）：
+  - 新增后成绩和录像都可读；重复 ID 导致事务回滚。
+  - `by-bucket` 只返回目标 `size + gameMode + groupId`。
+  - `by-group` 跨 size / gameMode 计数和清空。
+  - 删除单条、清空当前桶、清空分组、清空全部。
+  - 删清空后无孤立录像。
+  - 损坏成绩过滤；损坏录像返回 `null`。
+  - 10×10、约 3,000 步录像保存/读取。
 - 依赖：P6-1、P6-2、P1-2。
 
 ### P6-6 旧数据清理
@@ -432,10 +453,10 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 - 内容：
   - `LEGACY_KEYS = ['config', 'scores', 'currentScore', 'currentScoreList']`。
   - `hasLegacyData()`、`clearLegacyData()`。
-  - 新代码不读取这些键。
+  - 新代码不读取这些键；不从旧 v2 localStorage 键迁移。
 - 测试：
   - 有/无旧键检测。
-  - 清理只删除旧键，不影响 `puzzle.v2.*`。
+  - 清理只删除旧键，不影响 `puzzle.v2.settings` / `puzzle.v2.appearance` 和 IndexedDB。
   - 全仓库搜索确认没有旧键读取。
 - 依赖：P6-1。
 
@@ -480,12 +501,13 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 - [ ] 文件：`src/games/puzzle/ui/dialog.ts`、`notice.ts`、`lifecycle.ts`
 - 内容：
   - 基于原生 `<dialog>` 的确认框/设置框封装。
-  - 非阻塞 toast/notice。
+  - 非阻塞 toast/notice，包含 loading、存储不可用、配额不足、录像损坏提示。
   - `createAbortController` / `dispose` 辅助，统一页面卸载。
 - 测试/验收：
   - Esc/取消/确认行为一致。
   - 焦点回到触发元素。
   - 页面销毁后无残留监听器。
+  - 存储错误提示不阻塞当前页面。
 - 依赖：P6-1。
 
 ---
@@ -497,8 +519,8 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 - [ ] 文件：`puzzle-game/puzzle.html`、`src/games/puzzle/pages/game.ts`、`styles/game.css`
 - 内容：
   - 替换占位页，保留原 URL。
-  - 加载 settings/appearance；初始化空棋盘。
-  - 统一的错误边界：存储不可用、主题损坏时显示提示并继续。
+  - 同步加载 settings/appearance；初始化空棋盘。
+  - 统一的错误边界：localStorage 不可用、IndexedDB 不可用、主题损坏时显示提示并继续。
 - 验收：页面可加载，无控制台错误。
 - 依赖：P6、P7。
 
@@ -517,11 +539,11 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 - [ ] 文件：`pages/game.ts`
 - 内容：
-  - solved 后构造 `ScoreRecord` + `ReplayRecord`，调用 score-store 保存。
-  - 保存失败提示，不丢当前结果。
-  - `?retry=<id>`：读取成绩打乱，创建 retry session；复原后不保存。
+  - solved 后构造 `ScoreRecord` + `ReplayRecord`，`await addScoreWithReplay` 保存。
+  - 保存中显示状态并禁用重复提交；保存失败提示，不丢当前结果。
+  - `?retry=<id>`：异步读取成绩打乱，创建 retry session；加载期间显示 loading；复原后不保存。
   - 完成后锁定棋盘，显示“新一局/查看成绩”入口。
-- 验收：正常成绩落库；重玩不落库；刷新后成绩仍在。
+- 验收：正常成绩落库；重玩不落库；刷新后成绩和录像仍在。
 - 依赖：P3-2、P6-5、P8-2。
 
 ### P8-4 设置与外观编辑器
@@ -555,7 +577,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
   - 加载页面、切阶数、三种输入各完成一局、盲玩隐藏、成绩保存。
   - 切换内置/自定义主题，刷新后主题与 metrics 保留。
   - 分组改名后刷新，HUD 和成绩页显示新名称。
-  - 刷新后设置与成绩保留。
+  - 刷新后设置、成绩和录像保留。
 - 验收：Playwright 通过；用户手动验收。
 - 依赖：P8-3、P8-4。
 
@@ -570,18 +592,19 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
   - 解析 `size` / `mode` / `group`（固定编号 1–10）；非法回退。
   - 筛选变化用 `history.pushState`；监听 `popstate`。
   - 从 settings 读默认筛选。
-- 验收：刷新/前进后退/分享链接都能恢复筛选。
-- 依赖：P6-3、P7-1。
+  - 筛选切换异步查询 IndexedDB；使用请求序号或取消标记忽略过期结果。
+- 验收：刷新/前进后退/分享链接都能恢复筛选；快速切换不出现旧结果覆盖。
+- 依赖：P6-3、P6-5、P7-1。
 
 ### P9-2 统计与列表
 
 - [ ] 文件：`pages/stats.ts`
 - 内容：
-  - 加载 scores，过滤/排序/编号。
-  - 显示组统计、表格、高亮、空状态。
+  - `await listScoresByBucket(filter)`，只加载目标桶；再排序/编号。
+  - 显示组统计、表格、高亮、空状态、加载状态。
   - 分组筛选和列表显示 `Group.name`，不使用 ID 作为文案。
   - 不显示旧版“榜首列是阶数”的错位表头。
-- 验收：统计数字与纯函数一致；空桶显示空状态。
+- 验收：统计数字与纯函数一致；空桶显示空状态；加载失败显示错误提示。
 - 依赖：P4、P9-1。
 
 ### P9-3 详情与删除
@@ -589,10 +612,13 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 - [ ] 文件：`pages/stats.ts`、`ui/dialog.ts`
 - 内容：
   - `?score=<id>` 打开详情；显示打乱缩略图、时间、观察、曼哈顿距离（由 scramble 计算）、步数、TPS、ao、日期等。
-  - 删除单条/清空当前筛选/清空分组全部成绩/全部，使用原生确认框；删除后局部更新，不 `location.reload()`。
-  - “清空分组数据”按 `groupId` 删除该组所有 `size + gameMode` 的成绩与 replay，保留分组和名称；确认框显示名称、编号和成绩条数。
+  - 删除单条：`await removeScore(id)`。
+  - 清空当前筛选：`await clearScoresByBucket(filter)`；确认框用 `countScoresByBucket(filter)`。
+  - 清空分组全部成绩：`await clearScoresByGroup(groupId)`；确认框用 `countScoresByGroup(groupId)`，保留分组和名称。
+  - 清空全部：`await clearAllScores()`；确认框用 `countAllScores()`。
+  - 使用原生确认框；删除后局部更新，不 `location.reload()`。
   - 删除后清理 URL 中失效的 score id。
-- 验收：删除后编号/统计/图表立即更新；清空分组后该组为空且分组仍存在；刷新一致。
+- 验收：删除后编号/统计/图表立即更新；清空分组后该组为空且分组仍存在；刷新一致；无孤立录像。
 - 依赖：P6-5、P9-2。
 
 ### P9-4 折线图
@@ -610,6 +636,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 - [ ] 文件：`tests/e2e/stats.spec.ts`
 - 内容：
   - 筛选、详情、删除、分组改名/清空、刷新、URL 恢复。
+  - IndexedDB 持久化：刷新后成绩仍在，删除后录像不存在。
   - 图表出现/隐藏。
 - 验收：Playwright 通过；用户手动验收。
 - 依赖：P9-3、P9-4。
@@ -622,10 +649,10 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 - [ ] 文件：`puzzle-game/replay.html`、`src/games/puzzle/pages/replay.ts`、`styles/replay.css`
 - 内容：
-  - 解析 `?score=<id>`；加载 score + replay。
-  - 缺失/损坏显示空状态和返回成绩页入口。
+  - 解析 `?score=<id>`；`await getScoreById(id)` + `await loadReplay(id)`。
+  - 缺失/损坏显示空状态和返回成绩页入口；加载期间显示 loading。
   - 初始化只读 board-view 和 timeline。
-- 验收：合法 id 正常显示；非法 id 不崩溃。
+- 验收：合法 id 正常显示；非法 id / 缺失录像 / IndexedDB 不可用时不崩溃。
 - 依赖：P5-1、P6-5、P7-2。
 
 ### P10-2 播放器与控制
@@ -644,8 +671,8 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 - [ ] 文件：`pages/replay.ts`、`tests/e2e/replay.spec.ts`
 - 内容：
   - “重玩”跳转 `puzzle.html?retry=<id>`。
-  - 回放数据损坏提示 issues，不崩溃。
-  - E2E：打开回放、播放、暂停、改倍速、重玩。
+  - 回放数据损坏提示 issues，不崩溃；缺失录像显示空状态。
+  - E2E：打开回放、播放、暂停、改倍速、重玩、刷新后仍可加载。
 - 验收：Playwright 通过；用户手动验收。
 - 依赖：P10-2、P8-3。
 
@@ -655,9 +682,9 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P11-1 文档更新
 
-- [ ] 文件：`README.md`、`docs/PUZZLE_GAME.md`、`docs/REFACTOR_PLAN.md`、`docs/PUZZLE_TASKS.md`
+- [ ] 文件：`README.md`、`docs/PUZZLE_GAME.md`、`docs/PUZZLE_ARCHITECTURE.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`、`docs/REFACTOR_PLAN.md`、`docs/PUZZLE_TASKS.md`
 - 内容：
-  - 更新拼图功能说明、存储键、URL 参数、固定分组与清空分组数据规则、三种着色模式与主题级 metrics、开发命令。
+  - 更新拼图功能说明、localStorage / IndexedDB 存储划分、录像紧凑编码、URL 参数、固定分组与清空规则、三种着色模式与主题级 metrics、开发命令。
   - 标记任务完成状态。
   - 记录实际实现与本文档的差异。
 - 验收：文档与新实现一致。
@@ -668,6 +695,8 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 - 内容：
   - 删除未使用的占位 CSS/HTML 片段和死代码。
   - 确认没有代码读取旧键 `config` / `scores` / `currentScore` / `currentScoreList`。
+  - 确认没有页面或其他层直接操作 localStorage / IndexedDB，读写只经过 data 层。
+  - 确认不再使用 `puzzle.v2.scores`、`puzzle.v2.replay.*`、`puzzle.v2.meta`。
   - 检查没有重复的 board 渲染实现、没有每 tile 监听器。
   - 保留旧图片等运行时资源；不删除 `docs/images`。
 - 验收：`rg` 搜索旧键只在 `data/legacy.ts` 出现；构建产物无多余依赖。
@@ -683,10 +712,12 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
     - normal / blind。
     - click / slide / keyboard。
     - 内置降阶预设、三种着色模式、自定义主题复制/保存、主题级字号/间隙/圆角。
-    - 成绩保存、统计、详情、删除。
-    - 回放播放/暂停/倍速/seek、重玩不保存。
+    - 成绩保存、统计、详情、删除、清空当前桶/分组/全部。
+    - 回放播放/暂停/倍速/seek、重玩不保存；10×10 长录像可加载和播放。
+    - IndexedDB 刷新后成绩和录像仍在；设置/外观刷新后仍在（localStorage）。
+    - IndexedDB 不可用/配额不足的错误提示；关闭其他标签页后恢复。
     - 刷新、URL 分享、浏览器后退。
-    - 旧数据清理按钮。
+    - 旧数据清理按钮；清理不影响 IndexedDB 和设置/外观。
 - 验收：全部通过；用户确认后提交。
 
 ---
@@ -701,12 +732,16 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 - [ ] blind 计时包含观察时间，第一次移动后隐藏数字，复原后恢复。
 - [ ] click/slide/keyboard 都能完成一局；一次整行滑动按多步计数。
 - [ ] 复原后棋盘锁定，不会重复保存。
-- [ ] 成绩保存后刷新仍在；重玩同一打乱不新增成绩。
-- [ ] 成绩页筛选、统计、高亮、详情、删除、清空分组正确；删除后不刷新页面也更新。
-- [ ] 回放播放/暂停/上下一步/倍速/进度条正确；倍速变化不跳时间轴。
+- [ ] 成绩和录像保存到 IndexedDB，刷新后仍在；重玩同一打乱不新增成绩。
+- [ ] 成绩页筛选、统计、高亮、详情、删除、清空当前筛选/分组/全部正确；删除后不刷新页面也更新。
+- [ ] 删除或清空后没有孤立录像；IndexedDB 事务失败不会留下半条数据。
+- [ ] 回放播放/暂停/上下一步/倍速/进度条正确；倍速变化不跳时间轴；10×10 长录像可正常加载。
+- [ ] 设置和外观保存在 localStorage，刷新后仍在；清空成绩不影响设置和外观。
 - [ ] 两套内置降阶主题可切换；自定义主题支持降阶/按行/固定色，颜色和 metrics 保存后刷新仍生效；切换主题不重开一局。
 - [ ] 修改内置主题时先生成自定义副本，内置主题本身保持不变。
-- [ ] 旧数据不读取；清理按钮只删旧键，不影响新数据。
+- [ ] 旧数据不读取；清理按钮只删旧键，不影响 IndexedDB 和设置/外观。
+- [ ] IndexedDB 不可用/配额不足时显示非阻塞提示；设置和外观仍可用。
+- [ ] 10×10 长录像（约 3,000 步）保存、回放、seek 正常。
 - [ ] 移动端横屏可用；键盘可完成一局；无控制台错误。
 
 ## 提交节奏

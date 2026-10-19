@@ -1,6 +1,6 @@
 # 重构计划
 
-> 状态：阶段 2 进行中（拼图纯逻辑 P0–P4 已完成，P5 待开始）
+> 状态：阶段 2 进行中（拼图纯逻辑 P0–P4 已完成，P5 待开始；P5/P6 详细设计见 `docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`）
 >
 > 分支：`refactor/vite-ts`
 >
@@ -8,7 +8,7 @@
 
 ## 0. 背景与意图（给后续 AI 的上下文）
 
-- 这个仓库是 Criel 的个人博客与游戏站，部署在 GitHub Pages 和 Netlify，纯静态、无后端，用户数据全部保存在浏览器 localStorage。
+- 这个仓库是 Criel 的个人博客与游戏站，部署在 GitHub Pages 和 Netlify，纯静态、无后端，用户数据全部保存在浏览器本地：小设置和外观用 localStorage，成绩列表和录像用 IndexedDB。
 - `puzzle-game` 写于大二暑假，是作者刚学前端三件套时的练习项目；`snake-game` 是后来借助 coding agent 做的小游戏。两套代码都带有明显的“能跑就行”痕迹：全局状态、重复渲染、直接读写 localStorage、重依赖全量引入等。
 - 作者现在的目标不是把旧代码整理整齐，而是把项目重构为更工程化、更可扩展、更容易长期维护的形态，同时保留现有功能与体验；拼图旧数据已确认丢弃，不迁移。
 - 作者重视运行时轻量：不希望在两个小游戏上引入 Vue/React 这类框架；但愿意使用成熟库解决图表、图标、国际化等通用问题，避免重复造轮子。
@@ -33,6 +33,7 @@
 - 测试：Vitest 覆盖核心逻辑和数据层；Playwright 做少量端到端冒烟测试。
 - 规范：ESLint + Prettier。
 - 部署：GitHub Actions 构建 `dist` 发布 GitHub Pages；Netlify 使用同一构建命令。
+- 存储：localStorage（设置/外观）+ IndexedDB（成绩/录像）；IndexedDB 使用 `idb` 轻量封装，测试使用 `fake-indexeddb`。
 - 图表：ECharts 按需引入，仅成绩页加载；如果后续仍然偏重，再评估 uPlot。
 - 图标：使用 Lucide / Iconify 等图标源，构建时打包为本地 SVG；生产环境不依赖运行时 CDN。
 - 国际化：轻量 typed module + 原生 `Intl`；规模变大后再评估 i18next / intl-messageformat。
@@ -40,8 +41,9 @@
 
 ## 3. 依赖原则
 
-- 通用、困难、非核心的问题优先用成熟库：图表、日期格式化、颜色选择、焦点管理、国际化。
+- 通用、困难、非核心的问题优先用成熟库：图表、日期格式化、颜色选择、焦点管理、国际化、IndexedDB 封装。
 - 项目核心逻辑自己实现：华容道规则、打乱算法、计分、贪吃蛇状态机、碰撞与冲刺。
+- IndexedDB 使用 `idb` 处理 Promise 化和事务；测试使用 `fake-indexeddb`，不引入重型 ORM。
 - 引入依赖前先回答：它解决什么问题、增加多少体积、是否可替换、是否影响离线和国内访问。
 - 不为“看起来工程化”引入抽象；`shared` 只放真正跨游戏复用的模块。
 - 优先使用浏览器原生能力：`<dialog>`、`<input type="color">`、`Intl`、Canvas 2D、Web Animations。
@@ -55,11 +57,11 @@
 ├─ puzzle-game/                  # HTML 入口保留原路径
 ├─ snake-game/
 ├─ src/
-│  ├─ shared/                    # storage、ui、styles、time、i18n
+│  ├─ shared/                    # 通用 ui、styles、time、i18n
 │  └─ games/
 │     ├─ puzzle/
 │     │  ├─ core/                # board、moves、scramble、session、stats、replay、appearance
-│     │  ├─ data/                # storage、settings、appearance、scores、legacy
+│     │  ├─ data/                # localStorage、IndexedDB、schema、录像编码、stores、legacy
 │     │  ├─ ui/                  # board-view、设置、成绩表、图表、格式化
 │     │  ├─ pages/               # 三个页面入口
 │     │  └─ styles/
@@ -90,7 +92,7 @@
 0. **基线与行为记录**：整理功能清单和必要的行为记录；不改代码。
 1. **工程骨架**：Vite + TypeScript + 多页入口 + CI/部署；现有页面先原样跑通。
 2. **拼图核心**：拆分 board、moves、scramble、session、stats、replay、appearance；先纯逻辑，后 data/UI；补核心单测。实现顺序见 `docs/PUZZLE_TASKS.md`。
-3. **拼图页面**：共享 board-view，迁移游戏页、成绩页、回放页；使用 `puzzle.v2.*` 新存储键，不迁移旧数据。
+3. **拼图页面**：共享 board-view，迁移游戏页、成绩页、回放页；设置/外观用 localStorage，成绩/录像用 IndexedDB，不迁移旧数据。
 4. **贪吃蛇**：拆分 engine、renderer、i18n、theme、storage；保持玩法手感。
 5. **收尾**：依赖瘦身、UI/可访问性/性能优化、旧资源清理、文档更新。
 
@@ -98,14 +100,17 @@
 
 ## 6. 数据与兼容策略
 
-- **拼图旧数据不迁移、不兼容**。启用 `puzzle.v2.*` 新存储键；旧键 `config`、`scores`、`currentScore`、`currentScoreList` 不再读取。
+- **拼图旧数据不迁移、不兼容**。旧键 `config`、`scores`、`currentScore`、`currentScoreList` 不再读取。
 - 旧键只提供显式清理入口（`src/games/puzzle/data/legacy.ts`），不自动删除；GitHub Pages 与 Netlify 需分别清理。
-- 成绩只存事实；`tps`、`number`、`ao5`、`ao12`、格式化时间等派生值读时计算。详见 `docs/PUZZLE_ARCHITECTURE.md`。
+- **存储分层**：设置、外观存 localStorage；成绩列表和录像存 IndexedDB（DB `puzzle.v2`，stores `scores` / `replays`，索引 `by-bucket` / `by-group`）。
+- **录像紧凑编码**：IndexedDB 中存 `directions` + `timeDeltas`，读取时解码为 `ReplayRecord`；不存储逐帧棋盘。
+- 成绩只存事实；`tps`、`number`、`ao5`、`ao12`、格式化时间等派生值读时计算。详见 `docs/PUZZLE_ARCHITECTURE.md` 与 `docs/PUZZLE_STORAGE.md`。
 - 成绩 ID 使用 `crypto.randomUUID()`（含回退实现），不使用雪花 ID；ID 用于稳定引用，展示编号由桶内排序派生。
 - 拼图分组固定 10 个（ID 1–10），只允许修改名称；不新增、不删除分组，只提供按分组清空成绩与录像。
 - 页面间不通过 localStorage 传状态；回放、重玩使用 URL 参数 + score id。
 - 统计筛选、选中成绩等页面状态使用 URL 参数；旧页面 URL 路径保留。
-- 未来 schema 变化通过 `puzzle.v2.meta.version` 迁移；当前 v2 不做旧版本迁移。
+- 版本管理：localStorage envelope 使用 `version: 2`；IndexedDB 使用 `DB_VERSION`。不再使用 `puzzle.v2.meta`；当前 v2 不做旧版本迁移。
+- 不做 localStorage 降级成绩存储；IndexedDB 不可用时明确提示，避免两套数据源。
 - 贪吃蛇旧数据策略在其重构阶段单独决定，默认同样优先新键、不迁移旧记录。
 - 旧代码只作为行为参考，不复制进新目录；需要对照时使用 git tag、`git show` 或 worktree。
 
@@ -116,7 +121,7 @@
 - 必须覆盖：
   - 拼图：三种操作模式、盲玩、计时/观察时间、ao5/ao12 规则、三种着色模式（降阶/按行/固定色）、主题级字号/间隙/圆角、预设与自定义主题、自定义光标、录像回放、录像重玩、固定分组、按组清空成绩与删除成绩。
   - 贪吃蛇：三种模式、碰撞缓冲、锁定冲刺、计分、最佳记录、速度设置、中英文、深浅主题。
-- 数据：拼图旧成绩、旧配置、旧自定义方案不迁移；提供显式清理入口。贪吃蛇在对应阶段决定。
+- 数据：拼图旧成绩、旧配置、旧自定义方案不迁移；提供显式清理入口。成绩/录像使用 IndexedDB，设置/外观使用 localStorage；长录像不占满 localStorage。贪吃蛇在对应阶段决定。
 - 质量：构建通过、核心测试通过、移动端和键盘可用、无控制台错误。
 - 性能目标（非硬性指标）：首页几乎零 JS；游戏页不加载图表；图表按需加载；图标不依赖第三方 CDN。
 
@@ -126,7 +131,7 @@
 - 保持代码随时可运行，不做长时间的“大爆炸式”重构。
 - 改动前先看功能清单、数据模型与不变量；改动后更新文档。
 - 重构期间不顺手加入无关功能；新功能单独立项。
-- 关键决策记录在本文件或 `docs/PUZZLE_ARCHITECTURE.md` 中。
+- 关键决策记录在本文件、`docs/PUZZLE_ARCHITECTURE.md`、`docs/PUZZLE_REPLAY.md` 或 `docs/PUZZLE_STORAGE.md` 中。
 
 ## 9. 待讨论
 
@@ -136,14 +141,17 @@
 - 贪吃蛇渲染：DOM diff / Canvas 2D。
 - 自由模式当前“暂无”的处理：实现还是移除对应文案。
 - 外观自定义主题是否支持命名、删除、排序（当前 3 个槽位；主题已支持三种着色模式和独立 metrics）。
-- 成绩/设置导入导出 JSON（v2 schema 稳定后再做）。
-- 数据量增长后是否把 repository 切换到 IndexedDB。
+- 成绩 / 录像 / 设置导入导出 JSON（v2 schema 稳定后再做）。
+- 长录像时间轴是否改为 checkpoint / 按需物化盘面（当前保留完整帧）。
+- 是否使用 `navigator.storage.persist()` 申请持久化存储。
 - 图表最终选型：当前按需加载 ECharts，后续可评估 uPlot / 自绘 SVG。
 
 ## 10. 参考
 
 - 现有功能说明：`README.md`、`docs/PUZZLE_GAME.md`
 - 拼图架构契约：`docs/PUZZLE_ARCHITECTURE.md`
+- 回放设计：`docs/PUZZLE_REPLAY.md`
+- 数据存储设计：`docs/PUZZLE_STORAGE.md`
 - 拼图任务清单：`docs/PUZZLE_TASKS.md`
 - 旧版本基线：git tag `pre-refactor-2026-10`
 - 旧代码只读 worktree：`D:\Project\Criel14.github.io-legacy`（detached HEAD，指向基线 tag；供重构期间随时检索旧实现，不修改、不提交）
