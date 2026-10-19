@@ -1,6 +1,5 @@
 import type {
   Direction,
-  GroupId,
   MoveRecord,
   SessionConfig,
   SessionResult,
@@ -8,17 +7,10 @@ import type {
   SessionView,
 } from '../types';
 import { isPuzzleSize, isSolved, isValidBoard } from './board';
+import { isGroupId } from './groups';
 import { applyMove, isDirection, planLineMove } from './moves';
 import { calculateTps } from './score';
 import { manhattanDistance } from './scramble';
-
-const MIN_GROUP_ID = 1;
-const MAX_GROUP_ID = 10;
-
-/** 运行时校验固定分组编号；schema 层也会校验，但 core 被直接调用时仍需防御。 */
-function isGroupId(value: number): value is GroupId {
-  return Number.isInteger(value) && value >= MIN_GROUP_ID && value <= MAX_GROUP_ID;
-}
 
 /**
  * 创建一局游戏。

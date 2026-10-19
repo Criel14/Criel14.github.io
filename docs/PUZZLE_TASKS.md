@@ -4,7 +4,7 @@
 >
 > 当前分支：`refactor/vite-ts`
 >
-> 状态：P0–P5 已完成，P6 待开始；P5/P6 详细设计见 `docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`
+> 状态：P0–P6 已完成，P7 待开始；P5/P6 详细设计见 `docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`
 >
 > 标记：`[ ]` 未开始 / `[~]` 进行中 / `[x]` 已完成 / `[!]` 阻塞
 >
@@ -20,7 +20,7 @@
 | P3   | session 纯逻辑            | P1         | `[x]` |
 | P4   | stats 纯逻辑              | P1         | `[x]` |
 | P5   | replay 纯逻辑             | P1         | `[x]` |
-| P6   | localStorage + IndexedDB 数据层与旧数据清理 | P1–P5 | `[ ]` |
+| P6   | localStorage + IndexedDB 数据层与旧数据清理 | P1–P5 | `[x]` |
 | P7   | 共享 UI 基础              | P2、P6     | `[ ]` |
 | P8   | 游戏页                    | P3、P6、P7 | `[ ]` |
 | P9   | 成绩页                    | P4、P6、P7 | `[ ]` |
@@ -352,46 +352,48 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P6-1 localStorage 适配器与 IndexedDB 初始化
 
-- [ ] 文件：`src/games/puzzle/data/local-storage.ts`、`local-storage.test.ts`、`db.ts`、`db.test.ts`、`errors.ts`
+- [x] 文件：`src/games/puzzle/core/groups.ts`、`groups.test.ts`、`src/games/puzzle/data/local-storage.ts`、`local-storage.test.ts`、`db.ts`、`db.test.ts`、`errors.ts`、`errors.test.ts`
 - 内容：
   - 安装 `idb`（运行时）与 `fake-indexeddb`（开发测试）。
-  - `Storage` 接口：`get`、`set`、`remove`、`keys`。
+  - 抽取 `core/groups.ts` 的 `isGroupId`，供 session 与 schema 共用。
+  - `StorageAdapter` 接口：`get`、`set`、`remove`、`keys`。
   - `createLocalStorage()` 与 `createMemoryStorage()`。
-  - `readJson` / `writeJson`：JSON 解析失败、配额错误、存储不可用转换为 `DataStoreError`。
+  - `readJson` / `writeJson`：JSON 解析失败返回 `null`；配额/不可用转换为 `DataStoreError`。
   - `DataStoreError` 与错误码：`unavailable` / `blocked` / `quota` / `validation` / `corrupt` / `unknown`。
   - IndexedDB：`DB_NAME = 'puzzle.v2'`、`DB_VERSION = 1`，打开连接、创建 `scores` / `replays` store 和索引。
-  - `closeDB()`、`deletePuzzleDB()` 用于测试/维护；监听 `blocked` / `blocking` / `terminated`。
+  - `closeDB()`、`deletePuzzleDB()` 用于测试/维护；`blocked` 时打开失败、`blocking` 时让出连接、`terminated` 清空缓存。
   - 不再创建 `puzzle.v2.meta`。
 - 测试：
-  - 内存存储读写/删除。
-  - 损坏 JSON 不抛到页面层。
-  - 配额/不可用模拟。
-  - IndexedDB 首次打开创建 store/index；关闭和删除数据库。
+  - 内存存储读写/删除；损坏 JSON；循环引用；配额/不可用模拟。
+  - `DataStoreError` 的原生异常名映射。
+  - IndexedDB 首次打开创建 store/index；连接复用、关闭和删除数据库。
 - 依赖：P1-1。
 
 ### P6-2 schema 与录像编码
 
-- [ ] 文件：`src/games/puzzle/data/schema.ts`、`schema.test.ts`、`replay-codec.ts`、`replay-codec.test.ts`
+- [x] 文件：`src/games/puzzle/data/schema.ts`、`schema.test.ts`、`time.ts`、`replay-codec.ts`、`replay-codec.test.ts`
 - 内容：
   - `STORAGE_KEYS = { settings, appearance }`；`SCHEMA_VERSION = 2`（localStorage envelope）。
   - localStorage envelope 类型：`{ version: 2, data: ... }`。
   - `isScoreRecord`、`isReplayRecord`、`isGameSettings`、`isAppearanceState` 等守卫。
+  - `isScoreRecord` 允许 `durationMs >= 0`，时间字段允许小数。
   - 校验固定 10 组、`GroupId` 为 1–10、`groupId` 在范围内；名称允许重名。
   - 校验 `Theme.color.mode` 对应的 palette 长度（18/10/99）、颜色格式、`fontColor` / `blankColor`、`Theme.metrics` 范围。
   - `StoredReplayV2 { scoreId, directions, timeDeltas }` 类型守卫。
-  - `encodeReplay` / `decodeReplay`：方向字符串、时间增量、非负安全整数、累计时间、`MAX_REPLAY_MOVES = 100_000`。
+  - `roundTimeMs` 统一保留 3 位小数；`encodeReplay` 先四舍五入绝对时间再计算增量。
+  - `encodeReplay` / `decodeReplay`：方向字符串、非负有限时间、累计时间、`MAX_REPLAY_MOVES = 100_000`。
   - 非法记录跳过策略；解码失败返回 `null`。
 - 测试：
   - 合法/非法 score、replay、settings、appearance。
-  - 缺字段、错误类型、越界 size、非法颜色。
+  - 缺字段、错误类型、越界 size、非法颜色、duration 为 0、小数时间。
   - 分组数量/ID 非法、`groupId` 越界、损坏名称回退。
   - 主题模式/色板长度/metrics 非法。
-  - 录像往返一致（0 / 1 / 3,000 / 10,000 步）；非法方向、长度不一致、负 delta、超上限。
+  - 录像往返一致（0 / 1 / 3,000 / 10,000 步）；3 位小数、非法方向、长度不一致、负 delta、超上限。
 - 依赖：P1-1、P6-1。
 
 ### P6-3 设置存储（localStorage）
 
-- [ ] 文件：`src/games/puzzle/data/settings-store.ts`、`settings-store.test.ts`
+- [x] 文件：`src/games/puzzle/data/settings-store.ts`、`settings-store.test.ts`
 - 内容：
   - 使用 `local-storage.ts` 同步读写 `puzzle.v2.settings`。
   - 默认设置：size 4、normal、slide、无自定义光标、非极简 UI。
@@ -408,7 +410,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P6-4 外观存储（localStorage）
 
-- [ ] 文件：`src/games/puzzle/data/appearance-store.ts`、`appearance-store.test.ts`
+- [x] 文件：`src/games/puzzle/data/appearance-store.ts`、`appearance-store.test.ts`
 - 内容：
   - 使用 `local-storage.ts` 同步读写 `puzzle.v2.appearance`。
   - `loadAppearance` / `saveAppearance`。
@@ -426,7 +428,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P6-5 成绩与录像存储（IndexedDB）
 
-- [ ] 文件：`src/games/puzzle/data/score-store.ts`、`replay-store.ts`、`score-store.test.ts`
+- [x] 文件：`src/games/puzzle/data/score-store.ts`、`replay-store.ts`、`score-store.test.ts`
 - 内容：
   - `listScoresByBucket(filter)`：使用 `by-bucket` 索引，只加载目标桶。
   - `getScoreById(id)`、`addScoreWithReplay(score, replay)`、`removeScore(id)`。
@@ -449,7 +451,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P6-6 旧数据清理
 
-- [ ] 文件：`src/games/puzzle/data/legacy.ts`、`legacy.test.ts`
+- [x] 文件：`src/games/puzzle/data/legacy.ts`、`legacy.test.ts`
 - 内容：
   - `LEGACY_KEYS = ['config', 'scores', 'currentScore', 'currentScoreList']`。
   - `hasLegacyData()`、`clearLegacyData()`。

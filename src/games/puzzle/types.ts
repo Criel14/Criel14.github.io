@@ -66,7 +66,7 @@ export interface ScoreRecord {
   readonly moveMode: MoveMode;
   /** 本局所属的固定分组编号 1–10。 */
   readonly groupId: GroupId;
-  /** 有效用时，单位 ms，必须 > 0；normal 不含观察时间，blind 含观察时间。 */
+  /** 有效用时，单位 ms，必须 >= 0；normal 不含观察时间，blind 含观察时间。 */
   readonly durationMs: number;
   /** 第一次有效移动前的观察时间，单位 ms，必须 >= 0。 */
   readonly observeMs: number;

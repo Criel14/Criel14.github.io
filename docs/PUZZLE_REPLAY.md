@@ -272,7 +272,8 @@ interface StoredReplayV2 {
   readonly directions: string;
   /**
    * 时间增量，单位 ms，与 directions 等长。
-   * 第 0 项是相对创建时刻的 timeMs；后续项是相对上一步的增量，均 >= 0。
+   * 第 0 项是相对创建时刻的 timeMs；后续项是相对上一步的增量。
+   * 写入时统一保留 3 位小数，且均 >= 0。
    */
   readonly timeDeltas: readonly number[];
 }
@@ -283,8 +284,10 @@ interface StoredReplayV2 {
 ```ts
 let previous = 0;
 const timeDeltas = moves.map((move) => {
-  const delta = move.timeMs - previous;
-  previous = move.timeMs;
+  // 绝对时间先四舍五入到 3 位小数，再计算增量。
+  const roundedTimeMs = roundTimeMs(move.timeMs);
+  const delta = roundTimeMs(roundedTimeMs - previous);
+  previous = roundedTimeMs;
   return delta;
 });
 
@@ -296,7 +299,7 @@ const directions = moves.map((move) => move.direction).join('');
 ```ts
 let timeMs = 0;
 const moves = [...directions].map((direction, index) => {
-  timeMs += timeDeltas[index];
+  timeMs = roundTimeMs(timeMs + timeDeltas[index]);
   return { direction, timeMs };
 });
 ```
@@ -305,8 +308,8 @@ const moves = [...directions].map((direction, index) => {
 
 - `directions.length === timeDeltas.length`。
 - `directions` 只允许 `U/D/L/R`。
-- 每个 `timeDelta` 是非负安全整数。
-- 累计 `timeMs` 是安全整数。
+- 每个 `timeDelta` 是非负有限数；写入时统一四舍五入到 3 位小数。
+- 累计 `timeMs` 是有限数，且不超过 `Number.MAX_SAFE_INTEGER`。
 - 步数上限 `MAX_REPLAY_MOVES = 100_000`，防止损坏数据分配超大数组。
 - 解码失败时 `loadReplay` 返回 `null`，页面显示空状态。
 

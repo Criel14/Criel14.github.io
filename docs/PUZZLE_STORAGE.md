@@ -1,6 +1,6 @@
 # 数字华容道数据存储设计
 
-> 状态：P6 待实现
+> 状态：P6 已完成（数据层与旧数据清理均已实现）
 >
 > 分支：`refactor/vite-ts`
 >
@@ -15,6 +15,7 @@
 - **不使用 `puzzle.v2.meta`**：localStorage 的 envelope 自带 `version`，IndexedDB 用 `DB_VERSION`。
 - **数据库**：`puzzle.v2`，版本从 `1` 开始；object store 为 `scores` 和 `replays`，两者分开。
 - **录像紧凑编码**：IndexedDB 中存 `directions` 字符串 + `timeDeltas` 增量数组，读取时解码为 `ReplayRecord`。
+- **时间精度**：持久化的移动时间和时长统一保留 3 位小数；session 运行时仍使用完整精度。
 - **IndexedDB 封装**：使用 `idb` 运行时依赖；测试使用 `fake-indexeddb`。
 - **原子事务**：新增、删除成绩和录像都在同一个事务中完成，不再需要“先写 replay、失败回滚”。
 - **v2 尚未上线，不做旧 v2 数据迁移**；旧版 localStorage 键只提供显式清理入口。
@@ -94,22 +95,22 @@ v2 没有正式上线，不提供从这些键迁移到 IndexedDB 的逻辑。若
 `data/local-storage.ts` 提供：
 
 ```ts
-interface Storage {
+interface StorageAdapter {
   get(key: string): string | null;
   set(key: string, value: string): void;
   remove(key: string): void;
   keys(): string[];
 }
 
-createLocalStorage(): Storage;
-createMemoryStorage(): Storage;
-readJson<T>(storage: Storage, key: string, guard: (value: unknown) => value is T): T | null;
-writeJson(storage: Storage, key: string, value: unknown): void;
+createLocalStorage(): StorageAdapter;
+createMemoryStorage(initial?: Readonly<Record<string, string>>): StorageAdapter;
+readJson(storage: StorageAdapter, key: string): unknown | null;
+writeJson(storage: StorageAdapter, key: string, value: unknown): void;
 ```
 
 - `createMemoryStorage` 用于 Vitest，不依赖浏览器。
-- `readJson` 捕获 JSON 解析错误和 schema 错误，返回 `null`。
-- `writeJson` 捕获 `QuotaExceededError` 等异常，转换为 `DataStoreError`。
+- `readJson` 只把 JSON 解析失败当作缺失数据返回 `null`；存储访问错误继续抛 `DataStoreError`，由 store 决定回退默认值。
+- `writeJson` 捕获序列化错误和 `QuotaExceededError` 等异常，转换为 `DataStoreError`。
 - 页面和 core 不直接调用 `localStorage`；只有 data 层使用适配器。
 
 ## 3. IndexedDB
@@ -230,7 +231,8 @@ interface StoredReplayV2 {
   readonly directions: string;
   /**
    * 时间增量，单位 ms，与 directions 等长。
-   * 第 0 项是相对创建时刻的 timeMs；后续项是相对上一步的增量，均 >= 0。
+   * 第 0 项是相对创建时刻的 timeMs；后续项是相对上一步的增量。
+   * 写入时统一保留 3 位小数，且均 >= 0。
    */
   readonly timeDeltas: readonly number[];
 }
@@ -247,8 +249,11 @@ interface StoredReplayV2 {
 ```ts
 let previous = 0;
 const timeDeltas = moves.map((move) => {
-  const delta = move.timeMs - previous;
-  previous = move.timeMs;
+  // 先按绝对时间四舍五入到 3 位小数，再计算增量；
+  // 避免长录像的累计误差随步数增长。
+  const roundedTimeMs = roundTimeMs(move.timeMs);
+  const delta = roundTimeMs(roundedTimeMs - previous);
+  previous = roundedTimeMs;
   return delta;
 });
 
@@ -260,7 +265,7 @@ const directions = moves.map((move) => move.direction).join('');
 ```ts
 let timeMs = 0;
 const moves = [...directions].map((direction, index) => {
-  timeMs += timeDeltas[index];
+  timeMs = roundTimeMs(timeMs + timeDeltas[index]);
   return { direction, timeMs };
 });
 ```
@@ -272,8 +277,8 @@ const moves = [...directions].map((direction, index) => {
 - `scoreId` 非空字符串，且与成绩 ID 一致。
 - `directions.length === timeDeltas.length`。
 - `directions` 只包含 `U/D/L/R`。
-- 每个 `timeDelta` 是非负安全整数。
-- 累计 `timeMs` 是安全整数，且单调不减。
+- 每个 `timeDelta` 是非负有限数；写入时统一四舍五入到 3 位小数。
+- 累计 `timeMs` 是有限数，且单调不减；超过 `Number.MAX_SAFE_INTEGER` 视为损坏。
 - 步数不超过 `MAX_REPLAY_MOVES = 100_000`。
 - `encodeReplay` 遇到非法 `MoveRecord`（方向、负数、回退时间）时抛 `DataStoreError('validation')`。
 - `decodeReplay` 失败时 `loadReplay` 返回 `null`，不把异常抛到页面。
@@ -337,15 +342,15 @@ loadReplay(scoreId: string): Promise<ReplayRecord | null>;
 `data/settings-store.ts`：
 
 ```ts
-loadSettings(storage?: Storage): GameSettings;
-saveSettings(settings: GameSettings, storage?: Storage): void;
+loadSettings(storage?: StorageAdapter): GameSettings;
+saveSettings(settings: GameSettings, storage?: StorageAdapter): void;
 ```
 
 `data/appearance-store.ts`：
 
 ```ts
-loadAppearance(storage?: Storage): AppearanceState;
-saveAppearance(appearance: AppearanceState, storage?: Storage): void;
+loadAppearance(storage?: StorageAdapter): AppearanceState;
+saveAppearance(appearance: AppearanceState, storage?: StorageAdapter): void;
 ```
 
 - 同步 API。
@@ -454,7 +459,7 @@ npm install -D fake-indexeddb
 ### 8.3 `replay-codec.test.ts`
 
 - 0 步、1 步、3,000 步、10,000 步往返一致。
-- 方向字符串非法、长度不一致、负 delta、非整数 delta、累计溢出。
+- 方向字符串非法、长度不一致、负 delta、非有限 delta、累计溢出。
 - 超过 `MAX_REPLAY_MOVES` 被拒绝。
 - `encodeReplay` 拒绝非单调时间。
 - 估算体积：10,000 步紧凑编码明显小于对象数组。
@@ -502,6 +507,7 @@ src/games/puzzle/data/
 ├─ db.ts               # IndexedDB 打开、schema、连接管理
 ├─ errors.ts           # DataStoreError 与错误码
 ├─ schema.ts           # 各 record 的类型守卫
+├─ time.ts             # 3 位小数时间精度工具
 ├─ replay-codec.ts     # StoredReplayV2 编码/解码/校验
 ├─ settings-store.ts   # localStorage：设置
 ├─ appearance-store.ts # localStorage：外观

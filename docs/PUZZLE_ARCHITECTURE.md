@@ -1,6 +1,6 @@
 # 数字华容道重构架构
 
-> 状态：P0–P5 已实现，P6 待开始；回放与存储的详细设计见独立文档
+> 状态：P0–P6 已实现，P7 待开始；回放与存储的详细设计见独立文档
 >
 > 分支：`refactor/vite-ts`
 >
@@ -216,7 +216,7 @@ export interface AppearanceState {
 
 - `Board` 必须是 `0..size²-1` 的完整排列，长度等于 `size²`。
 - `MoveRecord.timeMs` 非负、有限，按数组顺序单调不减。
-- `ScoreRecord.durationMs > 0`，`observeMs >= 0`，`finishedAt` 是有效 epoch 毫秒。
+- `ScoreRecord.durationMs >= 0`（同一毫秒完成时可以为 0），`observeMs >= 0`，`finishedAt` 是有效 epoch 毫秒；持久化时移动时间和时长保留 3 位小数。
 - 开局时刻不落库：`startedAt = finishedAt - durationMs`，由 `getScoreStartedAt(score)` 统一派生。
 - 曼哈顿距离不落库：由 `scramble` + `size` 用 `manhattanDistance()` 派生。
 - `ScoreRecord.moveCount === ReplayRecord.moves.length`；回放数据不完整时标记为损坏，不猜测补齐。
@@ -267,11 +267,11 @@ core / UI 使用 `ReplayRecord { scoreId, moves }`；IndexedDB 中由 data 层�
 interface StoredReplayV2 {
   scoreId: string;
   directions: string;      // 每字符一步：U/D/L/R
-  timeDeltas: readonly number[]; // 与 directions 等长，非负增量
+  timeDeltas: readonly number[]; // 与 directions 等长，非负增量，保留 3 位小数
 }
 ```
 
-- 解码后恢复为 `MoveRecord[]`，时间由增量累加得到。
+- 解码后恢复为 `MoveRecord[]`，时间由增量累加得到并保持 3 位小数精度。
 - 步数上限 `MAX_REPLAY_MOVES = 100_000`。
 - 不存储每一帧的棋盘；回放时间轴由 scramble + moves 派生。
 
@@ -739,6 +739,7 @@ src/games/puzzle/
 ├─ types.ts
 ├─ core/
 │  ├─ board.ts
+│  ├─ groups.ts
 │  ├─ moves.ts
 │  ├─ scramble.ts
 │  ├─ score.ts
@@ -758,6 +759,7 @@ src/games/puzzle/
 │  ├─ db.ts
 │  ├─ errors.ts
 │  ├─ schema.ts
+│  ├─ time.ts
 │  ├─ replay-codec.ts
 │  ├─ settings-store.ts
 │  ├─ appearance-store.ts
