@@ -4,7 +4,7 @@
 >
 > 当前分支：`refactor/vite-ts`
 >
-> 状态：P0–P3 已完成，P4 待开始
+> 状态：P0–P4 已完成，P5 待开始
 >
 > 标记：`[ ]` 未开始 / `[~]` 进行中 / `[x]` 已完成 / `[!]` 阻塞
 >
@@ -18,7 +18,7 @@
 | P1   | 领域类型与 score 共享函数 | P0         | `[x]` |
 | P2   | appearance 纯逻辑         | P1         | `[x]` |
 | P3   | session 纯逻辑            | P1         | `[x]` |
-| P4   | stats 纯逻辑              | P1         | `[ ]` |
+| P4   | stats 纯逻辑              | P1         | `[x]` |
 | P5   | replay 纯逻辑             | P1         | `[ ]` |
 | P6   | data 层与旧数据清理       | P1–P5      | `[ ]` |
 | P7   | 共享 UI 基础              | P2、P6     | `[ ]` |
@@ -243,7 +243,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P4-1 ao5 / ao12
 
-- [ ] 文件：`src/games/puzzle/core/stats.ts`、`stats.test.ts`
+- [x] 文件：`src/games/puzzle/core/stats.ts`、`stats.test.ts`
 - 内容：
   - `SESSION_GAP_MS = 5 * 60 * 1000`。
   - `computeAoAt(scores, index, windowSize)`：窗口、5 分钟间隔、去尾平均。
@@ -261,7 +261,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P4-2 聚合统计
 
-- [ ] 文件：`src/games/puzzle/core/stats.ts`、`stats.test.ts`
+- [x] 文件：`src/games/puzzle/core/stats.ts`、`stats.test.ts`
 - 内容：
   - `computeScoreStats(scores)`：返回 `ScoreStats`。
   - 时间/步数/TPS/观察时间的算术平均。
@@ -277,7 +277,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P4-3 高亮与图表数据
 
-- [ ] 文件：`src/games/puzzle/core/stats.ts`、`stats.test.ts`
+- [x] 文件：`src/games/puzzle/core/stats.ts`、`stats.test.ts`
 - 内容：
   - `computeScoreHighlights(scores)`：时间/步数/ao 最小最好、最大最差；TPS 最大最好、最小最差；并列全部标记。
   - `buildChartSeries(scores)`：`labels` 为派生 number，`timeSeconds`、`steps` 与之一一对应。

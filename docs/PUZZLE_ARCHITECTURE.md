@@ -1,6 +1,6 @@
 # 数字华容道重构架构
 
-> 状态：P0–P3 已实现，P4 待开始
+> 状态：P0–P4 已实现，P5 待开始
 >
 > 分支：`refactor/vite-ts`
 >
@@ -495,6 +495,8 @@ computeScoreStats(scores): ScoreStats;
 - 平均使用算术平均。
 - 空桶返回全 `null`（`count` 为 0）。
 - TPS 按每条成绩的 `moveCount / durationMs` 计算，再求平均。
+- TPS 为 0（`durationMs <= 0`）或非有限值时不参与平均和最佳值；没有有效 TPS 时返回 `null`。
+- `bestAo5` / `bestAo12` 在 `computeScoreStats` 内部先按完成时间排序，不要求调用方预先排序。
 
 ### 8.3 ao
 
