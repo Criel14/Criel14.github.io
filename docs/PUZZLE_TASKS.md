@@ -4,7 +4,7 @@
 >
 > 当前分支：`refactor/vite-ts`
 >
-> 状态：P0–P4 已完成，P5 待开始；P5/P6 详细设计见 `docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`
+> 状态：P0–P5 已完成，P6 待开始；P5/P6 详细设计见 `docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`
 >
 > 标记：`[ ]` 未开始 / `[~]` 进行中 / `[x]` 已完成 / `[!]` 阻塞
 >
@@ -19,7 +19,7 @@
 | P2   | appearance 纯逻辑         | P1         | `[x]` |
 | P3   | session 纯逻辑            | P1         | `[x]` |
 | P4   | stats 纯逻辑              | P1         | `[x]` |
-| P5   | replay 纯逻辑             | P1         | `[ ]` |
+| P5   | replay 纯逻辑             | P1         | `[x]` |
 | P6   | localStorage + IndexedDB 数据层与旧数据清理 | P1–P5 | `[ ]` |
 | P7   | 共享 UI 基础              | P2、P6     | `[ ]` |
 | P8   | 游戏页                    | P3、P6、P7 | `[ ]` |
@@ -294,7 +294,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P5-1 时间轴构建
 
-- [ ] 文件：`src/games/puzzle/core/replay.ts`、`replay.test.ts`
+- [x] 文件：`src/games/puzzle/core/replay.ts`、`replay.test.ts`
 - 内容：
   - `buildReplayTimeline(score, replay)`：第 0 帧为 scramble；逐步应用 moves。
   - normal 时间偏移 `observeMs`；blind 不偏移。
@@ -316,7 +316,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P5-2 播放器状态机
 
-- [ ] 文件：`src/games/puzzle/core/replay-playback.ts`、`replay-playback.test.ts`
+- [x] 文件：`src/games/puzzle/core/replay-playback.ts`、`replay-playback.test.ts`
 - 内容：
   - `PLAYBACK_SPEEDS`：0.125–10 的旧倍速列表。
   - `createPlayback`、`play`、`pause`、`seekToFrame`、`stepBy`、`setSpeed`、`updatePlayback`。
@@ -336,7 +336,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P5-3 回放集成与长录像测试
 
-- [ ] 文件：`src/games/puzzle/core/replay-integration.test.ts`
+- [x] 文件：`src/games/puzzle/core/replay-integration.test.ts`
 - 内容：把 timeline 与 playback 串起来，覆盖真实成绩形态和长录像边界。
 - 测试：
   - normal 4×4 完整回放，关键时间点帧正确。

@@ -9,6 +9,11 @@ const BLANK_DELTAS: Record<Direction, { row: number; col: number }> = {
   R: { row: 0, col: -1 },
 };
 
+/** TypeScript 类型之外再兜一层，避免运行时收到非法方向字符串。 */
+export function isDirection(value: string): value is Direction {
+  return value === 'U' || value === 'D' || value === 'L' || value === 'R';
+}
+
 /** 判断某个方向是否可以移动。 */
 export function canMove(board: Board, direction: Direction, size: PuzzleSize): boolean {
   const blankIndex = getBlankIndex(board);

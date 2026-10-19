@@ -1,9 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import type { Board } from '../types';
-import { applyMove, applyMoves, canMove, planLineMove } from './moves';
+import { applyMove, applyMoves, canMove, isDirection, planLineMove } from './moves';
 
 const solved3: Board = [1, 2, 3, 4, 5, 6, 7, 8, 0];
 const solved4: Board = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0];
+
+describe('isDirection', () => {
+  it('识别四个合法方向', () => {
+    for (const direction of ['U', 'D', 'L', 'R']) {
+      expect(isDirection(direction)).toBe(true);
+    }
+  });
+
+  it('拒绝其他字符串', () => {
+    expect(isDirection('')).toBe(false);
+    expect(isDirection('X')).toBe(false);
+    expect(isDirection('UU')).toBe(false);
+  });
+});
 
 describe('canMove', () => {
   it('根据空白块边界判断方向', () => {
