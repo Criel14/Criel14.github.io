@@ -4,7 +4,7 @@
 >
 > 当前分支：`refactor/vite-ts`
 >
-> 状态：P0–P6 已完成，P7 进行中（P7-1、P7-2 已完成，P7-3 待开始）；P5/P6 详细设计见 `docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`
+> 状态：P0–P7 已完成，P8 待开始（P7-3 的交互与视觉随 P8 接入手动验收）；P5/P6 详细设计见 `docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`
 >
 > 标记：`[ ]` 未开始 / `[~]` 进行中 / `[x]` 已完成 / `[!]` 阻塞
 >
@@ -21,13 +21,13 @@
 | P4   | stats 纯逻辑              | P1         | `[x]` |
 | P5   | replay 纯逻辑             | P1         | `[x]` |
 | P6   | localStorage + IndexedDB 数据层与旧数据清理 | P1–P5 | `[x]` |
-| P7   | 共享 UI 基础              | P2、P6     | `[~]` |
+| P7   | 共享 UI 基础              | P2、P6     | `[x]` |
 | P8   | 游戏页                    | P3、P6、P7 | `[ ]` |
 | P9   | 成绩页                    | P4、P6、P7 | `[ ]` |
 | P10  | 回放页                    | P5、P6、P7 | `[ ]` |
 | P11  | 文档、清理与验收          | P8–P10     | `[ ]` |
 
-**当前进度：P0–P6 已完成**。P7 起为 UI 阶段，按顺序推进，不提前写页面。
+**当前进度：P0–P7 已完成**。P8 起进入页面组装，按顺序推进，不提前写页面。
 
 每个阶段结束都运行：
 
@@ -511,16 +511,15 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P7-3 对话框、提示与生命周期
 
-- [ ] 文件：`src/games/puzzle/ui/dialog.ts`、`notice.ts`、`lifecycle.ts`
+- [x] 文件：`src/games/puzzle/ui/dialog.ts`、`notice.ts`、`lifecycle.ts`、`styles/overlays.css`
 - 内容：
-  - 基于原生 `<dialog>` 的确认框/设置框封装。
+  - 基于原生 `<dialog>` 的确认框/设置框封装；不引入 dialog / notice 库。
   - 非阻塞 toast/notice，包含 loading、存储不可用、配额不足、录像损坏提示。
-  - `createAbortController` / `dispose` 辅助，统一页面卸载。
+  - `createLifecycle` / `dispose` 辅助，统一页面卸载时的监听器、定时器和 rAF 清理。
+  - `overlays.css` 提供 dialog / notice 的基础样式，颜色使用 `base.css` 语义 token；页面级布局在 P8 调整。
 - 测试/验收：
-  - Esc/取消/确认行为一致。
-  - 焦点回到触发元素。
-  - 页面销毁后无残留监听器。
-  - 存储错误提示不阻塞当前页面。
+  - `lifecycle` 用 Vitest node 单测覆盖 signal、监听器、定时器、rAF 和幂等清理。
+  - dialog / notice 不引入 DOM 模拟环境、不做 DOM 单测；Esc/取消/确认、焦点回收、非阻塞提示随 P8 接入手动验收。
 - 依赖：P6-1。
 
 ---

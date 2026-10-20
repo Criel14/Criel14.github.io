@@ -1,6 +1,6 @@
 # 数字华容道重构架构
 
-> 状态：P0–P6 已实现，P7 进行中（P7-1、P7-2 已完成，P7-3 待开始）；回放与存储的详细设计见独立文档
+> 状态：P0–P7 已实现，P8 待开始（P7-3 交互与视觉随 P8 手动验收）；回放与存储的详细设计见独立文档
 >
 > 分支：`refactor/vite-ts`
 >
@@ -748,6 +748,17 @@ function getTileLayer(tile: number, size: PuzzleSize): number {
 - 深色/浅色主题只需在 `html[data-theme='dark']` 覆盖这些 token，并同步 `color-scheme`；本轮只建立 token 层，不实现切换入口。
 - 棋盘 CSS 不写死页面颜色；空白块透明时自然透出页面背景。
 
+### 10.6 对话框、提示与生命周期
+
+- `ui/dialog.ts` 基于原生 `<dialog>`：`createDialog` 提供通用外壳，`confirmDialog` 返回 `Promise<boolean>`。
+- Esc 与取消都返回取消，只有确认返回 `true`；关闭后焦点回到触发元素；危险操作默认聚焦取消；点击遮罩不关闭；`dismissible: false` 时 Esc 无效；`setBusy(true)` 阻止重复提交和 Esc。
+- `ui/notice.ts` 提供非阻塞 notice：顶部居中、稳定 id 去重、loading 可原地更新为成功/失败；info/success 使用 `role="status"`，warning/error 使用 `role="alert"`，不抢焦点。
+- 存储错误通过 `showStorageErrorNotice` 映射 `unavailable` / `blocked` / `quota` / `validation` / `corrupt` / `unknown`；回放 `issues` 通过 `showReplayIssueNotice` 提示，不阻塞页面。
+- `ui/lifecycle.ts` 提供 `createLifecycle` 与 `dispose`：统一 `AbortSignal`、事件监听、定时器、rAF 和销毁回调；页面卸载或重开一局时统一清理。
+- `styles/overlays.css` 提供基础样式，颜色使用 `base.css` 语义 token；页面级布局在 P8 调整。
+- UI 层不 import data；`StorageNoticeCode` 在 `notice.ts` 内定义，页面传入 `DataStoreErrorCode` 时由 TypeScript 校验。
+- P7-3 不引入 dialog / notice 库，也不引入 DOM 模拟环境；dialog / notice 的交互与视觉在 P8 接入手动验收。
+
 ## 11. 模块边界与目录
 
 ```text
@@ -795,6 +806,7 @@ src/games/puzzle/
 │  └─ replay.ts
 └─ styles/
    ├─ board.css
+   ├─ overlays.css
    ├─ game.css
    ├─ stats.css
    └─ replay.css
@@ -844,7 +856,7 @@ types ← core ← ui   ← pages
 
 - **core**：Vitest 单元测试；时间、随机源、棋盘全部通过参数注入；不依赖 DOM。
 - **data**：localStorage 适配器用内存 `Storage` 测试；IndexedDB repository 用 `fake-indexeddb` 测试；覆盖缺键、损坏 JSON、非法记录、配额/不可用错误、索引查询、原子事务。
-- **ui**：纯格式化函数可单测；board-view / 页面交互以 Playwright 冒烟测试为主，避免为了 DOM 测试引入额外运行时。
+- **ui**：纯格式化函数和 lifecycle 用 Vitest node 单测；dialog / notice / board-view 等 DOM 交互不引入 DOM 模拟环境，以手动验收和后续 Playwright 为主。
 - **测试命名**：中文描述，和现有 `board.test.ts` / `moves.test.ts` 保持一致。
 - **每次提交前**：
   ```bash
@@ -861,6 +873,7 @@ types ← core ← ui   ← pages
 - stats：空桶、单条、算术平均、去尾 ao、5 分钟边界、并列高亮、删除后重编号、清空分组后为空。
 - replay：0 步、正常回放、盲玩偏移、非法 move、倍速切换、暂停恢复、seek 边界、10×10 约 3,000 步长录像。
 - appearance：2–10 层映射、三种着色模式取色、两套内置主题不可变、主题级 metrics clamp、自定义主题复制/删除、主题切换不重建棋盘。
+- ui：lifecycle 的 signal / 监听器 / 定时器 / rAF 清理；dialog / notice 的 Esc、焦点回收、非阻塞提示在 P8 手动验收。
 - data：localStorage 设置/外观读写、IndexedDB 原子事务、`by-bucket` / `by-group` 索引、按桶/组/全部清空、录像编码往返、固定 10 组与改名、旧键不读取、清理旧键。
 
 ## 14. 决策记录

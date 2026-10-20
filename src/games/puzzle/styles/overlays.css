@@ -1,0 +1,273 @@
+/* 对话框与提示的基础样式：颜色只使用 base.css 的语义 token，页面级布局留给 P8 调整。 */
+
+.puzzle-dialog {
+  width: min(92vw, 36rem);
+  max-height: min(85dvh, 44rem);
+  margin: auto;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border-muted);
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 0.28);
+}
+
+.puzzle-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.puzzle-dialog::backdrop {
+  background: var(--color-overlay, rgb(0 0 0 / 0.45));
+}
+
+.puzzle-dialog__header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-border-muted);
+}
+
+.puzzle-dialog__title {
+  margin: 0;
+  font-size: 1.125rem;
+  line-height: 1.4;
+}
+
+.puzzle-dialog__close {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.puzzle-dialog__close:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.puzzle-dialog__close:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.puzzle-dialog__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 1.25rem;
+  overflow: auto;
+}
+
+.puzzle-dialog__body > :first-child {
+  margin-top: 0;
+}
+
+.puzzle-dialog__body > :last-child {
+  margin-bottom: 0;
+}
+
+.puzzle-dialog__footer {
+  display: flex;
+  flex: none;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.875rem 1.25rem;
+  border-top: 1px solid var(--color-border-muted);
+  background: var(--color-bg);
+}
+
+.puzzle-button {
+  appearance: none;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.puzzle-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.puzzle-button--primary {
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+
+.puzzle-button--danger {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+.puzzle-button--secondary {
+  border-color: var(--color-border-muted);
+  background: var(--color-surface);
+}
+
+.puzzle-button--primary:hover:not(:disabled),
+.puzzle-button--danger:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.puzzle-button--secondary:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+}
+
+.puzzle-notices {
+  position: fixed;
+  inset-block-start: 1rem;
+  inset-inline: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding-inline: 1rem;
+  pointer-events: none;
+}
+
+.puzzle-notice {
+  --notice-accent: var(--color-info);
+
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  width: min(100%, 28rem);
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--color-border-muted);
+  border-left: 4px solid var(--notice-accent);
+  border-radius: 0.5rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.15);
+  pointer-events: auto;
+  animation: puzzle-notice-in 160ms ease-out;
+}
+
+.puzzle-notice--success {
+  --notice-accent: var(--color-success);
+}
+
+.puzzle-notice--warning {
+  --notice-accent: var(--color-warning);
+}
+
+.puzzle-notice--error {
+  --notice-accent: var(--color-danger);
+}
+
+.puzzle-notice__icon {
+  flex: none;
+  width: 0.625rem;
+  height: 0.625rem;
+  margin-top: 0.4rem;
+  border-radius: 50%;
+  background: var(--notice-accent);
+}
+
+.puzzle-notice__spinner {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.1rem;
+  border: 2px solid var(--color-border-muted);
+  border-top-color: var(--notice-accent);
+  border-radius: 50%;
+  animation: puzzle-spin 0.8s linear infinite;
+}
+
+.puzzle-notice__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.puzzle-notice__title {
+  margin: 0 0 0.125rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.puzzle-notice__message {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.puzzle-notice__close {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.puzzle-notice__close:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+/* hidden 属性的 UA 样式优先级低于类选择器，需要显式兜底。 */
+.puzzle-notice__close[hidden],
+.puzzle-notice__title[hidden] {
+  display: none;
+}
+
+@keyframes puzzle-notice-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.25rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes puzzle-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 480px) {
+  .puzzle-notices {
+    inset-block-start: 0.5rem;
+    padding-inline: 0.5rem;
+  }
+
+  .puzzle-notice {
+    width: 100%;
+  }
+}

@@ -1,6 +1,6 @@
 # 重构计划
 
-> 状态：阶段 2 进行中（拼图纯逻辑 P0–P5 与数据层 P6 已完成，P7 共享 UI 基础进行中；P7-1、P7-2 已完成，详细设计见 `docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`）
+> 状态：阶段 2 进行中（拼图 P0–P7 已完成，P8 游戏页待开始；P7-3 交互与视觉随 P8 手动验收，详细设计见 `docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`）
 >
 > 分支：`refactor/vite-ts`
 >
