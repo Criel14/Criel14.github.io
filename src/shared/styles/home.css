@@ -30,7 +30,7 @@
 .home-intro {
   max-width: 30em;
   margin: 1.25rem 0 0;
-  color: var(--muted);
+  color: var(--color-muted);
 }
 
 .game-list {
@@ -44,19 +44,19 @@
   gap: 1rem;
   align-items: center;
   padding: 1.25rem 1.25rem 1.25rem 1rem;
-  border: 1px solid var(--line);
+  border: 1px solid var(--color-border);
   text-decoration: none;
   transition: background-color 120ms ease;
 }
 
 .game-card:hover {
-  background-color: var(--surface-hover);
+  background-color: var(--color-surface-hover);
 }
 
 .game-index {
   font-family: var(--font-mono);
   font-size: 0.75rem;
-  color: var(--muted);
+  color: var(--color-muted);
 }
 
 .game-title {
@@ -69,7 +69,7 @@
 .game-desc {
   display: block;
   margin-top: 0.25rem;
-  color: var(--muted);
+  color: var(--color-muted);
   font-size: 0.875rem;
 }
 
@@ -88,7 +88,7 @@
   gap: 0.5rem 0.75rem;
   margin-top: auto;
   padding-top: 3rem;
-  color: var(--muted);
+  color: var(--color-muted);
   font-size: 0.8125rem;
 }
 
@@ -98,7 +98,7 @@
 }
 
 .home-footer a:hover {
-  color: var(--ink);
+  color: var(--color-text);
 }
 
 @media (max-width: 520px) {

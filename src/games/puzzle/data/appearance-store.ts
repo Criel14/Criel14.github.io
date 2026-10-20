@@ -74,11 +74,16 @@ function normalizeCustomTheme(value: unknown): Theme | null {
     return null;
   }
 
+  if (typeof value.blindTileColor !== 'string' || !isValidHexColor(value.blindTileColor)) {
+    return null;
+  }
+
   const candidate = {
     id: value.id,
     name: value.name.trim(),
     builtin: false,
     color,
+    blindTileColor: value.blindTileColor,
     metrics: normalizeMetrics(value.metrics),
   };
 

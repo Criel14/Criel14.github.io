@@ -57,6 +57,9 @@ const RAINBOW_SOFT_METRICS: BoardMetrics = Object.freeze({
 /** 默认主题 ID；内置主题列表的第一项。 */
 export const DEFAULT_THEME_ID = 'rainbow';
 
+/** 新建自定义主题和损坏盲玩色的回退值；沿用旧版隐藏数字时的蓝色。 */
+export const DEFAULT_BLIND_TILE_COLOR = '#66ccff';
+
 /** 新建自定义主题和损坏 metrics 的回退值，取自旧预设1。 */
 export const DEFAULT_METRICS: BoardMetrics = RAINBOW_METRICS;
 
@@ -84,6 +87,7 @@ function createLayerTheme(
       blankColor: 'transparent',
       fontColor: '#ffffff',
     },
+    blindTileColor: DEFAULT_BLIND_TILE_COLOR,
     metrics,
   });
 }

@@ -86,8 +86,9 @@ v2 没有正式上线，不提供从这些键迁移到 IndexedDB 的逻辑。若
 ### 2.3 外观
 
 - 存储 `AppearanceState`：`activeThemeId` + `themes`。
-- 内置主题不可修改、不可删除；自定义主题可以编辑颜色和 metrics。
+- 内置主题不可修改、不可删除；自定义主题可以编辑颜色、盲玩色和 metrics。
 - 主题非法时过滤；`activeThemeId` 失效时回退第一个内置主题。
+- `Theme.blindTileColor` 是盲玩隐藏数字时的方块背景色，必须是 `#rrggbb`；缺失或非法的主题会被过滤。
 - 外观保存不重开当前局；运行中禁止打开外观编辑由 UI 执行。
 
 ### 2.4 localStorage 适配器

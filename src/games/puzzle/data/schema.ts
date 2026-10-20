@@ -111,6 +111,8 @@ export function isTheme(value: unknown): value is Theme {
     value.name.length > 0 &&
     typeof value.builtin === 'boolean' &&
     isColorMode(value.color) &&
+    typeof value.blindTileColor === 'string' &&
+    isValidHexColor(value.blindTileColor) &&
     isBoardMetrics(value.metrics)
   );
 }

@@ -35,6 +35,7 @@ function createTheme(color: ColorMode): Theme {
     name: '测试主题',
     builtin: false,
     color,
+    blindTileColor: '#66ccff',
     metrics,
   };
 }
@@ -192,6 +193,7 @@ describe('cloneTheme', () => {
     expect(clone.color).not.toBe(layerTheme.color);
     expect(clone.color.palette).not.toBe(layerTheme.color.palette);
     expect(clone.metrics).not.toBe(layerTheme.metrics);
+    expect(clone.blindTileColor).toBe(layerTheme.blindTileColor);
     expect(clone).toEqual(layerTheme);
   });
 

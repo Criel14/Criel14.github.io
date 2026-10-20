@@ -202,12 +202,18 @@ export interface BoardMetrics {
   readonly radiusRatio: number;
 }
 
-/** 统一外观入口：颜色模式和尺寸比例都属于主题。 */
+/** 统一外观入口：颜色模式、盲玩颜色和尺寸比例都属于主题。 */
 export interface Theme {
   readonly id: string;
   readonly name: string;
   readonly builtin: boolean;
   readonly color: ColorMode;
+  /**
+   * 盲玩隐藏数字时，所有非空方块的背景色。
+   * 必须为 #rrggbb；默认沿用旧版 #66ccff，用户可在自定义主题里调整。
+   * 空白块仍使用 color.blankColor，不参与这个颜色。
+   */
+  readonly blindTileColor: string;
   readonly metrics: BoardMetrics;
 }
 

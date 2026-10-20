@@ -27,6 +27,7 @@ function createCustomTheme(overrides: Partial<Theme> = {}): Theme {
       blankColor: 'transparent',
       fontColor: 'auto',
     },
+    blindTileColor: '#66ccff',
     metrics: {
       fontSizeRatio: 0.6,
       gapRatio: 0.02,

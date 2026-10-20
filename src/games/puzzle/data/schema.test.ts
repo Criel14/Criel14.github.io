@@ -176,6 +176,12 @@ describe('isTheme / isAppearanceState', () => {
         metrics: { ...theme.metrics, fontSizeRatio: 2 },
       }),
     ).toBe(false);
+    expect(
+      isTheme({
+        ...theme,
+        blindTileColor: 'red',
+      }),
+    ).toBe(false);
   });
 
   it('拒绝 activeThemeId 失效或主题列表为空', () => {

@@ -13,6 +13,7 @@ const theme: Theme = {
     blankColor: 'transparent',
     fontColor: '#ffffff',
   },
+  blindTileColor: '#66ccff',
   metrics: {
     fontSizeRatio: 0.5,
     gapRatio: 0.03,
@@ -65,9 +66,10 @@ describe('normalizeMetrics', () => {
 });
 
 describe('toCssVariables', () => {
-  it('生成空白色和三个比例变量', () => {
+  it('生成空白色、盲玩色和三个比例变量', () => {
     expect(toCssVariables(theme)).toEqual({
       '--blank-color': 'transparent',
+      '--blind-tile-bg': '#66ccff',
       '--tile-font-ratio': '0.5',
       '--tile-gap-ratio': '0.03',
       '--tile-radius-ratio': '0.04',
@@ -86,6 +88,7 @@ describe('toCssVariables', () => {
 
     expect(toCssVariables(invalidTheme)).toEqual({
       '--blank-color': 'transparent',
+      '--blind-tile-bg': '#66ccff',
       '--tile-font-ratio': '1',
       '--tile-gap-ratio': '0',
       '--tile-radius-ratio': String(DEFAULT_METRICS.radiusRatio),
@@ -102,5 +105,13 @@ describe('toCssVariables', () => {
       color: { ...theme.color, blankColor: '#fff' },
     };
     expect(toCssVariables(invalidBlank)['--blank-color']).toBe('transparent');
+  });
+
+  it('非法盲玩色回退旧版蓝色', () => {
+    const invalidBlind: Theme = {
+      ...theme,
+      blindTileColor: 'red',
+    };
+    expect(toCssVariables(invalidBlind)['--blind-tile-bg']).toBe('#66ccff');
   });
 });

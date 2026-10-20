@@ -4,7 +4,7 @@
 >
 > 当前分支：`refactor/vite-ts`
 >
-> 状态：P0–P6 已完成，P7 进行中（P7-1 已完成）；P5/P6 详细设计见 `docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`
+> 状态：P0–P6 已完成，P7 进行中（P7-1、P7-2 已完成，P7-3 待开始）；P5/P6 详细设计见 `docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`
 >
 > 标记：`[ ]` 未开始 / `[~]` 进行中 / `[x]` 已完成 / `[!]` 阻塞
 >
@@ -173,7 +173,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
   - `DEFAULT_METRICS` 或复用 presets。
   - `clampRatio(value, min, max)`。
   - `normalizeMetrics(raw)`：非数字、NaN、Infinity、越界值回退/夹取。
-  - `toCssVariables(theme)`：读取 `theme.metrics` 和 `theme.color.blankColor`，返回纯对象，不碰 DOM。
+  - `toCssVariables(theme)`：读取 `theme.metrics`、`theme.color.blankColor` 和 `theme.blindTileColor`，返回纯对象，不碰 DOM。
 - 测试：
   - 字号 0–1、间隙 0–0.1、圆角 0–0.5 的边界。
   - `NaN` / `Infinity` / 字符串输入（防御性）回退。
@@ -479,24 +479,35 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
   - 负数/NaN 防御。
 - 依赖：P1-1。
 
+### P7-2a 主题盲玩颜色
+
+- [x] 文件：`src/games/puzzle/types.ts`、`core/appearance/presets.ts`、`metrics.ts`、`data/schema.ts`、`appearance-store.ts` 及对应测试
+- 内容：
+  - `Theme` 新增 `blindTileColor`，必须是 `#rrggbb`，默认 `#66ccff`。
+  - 两套内置主题都使用旧版蓝色；`toCssVariables` 输出 `--blind-tile-bg`。
+  - 自定义主题可调；主题必须包含合法的 `blindTileColor`，缺失或非法的主题直接过滤。
+- 测试：
+  - 内置主题默认值、合法值保留、缺失/非法主题被丢弃、CSS 变量输出。
+- 依赖：P2-5、P6-4。
+
 ### P7-2 board-view 与主题应用
 
-- [ ] 文件：`src/games/puzzle/ui/board-view.ts`、`board-style.ts`、`styles/board.css`
+- [x] 文件：`src/games/puzzle/ui/board-view.ts`、`board-input.ts`、`styles/board.css`；页面 token 在 `src/shared/styles/base.css`
 - 内容：
-  - `createBoardView({ root, size, theme, interactive })`。
-  - `update(board)`、`setTheme(theme)`、`destroy()`；metrics 已包含在 theme 中。
+  - `createBoardView({ root, size, theme, numbersVisible })` 只负责渲染；输入拆到 `board-input.ts`。
+  - `update(board)`、`setTheme(theme)`、`setNumbersVisible(visible)`、`destroy()`；`element` 暴露棋盘外层。
   - 每个 tile 通过 `getTileVisual` 设置 `--tile-bg` / `--tile-fg`；CSS 不区分着色模式。
-  - `board-style` 从 `theme.metrics` 设置 `--tile-font-ratio`、`--tile-gap-ratio`、`--tile-radius-ratio`、`--blank-color`。
-  - 事件委托：click / mouseover / touchstart / touchmove 统一绑定在 board 容器。
-  - `ResizeObserver` 计算 `--cell-size`。
-  - 只读模式用于成绩详情和回放。
+  - 复用 `toCssVariables(theme)` 设置 `--tile-font-ratio`、`--tile-gap-ratio`、`--tile-radius-ratio`、`--blank-color`、`--blind-tile-bg`；不再单建 `board-style.ts`。
+  - 用 CSS 容器查询单位计算 `--cell-size`，不使用 `ResizeObserver`。
+  - `attachBoardInput(element, callbacks, { captureTouchMove })`：click / 鼠标经过 / 触摸路径统一在 board 容器采集，只上报格子下标。
+  - 只读模式用于成绩详情和回放：只创建 board-view，不挂输入。
+  - `base.css` 页面颜色迁移到 `--color-*` 语义 token，为后续深色/浅色主题预留。
 - 测试/验收：
   - 主题切换/修改 metrics 只更新 CSS 变量和 tile 颜色，不重建 tile。
-  - 三种着色模式的 tile 颜色正确。
-  - 2–10 阶布局正确。
-  - 不使用每 tile 独立监听器。
-  - `destroy` 后监听器和 observer 释放。
-- 依赖：P2-5、P6-4。
+  - 三种着色模式的 tile 颜色正确；盲玩隐藏数字使用 `--blind-tile-bg`。
+  - 2–10 阶布局、实际视觉效果随 P8-1 接入游戏页时验收。
+  - 不使用每 tile 独立监听器；`destroy` 后监听器释放。
+- 依赖：P2-5、P6-4、P7-2a。
 
 ### P7-3 对话框、提示与生命周期
 
@@ -554,7 +565,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 - 内容：
   - 游戏设置：阶数、模式、操作模式、分组选择；分组名称编辑（固定 10 组，不增删，允许重名）。
   - 外观：两套内置降阶主题；自定义主题支持降阶/按行/固定色三种模式。
-  - 色板编辑：降阶 18 色、按行 10 色、固定色 99 色；空白色、字体色（auto 或固定色）。
+  - 色板编辑：降阶 18 色、按行 10 色、固定色 99 色；空白色、字体色（auto 或固定色）、盲玩隐藏数字颜色。
   - 每个主题独立编辑字号/间隙/圆角；内置主题只读，修改时复制为自定义主题。
   - 原生 `<input type="color">`；实时预览；显式保存。
   - 保存外观不重开一局；运行中禁用设置入口。

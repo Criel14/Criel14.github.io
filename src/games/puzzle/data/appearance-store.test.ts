@@ -151,6 +151,25 @@ describe('normalizeAppearance', () => {
     ]);
   });
 
+  it('保留合法盲玩色，丢弃缺失或非法盲玩色的主题', () => {
+    const custom = createCustomTheme();
+    const appearance = normalizeAppearance({
+      activeThemeId: custom.id,
+      themes: [
+        { ...custom, blindTileColor: '#ff8800' },
+        { ...custom, id: 'custom-missing', blindTileColor: undefined },
+        { ...custom, id: 'custom-invalid', blindTileColor: 'red' },
+      ],
+    });
+
+    expect(appearance.themes.map((theme) => theme.id)).toEqual([
+      'rainbow',
+      'rainbow-soft',
+      custom.id,
+    ]);
+    expect(appearance.themes[2].blindTileColor).toBe('#ff8800');
+  });
+
   it('最多保留 3 个自定义主题，并回退失效 activeThemeId', () => {
     const themes = [1, 2, 3, 4].map((index) =>
       createCustomTheme(`custom-${index}`, `自定义 ${index}`),

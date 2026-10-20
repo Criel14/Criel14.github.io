@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { BUILTIN_THEMES, DEFAULT_METRICS, DEFAULT_THEME_ID } from './presets';
+import {
+  BUILTIN_THEMES,
+  DEFAULT_BLIND_TILE_COLOR,
+  DEFAULT_METRICS,
+  DEFAULT_THEME_ID,
+} from './presets';
 
 const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
 
@@ -74,6 +79,13 @@ describe('BUILTIN_THEMES', () => {
       expect(theme.color.blankColor).toBe('transparent');
       expect(theme.color.fontColor).toBe('#ffffff');
     }
+  });
+
+  it('两套内置主题的盲玩色都沿用旧版蓝色', () => {
+    for (const theme of BUILTIN_THEMES) {
+      expect(theme.blindTileColor).toBe('#66ccff');
+    }
+    expect(DEFAULT_BLIND_TILE_COLOR).toBe('#66ccff');
   });
 
   it('保留旧预设的尺寸比例', () => {

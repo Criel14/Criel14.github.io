@@ -1,0 +1,52 @@
+.puzzle-board {
+  width: 100%;
+  aspect-ratio: 1;
+  container-type: inline-size;
+}
+
+/* cqw 不能用于容器自身，所以尺寸计算放在内层 grid。 */
+.puzzle-board__grid {
+  --gap-size: calc(100cqw / var(--board-size) * var(--tile-gap-ratio));
+  --cell-size: calc((100cqw - (var(--board-size) - 1) * var(--gap-size)) / var(--board-size));
+
+  display: grid;
+  grid-template-columns: repeat(var(--board-size), 1fr);
+  gap: var(--gap-size);
+  width: 100%;
+  height: 100%;
+}
+
+.puzzle-board__tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  border-radius: calc(var(--cell-size) * var(--tile-radius-ratio));
+  background-color: var(--tile-bg, transparent);
+  color: var(--tile-fg, transparent);
+  font-size: calc(var(--cell-size) * var(--tile-font-ratio));
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.puzzle-board__tile--blank {
+  background-color: var(--blank-color, transparent);
+  color: transparent;
+}
+
+.puzzle-board--numbers-hidden .puzzle-board__tile:not(.puzzle-board__tile--blank) {
+  background-color: var(--blind-tile-bg);
+  color: transparent;
+}
+
+.puzzle-board--numbers-hidden .puzzle-board__value {
+  visibility: hidden;
+}
+
+.puzzle-board--interactive .puzzle-board__tile:not(.puzzle-board__tile--blank) {
+  cursor: pointer;
+}

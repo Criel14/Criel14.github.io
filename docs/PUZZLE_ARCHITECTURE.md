@@ -1,6 +1,6 @@
 # 数字华容道重构架构
 
-> 状态：P0–P6 已实现，P7 进行中；回放与存储的详细设计见独立文档
+> 状态：P0–P6 已实现，P7 进行中（P7-1、P7-2 已完成，P7-3 待开始）；回放与存储的详细设计见独立文档
 >
 > 分支：`refactor/vite-ts`
 >
@@ -19,7 +19,7 @@
 - **纯逻辑优先**。`core` 不碰 DOM / localStorage / IndexedDB；`data` 负责持久化与校验；`ui` 只做 DOM；`pages` 负责组装。
 - **成绩只存事实**。`tps`、`number`、`ao5`、`ao12`、时间格式化全部读时派生。
 - **页面间不通过 localStorage 传状态**。回放、重玩使用 URL 参数 + score id。
-- **外观统一到 `Theme`**：每个主题包含一种着色模式（降阶 / 按行 / 固定色）和自带的字号、间隙、圆角；内置先保留两套降阶预设。
+- **外观统一到 `Theme`**：每个主题包含一种着色模式（降阶 / 按行 / 固定色）、盲玩隐藏数字颜色和自带的字号、间隙、圆角；内置先保留两套降阶预设。
 - **计时使用单调时钟 + 显式 session 状态机**；回放使用时间轴 + `requestAnimationFrame`，详见 `docs/PUZZLE_REPLAY.md`。
 - **不引入 UI 框架、状态库、插件系统**。项目规模不大，边界清晰比抽象层数更重要。
 
@@ -194,12 +194,17 @@ export interface BoardMetrics {
   radiusRatio: number;
 }
 
-/** 统一外观入口：颜色模式和尺寸比例都属于主题。 */
+/** 统一外观入口：颜色模式、盲玩颜色和尺寸比例都属于主题。 */
 export interface Theme {
   id: string;
   name: string;
   builtin: boolean;
   color: ColorMode;
+  /**
+   * 盲玩隐藏数字时，所有非空方块的背景色。
+   * 必须为 #rrggbb；默认沿用旧版 #66ccff，用户可在自定义主题里调整。
+   */
+  blindTileColor: string;
   metrics: BoardMetrics;
 }
 
@@ -225,6 +230,7 @@ export interface AppearanceState {
 - `ScoreRecord.groupId`、`GameSettings.groupId`、`ScoreFilter.groupId` 必须是 1–10 的整数。分组固定存在，因此不需要处理“分组被删除”的引用失效。
 - `ScoreRecord.id` 全局唯一；新成绩用 `crypto.randomUUID()`，无该 API 时使用带随机后缀的回退实现。
 - `Theme.color.palette` 长度由 mode 决定：layer 18、row 10、fixed 99；`palette` 颜色统一为 `#rrggbb`，`blankColor` 允许 `transparent` 或 `#rrggbb`，`fontColor` 允许 `auto` 或 `#rrggbb`。
+- `Theme.blindTileColor` 必须是 `#rrggbb`；默认 `#66ccff`，只用于盲玩隐藏数字时的非空方块，空白块仍使用 `blankColor`。
 - `Theme.metrics` 必须在约定范围内；非法值回退 `DEFAULT_METRICS`。
 - `AppearanceState.themes` 至少包含两套内置主题；`activeThemeId` 必须能解析到某个主题，否则回退第一个内置主题。
 - 内置主题不可修改、不可删除；自定义主题可以编辑颜色和 metrics，UI 第一版保留 3 个槽位。
@@ -704,6 +710,7 @@ function getTileLayer(tile: number, size: PuzzleSize): number {
 - 按行、固定色当前只作为自定义主题可选的模式，不提供内置预设。
 - 两套内置主题的字体色都沿用旧版白色；按行/固定色默认 `fontColor: 'auto'`，根据背景亮度自动选择黑/白。
 - `blankColor` 默认 `transparent`，让棋盘背景透出。
+- `blindTileColor` 默认 `#66ccff`（旧版盲玩隐藏数字时的蓝色），属于 `Theme`，用户可在自定义主题里调整；空白块不参与这个颜色。
 - 内置主题不可修改、不可删除；用户要调整颜色或 metrics 时，复制为自定义主题再编辑。
 - 修改主题时深拷贝，禁止原地修改常量。
 
@@ -716,8 +723,10 @@ function getTileLayer(tile: number, size: PuzzleSize): number {
   - 空白块使用 `theme.color.blankColor`，字体色为 `transparent`。
 - `fontColor === 'auto'` 时由背景亮度自动选择黑/白；否则使用配置的 `#rrggbb`。
 - `ui/board-view.ts` 给每个 tile 设置 `--tile-bg` / `--tile-fg`；CSS 使用这两个变量，不关心当前是哪种模式。
-- `ui/board-style.ts` 从 `theme.metrics` 设置 `--tile-font-ratio`、`--tile-gap-ratio`、`--tile-radius-ratio` 和 `--blank-color`。
-- `--cell-size` 由 board-view 用实际棋盘宽度 / `size` 计算，并用 `ResizeObserver` 更新；不再使用 `27/30`、`20/25` 这类魔法数。
+- `core/appearance/metrics.ts` 的 `toCssVariables(theme)` 从 `theme.metrics`、`color.blankColor` 和 `blindTileColor` 生成 `--tile-font-ratio`、`--tile-gap-ratio`、`--tile-radius-ratio`、`--blank-color`、`--blind-tile-bg`；页面通过 CSS 变量渲染，不逐项写死样式。
+- 盲玩隐藏数字时，非空方块统一使用 `--blind-tile-bg`；空白块保持 `--blank-color`。
+- 棋盘用 `container-type: inline-size`，内层 grid 用 `cqw` 计算 `--cell-size`，不依赖 `ResizeObserver`。
+- `ui/board-view.ts` 只渲染；点击、鼠标经过和触摸路径由 `ui/board-input.ts` 采集后交给页面。
 - 换主题或修改 metrics 只更新 CSS 变量和 tile 颜色，不重建 tile。
 - 颜色选择器使用原生 `<input type="color">`，不引入 jscolor。
 
@@ -731,6 +740,13 @@ function getTileLayer(tile: number, size: PuzzleSize): number {
 - 分组固定 10 个（ID 1–10），设置页只允许修改名称，不提供新增/删除/排序；清空分组数据在成绩页执行。
 - 自定义光标、极简 UI 属于 `GameSettings`，不属于 `Theme`。
 - 预设加载/自定义方案加载只修改内存状态；保存后才写 `puzzle.v2.appearance`。
+
+### 10.5 页面主题 token
+
+- 拼图外观主题只控制方块；页面背景、文字、边框、按钮、弹窗和提示使用 `src/shared/styles/base.css` 的语义 token。
+- 当前 token：`--color-bg`、`--color-text`、`--color-muted`、`--color-border`、`--color-border-muted`、`--color-surface`、`--color-surface-hover`。
+- 深色/浅色主题只需在 `html[data-theme='dark']` 覆盖这些 token，并同步 `color-scheme`；本轮只建立 token 层，不实现切换入口。
+- 棋盘 CSS 不写死页面颜色；空白块透明时自然透出页面背景。
 
 ## 11. 模块边界与目录
 
@@ -769,7 +785,7 @@ src/games/puzzle/
 ├─ ui/
 │  ├─ format.ts
 │  ├─ board-view.ts
-│  ├─ board-style.ts
+│  ├─ board-input.ts
 │  ├─ dialog.ts
 │  ├─ notice.ts
 │  └─ lifecycle.ts
@@ -805,7 +821,8 @@ types ← core ← ui   ← pages
 - `data/*-store.ts` 只导出 repository 函数；页面不直接操作 localStorage / IndexedDB。
 - 设置、外观 repository 为同步 API；成绩、录像 repository 为异步 API。
 - `data/db.ts`、`data/local-storage.ts`、`data/replay-codec.ts` 属于 data 层内部实现，页面不直接 import。
-- `ui/board-view.ts` 不关心成绩、session、统计，只接收 `Board` + `Theme`；`Theme` 已包含 metrics。
+- `ui/board-view.ts` 不关心成绩、session、统计，只接收 `Board` + `Theme`；`Theme` 已包含 metrics。`update` 只重绘变化的格子，`setTheme` 只更新 CSS 变量和颜色。
+- `ui/board-input.ts` 只上报格子下标和原始事件，不 import `core` 的 session/moves，不判断 `moveMode`；页面决定点击、滑动或忽略。
 
 ## 12. URL 契约
 
@@ -860,7 +877,8 @@ types ← core ← ui   ← pages
 | 页面状态   | URL 参数 + repository                    | 去掉 `currentScore` 过期与配置错位                      |
 | 计时       | `performance.now()`，不做暂停            | 后台不继续累计 tick 误差；语义更接近真实                |
 | 回放       | 时间轴 + rAF                             | 倍速、暂停、seek 都可用同一套状态                       |
-| 外观       | 每个 Theme 内含 ColorMode + BoardMetrics | 颜色和尺寸随主题切换，用户可自定义；避免全局状态分叉    |
+| 外观       | 每个 Theme 内含 ColorMode + blindTileColor + BoardMetrics | 颜色和尺寸随主题切换，用户可自定义；避免全局状态分叉    |
+| 盲玩颜色   | `Theme.blindTileColor`，默认 `#66ccff`   | 隐藏数字时的方块颜色也属于外观主题，用户可调整          |
 | 着色模式   | 降阶 / 按行 / 固定色                     | 覆盖分层、按行、逐数字三种需求；一个主题只用一种模式    |
 | 按行       | 按数字块原本所属行                       | 颜色跟随数字块，移动时不闪色                            |
 | 内置预设   | 先保留两套降阶                           | 复刻旧视觉；按行/固定色的默认预设后续再定               |
