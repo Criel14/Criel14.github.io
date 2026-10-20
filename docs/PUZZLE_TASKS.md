@@ -4,7 +4,7 @@
 >
 > 当前分支：`refactor/vite-ts`
 >
-> 状态：P0–P6 已完成，P7 待开始；P5/P6 详细设计见 `docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`
+> 状态：P0–P6 已完成，P7 进行中（P7-1 已完成）；P5/P6 详细设计见 `docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`
 >
 > 标记：`[ ]` 未开始 / `[~]` 进行中 / `[x]` 已完成 / `[!]` 阻塞
 >
@@ -21,13 +21,13 @@
 | P4   | stats 纯逻辑              | P1         | `[x]` |
 | P5   | replay 纯逻辑             | P1         | `[x]` |
 | P6   | localStorage + IndexedDB 数据层与旧数据清理 | P1–P5 | `[x]` |
-| P7   | 共享 UI 基础              | P2、P6     | `[ ]` |
+| P7   | 共享 UI 基础              | P2、P6     | `[~]` |
 | P8   | 游戏页                    | P3、P6、P7 | `[ ]` |
 | P9   | 成绩页                    | P4、P6、P7 | `[ ]` |
 | P10  | 回放页                    | P5、P6、P7 | `[ ]` |
 | P11  | 文档、清理与验收          | P8–P10     | `[ ]` |
 
-**本轮范围：P1–P5（纯逻辑）**。P6 之后为数据/UI 阶段，按顺序推进，不提前写页面。
+**当前进度：P0–P6 已完成**。P7 起为 UI 阶段，按顺序推进，不提前写页面。
 
 每个阶段结束都运行：
 
@@ -468,7 +468,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P7-1 格式化
 
-- [ ] 文件：`src/games/puzzle/ui/format.ts`、`format.test.ts`
+- [x] 文件：`src/games/puzzle/ui/format.ts`、`format.test.ts`
 - 内容：
   - `formatDuration(ms)`：`12.34` / `1:02.34`。
   - `formatTps(tps)`：两位小数。
