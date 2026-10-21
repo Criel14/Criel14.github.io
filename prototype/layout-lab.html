@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="数字华容道游戏页布局实验室，仅用于开发阶段比较布局。" />
+    <title>数字华容道 · 布局实验室</title>
+    <link rel="stylesheet" href="../src/shared/styles/base.css" />
+    <link rel="stylesheet" href="../src/games/puzzle/styles/board.css" />
+    <link rel="stylesheet" href="../src/games/puzzle/prototype/layout-lab.css" />
+  </head>
+  <body class="lab">
+    <main class="game-layout">
+      <aside class="game-menu" aria-label="游戏菜单">
+        <div class="game-menu__size" data-size-display>4×4</div>
+
+        <div class="game-menu__buttons">
+          <div class="menu-action">
+            <button
+              class="icon-button"
+              type="button"
+              data-popover-trigger="size"
+              aria-haspopup="true"
+              aria-expanded="false"
+              aria-label="切换阶数"
+              title="切换阶数"
+            >
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <rect x="3.5" y="3.5" width="17" height="17" rx="2.5"></rect>
+                <path d="M9.2 3.5v17M14.8 3.5v17M3.5 9.2h17M3.5 14.8h17"></path>
+              </svg>
+            </button>
+
+            <div class="popover popover--side popover--size" data-popover="size" hidden>
+              <p class="popover__title">阶数</p>
+              <div class="size-grid" role="group" aria-label="选择阶数">
+                <button
+                  class="popover-option size-option"
+                  type="button"
+                  data-size-option="2"
+                  aria-label="2×2"
+                  aria-pressed="false"
+                >
+                  2
+                </button>
+                <button
+                  class="popover-option size-option"
+                  type="button"
+                  data-size-option="3"
+                  aria-label="3×3"
+                  aria-pressed="false"
+                >
+                  3
+                </button>
+                <button
+                  class="popover-option size-option"
+                  type="button"
+                  data-size-option="4"
+                  aria-label="4×4"
+                  aria-pressed="true"
+                >
+                  4
+                </button>
+                <button
+                  class="popover-option size-option"
+                  type="button"
+                  data-size-option="5"
+                  aria-label="5×5"
+                  aria-pressed="false"
+                >
+                  5
+                </button>
+                <button
+                  class="popover-option size-option"
+                  type="button"
+                  data-size-option="6"
+                  aria-label="6×6"
+                  aria-pressed="false"
+                >
+                  6
+                </button>
+                <button
+                  class="popover-option size-option"
+                  type="button"
+                  data-size-option="7"
+                  aria-label="7×7"
+                  aria-pressed="false"
+                >
+                  7
+                </button>
+                <button
+                  class="popover-option size-option"
+                  type="button"
+                  data-size-option="8"
+                  aria-label="8×8"
+                  aria-pressed="false"
+                >
+                  8
+                </button>
+                <button
+                  class="popover-option size-option"
+                  type="button"
+                  data-size-option="9"
+                  aria-label="9×9"
+                  aria-pressed="false"
+                >
+                  9
+                </button>
+                <button
+                  class="popover-option size-option"
+                  type="button"
+                  data-size-option="10"
+                  aria-label="10×10"
+                  aria-pressed="false"
+                >
+                  10
+                </button>
+                <span class="size-option size-option--empty" aria-hidden="true"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="menu-action">
+            <button
+              class="icon-button"
+              type="button"
+              data-popover-trigger="game-mode"
+              data-game-mode="normal"
+              aria-haspopup="true"
+              aria-expanded="false"
+              aria-label="游戏模式：普通"
+              title="游戏模式：普通"
+            >
+              <svg
+                class="icon mode-icon mode-icon--normal"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg
+                class="icon mode-icon mode-icon--blind"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path d="M4 4l16 16"></path>
+                <path
+                  d="M10.6 6.2A9.7 9.7 0 0 1 12 6c6 0 9.5 6 9.5 6a17 17 0 0 1-3.1 3.7M6.6 6.7C3.9 8.5 2.5 12 2.5 12s3.5 6 9.5 6a10 10 0 0 0 4.1-.9"
+                ></path>
+                <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"></path>
+              </svg>
+            </button>
+
+            <div class="popover popover--side popover--options" data-popover="game-mode" hidden>
+              <p class="popover__title">模式</p>
+              <div class="option-list" role="group" aria-label="选择游戏模式">
+                <button
+                  class="popover-option"
+                  type="button"
+                  data-game-mode-option="normal"
+                  aria-pressed="true"
+                >
+                  普通
+                </button>
+                <button
+                  class="popover-option"
+                  type="button"
+                  data-game-mode-option="blind"
+                  aria-pressed="false"
+                >
+                  盲玩
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="menu-action">
+            <button
+              class="icon-button"
+              type="button"
+              data-popover-trigger="move-mode"
+              data-move-mode="slide"
+              aria-haspopup="true"
+              aria-expanded="false"
+              aria-label="操作模式：滑动"
+              title="操作模式：滑动"
+            >
+              <svg
+                class="icon move-icon move-icon--click"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path d="M6 3.5 18.5 11l-5.5 1.3L10 18 6 3.5Z"></path>
+              </svg>
+              <svg
+                class="icon move-icon move-icon--slide"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path d="M4 12h16M7 9l-3 3 3 3M17 9l3 3-3 3"></path>
+              </svg>
+              <svg
+                class="icon move-icon move-icon--keyboard"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <rect x="2.5" y="6" width="19" height="12" rx="2"></rect>
+                <path d="M6 10h.01M9.5 10h.01M13 10h.01M16.5 10h.01M6 14h12"></path>
+              </svg>
+            </button>
+
+            <div class="popover popover--side popover--options" data-popover="move-mode" hidden>
+              <p class="popover__title">操作</p>
+              <div class="option-list" role="group" aria-label="选择操作模式">
+                <button
+                  class="popover-option"
+                  type="button"
+                  data-move-mode-option="click"
+                  aria-pressed="false"
+                >
+                  点击
+                </button>
+                <button
+                  class="popover-option"
+                  type="button"
+                  data-move-mode-option="slide"
+                  aria-pressed="true"
+                >
+                  滑动
+                </button>
+                <button
+                  class="popover-option"
+                  type="button"
+                  data-move-mode-option="keyboard"
+                  aria-pressed="false"
+                >
+                  键盘
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="menu-action menu-action--settings">
+            <button
+              class="icon-button"
+              type="button"
+              data-action="settings"
+              aria-label="设置"
+              title="设置（后续接入）"
+            >
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M4 7h10M18 7h2M4 12h2M10 12h10M4 17h8M16 17h4"></path>
+                <circle cx="16" cy="7" r="2"></circle>
+                <circle cx="8" cy="12" r="2"></circle>
+                <circle cx="14" cy="17" r="2"></circle>
+              </svg>
+            </button>
+          </div>
+
+          <div class="menu-action menu-action--home">
+            <a class="icon-button" href="/" aria-label="回到主页" title="回到主页">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="m3.5 10.5 8.5-7 8.5 7"></path>
+                <path d="M5.5 9.5V20h13V9.5"></path>
+                <path d="M9.5 20v-6h5v6"></path>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </aside>
+
+      <section class="game-board" aria-label="棋盘">
+        <div class="board-frame">
+          <div id="lab-board"></div>
+        </div>
+      </section>
+
+      <aside class="game-stats" aria-label="统计数据">
+        <div class="stats-primary">
+          <div class="stats-time">12.34</div>
+
+          <dl class="stats-list">
+            <div class="stats-row">
+              <dt>步数</dt>
+              <dd>28</dd>
+            </div>
+            <div class="stats-row">
+              <dt>TPS</dt>
+              <dd>2.27</dd>
+            </div>
+            <div class="stats-row">
+              <dt>ao5</dt>
+              <dd>11.82</dd>
+            </div>
+            <div class="stats-row">
+              <dt>ao12</dt>
+              <dd>12.07</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div class="stats-actions">
+          <a
+            class="icon-button"
+            href="/puzzle-game/score-list.html"
+            aria-label="成绩列表"
+            title="成绩列表"
+          >
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M9 6h11M9 12h11M9 18h11"></path>
+              <circle cx="4.5" cy="6" r="1"></circle>
+              <circle cx="4.5" cy="12" r="1"></circle>
+              <circle cx="4.5" cy="18" r="1"></circle>
+            </svg>
+          </a>
+
+          <div class="group-picker">
+            <button
+              class="group-button"
+              type="button"
+              data-popover-trigger="group"
+              aria-haspopup="true"
+              aria-expanded="false"
+              aria-label="切换分组：G1"
+              title="切换分组：G1"
+            >
+              <svg
+                class="icon icon--small"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <circle cx="9" cy="8" r="3"></circle>
+                <path d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5"></path>
+                <path d="M15.5 5.5a3 3 0 0 1 0 5.8M16.5 14c2.4.4 4 2.2 4 5"></path>
+              </svg>
+              <span class="group-button__name" data-group-name>G1</span>
+              <svg
+                class="icon icon--chevron"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path d="m7 10 5 5 5-5"></path>
+              </svg>
+            </button>
+
+            <div class="popover popover--above popover--group" data-popover="group" hidden>
+              <p class="popover__title">分组</p>
+              <div class="group-list" role="group" aria-label="选择分组">
+                <button
+                  class="popover-option group-option"
+                  type="button"
+                  data-group-option="1"
+                  aria-pressed="true"
+                >
+                  G1
+                </button>
+                <button
+                  class="popover-option group-option"
+                  type="button"
+                  data-group-option="2"
+                  aria-pressed="false"
+                >
+                  G2
+                </button>
+                <button
+                  class="popover-option group-option"
+                  type="button"
+                  data-group-option="3"
+                  aria-pressed="false"
+                >
+                  G3
+                </button>
+                <button
+                  class="popover-option group-option"
+                  type="button"
+                  data-group-option="4"
+                  aria-pressed="false"
+                >
+                  G4
+                </button>
+                <button
+                  class="popover-option group-option"
+                  type="button"
+                  data-group-option="5"
+                  aria-pressed="false"
+                >
+                  G5
+                </button>
+                <button
+                  class="popover-option group-option"
+                  type="button"
+                  data-group-option="6"
+                  aria-pressed="false"
+                >
+                  G6
+                </button>
+                <button
+                  class="popover-option group-option"
+                  type="button"
+                  data-group-option="7"
+                  aria-pressed="false"
+                >
+                  G7
+                </button>
+                <button
+                  class="popover-option group-option"
+                  type="button"
+                  data-group-option="8"
+                  aria-pressed="false"
+                >
+                  G8
+                </button>
+                <button
+                  class="popover-option group-option"
+                  type="button"
+                  data-group-option="9"
+                  aria-pressed="false"
+                >
+                  G9
+                </button>
+                <button
+                  class="popover-option group-option"
+                  type="button"
+                  data-group-option="10"
+                  aria-pressed="false"
+                >
+                  G10
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <script type="module" src="/src/games/puzzle/prototype/layout-lab.ts"></script>
+  </body>
+</html>

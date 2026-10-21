@@ -1,0 +1,434 @@
+/*
+ * 游戏页布局实验室（临时原型）。
+ *
+ * 视觉方向：三栏 3:4:3、留白充足、纯色扁平按钮、聊天气泡式弹框。
+ * 正式游戏页样式在 P8-1 的 styles/game.css 中实现。
+ */
+
+body.lab {
+  --page-pad-x: clamp(24px, 3.6vw, 56px);
+  --page-pad-y: clamp(28px, 4vh, 52px);
+  --page-bg: #f1efe9;
+  --ink: #24221d;
+  --muted: #746e63;
+  --line: #d8d2c6;
+  --button-face: #fbf9f4;
+  --button-face-hover: #f2eee5;
+  --button-edge: #d2cbbd;
+  --popover-bg: #fffdf8;
+  --option-hover: #f1ede4;
+  --selected-bg: #2b2923;
+  --selected-fg: #fffdf7;
+
+  height: 100dvh;
+  padding: var(--page-pad-y) var(--page-pad-x);
+  overflow: hidden;
+  background: var(--page-bg);
+  color: var(--ink);
+}
+
+.game-layout {
+  display: grid;
+  grid-template-columns: 3fr 4fr 3fr;
+  gap: clamp(56px, 5.6vw, 96px);
+  width: min(100%, 1800px);
+  height: 100%;
+  margin: 0 auto;
+}
+
+.game-menu,
+.game-stats,
+.game-board {
+  min-width: 0;
+  min-height: 0;
+}
+
+.game-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
+}
+
+.game-menu__size {
+  font-family: var(--font-mono);
+  font-size: clamp(4.2rem, 6.4vw, 6.6rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.07em;
+  line-height: 0.95;
+  text-align: right;
+}
+
+.game-menu__buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 56px);
+  gap: 0.65rem;
+  justify-content: end;
+  margin-top: clamp(1.2rem, 2.5vh, 1.9rem);
+}
+
+.menu-action--settings {
+  grid-column: 2;
+}
+
+.menu-action--home {
+  grid-column: 3;
+}
+
+.menu-action {
+  position: relative;
+}
+
+.icon-button,
+.group-button {
+  appearance: none;
+  border: 0;
+  background: var(--button-face);
+  color: var(--ink);
+  box-shadow: 0 2px 0 var(--button-edge);
+  cursor: pointer;
+  transition:
+    transform 70ms ease,
+    box-shadow 70ms ease,
+    background-color 120ms ease;
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border-radius: 11px;
+  text-decoration: none;
+}
+
+.icon-button:hover,
+.group-button:hover {
+  background: var(--button-face-hover);
+}
+
+.icon-button:active,
+.icon-button[aria-expanded='true'],
+.group-button:active,
+.group-button[aria-expanded='true'] {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 var(--button-edge);
+  background: var(--button-face-hover);
+}
+
+.icon-button:focus-visible,
+.group-button:focus-visible,
+.popover-option:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.icon {
+  display: block;
+  width: 27px;
+  height: 27px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+[data-game-mode='normal'] .mode-icon--blind,
+[data-game-mode='blind'] .mode-icon--normal {
+  display: none;
+}
+
+[data-move-mode='click'] .move-icon--slide,
+[data-move-mode='click'] .move-icon--keyboard,
+[data-move-mode='slide'] .move-icon--click,
+[data-move-mode='slide'] .move-icon--keyboard,
+[data-move-mode='keyboard'] .move-icon--click,
+[data-move-mode='keyboard'] .move-icon--slide {
+  display: none;
+}
+
+/* 棋盘占中列，宽度同时受列宽和视口高度限制。 */
+.game-board {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.board-frame {
+  width: min(100%, calc(100dvh - 2 * var(--page-pad-y)), 46rem);
+  aspect-ratio: 1;
+}
+
+#lab-board {
+  width: 100%;
+}
+
+.game-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  height: 100%;
+}
+
+.stats-primary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: max-content;
+  max-width: 100%;
+}
+
+.stats-time {
+  font-family: var(--font-mono);
+  font-size: clamp(3.9rem, 6vw, 6.25rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.08em;
+  line-height: 0.95;
+}
+
+.stats-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  align-self: stretch;
+  column-gap: 0.65rem;
+  row-gap: 0.65rem;
+  padding-inline-start: 0.25rem;
+  margin: clamp(1.5rem, 3vh, 2.2rem) 0 0;
+}
+
+.stats-row {
+  display: contents;
+}
+
+.stats-row dt {
+  color: var(--muted);
+  font-size: 1.15rem;
+  text-align: left;
+}
+
+.stats-row dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  text-align: right;
+}
+
+.stats-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem;
+  max-width: 100%;
+  margin-top: clamp(1.25rem, 2.5vh, 1.8rem);
+}
+
+.stats-actions .icon-button {
+  width: 50px;
+  height: 50px;
+}
+
+.group-picker {
+  position: relative;
+  min-width: 0;
+}
+
+.group-button {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  max-width: min(16rem, 100%);
+  height: 50px;
+  padding: 0 0.9rem;
+  border-radius: 11px;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.group-button__name {
+  min-width: 0;
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.icon--small {
+  width: 20px;
+  height: 20px;
+}
+
+.icon--chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+}
+
+/* 聊天气泡：侧边弹框和分组弹框共用同一套扁平表面。 */
+.popover {
+  position: absolute;
+  z-index: 30;
+  padding: 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--popover-bg);
+  box-shadow: 0 6px 18px rgb(36 34 29 / 0.08);
+  animation: popover-in 120ms ease-out;
+}
+
+.popover[hidden] {
+  display: none;
+}
+
+.popover::before {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--popover-bg);
+}
+
+.popover--side {
+  top: -4px;
+  left: calc(100% + 14px);
+}
+
+.popover--side::before {
+  top: 27px;
+  left: -5px;
+  clip-path: polygon(100% 0, 100% 100%, 0 50%);
+}
+
+.popover--above {
+  right: 0;
+  bottom: calc(100% + 14px);
+}
+
+.popover--above::before {
+  right: 22px;
+  bottom: -5px;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+.popover--size {
+  width: 9rem;
+}
+
+.popover--options {
+  width: 10rem;
+}
+
+.popover--group {
+  width: 14rem;
+}
+
+.popover__title {
+  margin: 0 0 0.4rem;
+  padding: 0.1rem 0.6rem 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+}
+
+.size-grid,
+.option-list,
+.group-list {
+  display: grid;
+  gap: 2px;
+}
+
+.size-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.option-list,
+.group-list {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.group-list {
+  max-height: min(26rem, 64vh);
+  overflow: auto;
+  scrollbar-width: thin;
+}
+
+.popover-option {
+  display: block;
+  width: 100%;
+  min-height: 38px;
+  padding: 0 0.7rem;
+  overflow: hidden;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 38px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.popover-option:hover {
+  background: var(--option-hover);
+}
+
+.popover-option[aria-pressed='true'] {
+  background: var(--selected-bg);
+  color: var(--selected-fg);
+}
+
+.size-option {
+  padding: 0 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.92rem;
+  text-align: center;
+}
+
+.size-option--empty {
+  min-height: 38px;
+  visibility: hidden;
+}
+
+@keyframes popover-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 1100px) {
+  body.lab {
+    --page-pad-x: 24px;
+    --page-pad-y: 28px;
+  }
+
+  .stats-time {
+    font-size: clamp(3.4rem, 6vw, 5rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popover {
+    animation: none;
+  }
+}

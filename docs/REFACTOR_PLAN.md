@@ -1,6 +1,6 @@
 # 重构计划
 
-> 状态：阶段 2 进行中（拼图 P0–P7 已完成，P8 游戏页待开始；P7-3 交互与视觉随 P8 手动验收，详细设计见 `docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`）
+> 状态：阶段 3 进行中（拼图 P0–P7 已完成；P8-0 页面设计文档与三栏布局实验室已确认（2026-10-21），P8-1 页面骨架待开始；P7-3 交互与视觉随 P8 手动验收，详细设计见 `docs/PUZZLE_GAME_PAGE.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`）
 >
 > 分支：`refactor/vite-ts`
 >
@@ -149,6 +149,7 @@
 ## 10. 参考
 
 - 现有功能说明：`README.md`、`docs/PUZZLE_GAME.md`
+- 游戏页设计与 P8 任务：`docs/PUZZLE_GAME_PAGE.md`
 - 拼图架构契约：`docs/PUZZLE_ARCHITECTURE.md`
 - 回放设计：`docs/PUZZLE_REPLAY.md`
 - 数据存储设计：`docs/PUZZLE_STORAGE.md`

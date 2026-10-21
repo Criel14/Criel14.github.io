@@ -1,12 +1,12 @@
 # 数字华容道重构架构
 
-> 状态：P0–P7 已实现，P8 待开始（P7-3 交互与视觉随 P8 手动验收）；回放与存储的详细设计见独立文档
+> 状态：P0–P7 已实现；P8-0 页面设计文档与三栏布局实验室已确认（2026-10-21），P8-1 待开始（P7-3 交互与视觉随 P8 手动验收）；回放与存储的详细设计见独立文档
 >
 > 分支：`refactor/vite-ts`
 >
 > 范围：拼图模块（`puzzle-game`）；贪吃蛇不在本文范围
 >
-> 配套文档：`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`、`docs/PUZZLE_TASKS.md`、`docs/REFACTOR_PLAN.md`、`docs/PUZZLE_GAME.md`
+> 配套文档：`docs/PUZZLE_GAME_PAGE.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`、`docs/PUZZLE_TASKS.md`、`docs/REFACTOR_PLAN.md`、`docs/PUZZLE_GAME.md`
 >
 > 注意：`docs/PUZZLE_GAME.md` 描述的是旧版行为和历史数据格式，仅作功能参考；回放细节以 `docs/PUZZLE_REPLAY.md` 为准，存储细节以 `docs/PUZZLE_STORAGE.md` 为准，本文保留架构级约束。
 
