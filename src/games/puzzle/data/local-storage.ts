@@ -87,20 +87,37 @@ export function createMemoryStorage(
   };
 }
 
+/** 读取 localStorage 的结果状态；页面据此决定是否提示用户。 */
+export type StorageReadStatus = 'ok' | 'missing' | 'corrupt' | 'unavailable';
+
 /**
- * 读取并解析 JSON。缺失键和损坏 JSON 都返回 null；
- * 存储访问错误继续向上抛，让调用方区分“没有数据”和“存储不可用”。
+ * 读取并解析 JSON 的结果。
+ * ok 时 value 是解析后的任意 JSON；其余状态没有可用值。
  */
-export function readJson(storage: StorageAdapter, key: string): unknown | null {
-  const raw = storage.get(key);
+export type JsonReadResult =
+  | { readonly status: 'ok'; readonly value: unknown }
+  | { readonly status: 'missing' | 'corrupt' | 'unavailable' };
+
+/**
+ * 读取并解析 JSON，同时保留“缺失 / 损坏 / 不可用”的区别。
+ * 存储访问错误不再向上抛，由页面根据 unavailable 状态统一提示。
+ */
+export function readJsonResult(storage: StorageAdapter, key: string): JsonReadResult {
+  let raw: string | null;
+  try {
+    raw = storage.get(key);
+  } catch {
+    return { status: 'unavailable' };
+  }
+
   if (raw === null) {
-    return null;
+    return { status: 'missing' };
   }
 
   try {
-    return JSON.parse(raw) as unknown;
+    return { status: 'ok', value: JSON.parse(raw) as unknown };
   } catch {
-    return null;
+    return { status: 'corrupt' };
   }
 }
 

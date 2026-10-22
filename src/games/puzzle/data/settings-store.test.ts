@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { GameSettings } from '../types';
 import { DataStoreError } from './errors';
-import { createMemoryStorage, readJson, writeJson } from './local-storage';
+import { createMemoryStorage, readJsonResult, writeJson } from './local-storage';
 import { SCHEMA_VERSION, STORAGE_KEYS } from './schema';
-import { createDefaultSettings, loadSettings, saveSettings } from './settings-store';
+import { createDefaultSettings, loadSettingsResult, saveSettings } from './settings-store';
 
 describe('createDefaultSettings', () => {
   it('返回 4×4、normal、slide、G1 和固定 10 组', () => {
@@ -23,7 +23,7 @@ describe('createDefaultSettings', () => {
   });
 });
 
-describe('saveSettings / loadSettings', () => {
+describe('saveSettings / loadSettingsResult', () => {
   it('保存后读取一致，并写入 v2 信封', () => {
     const storage = createMemoryStorage();
     const settings: GameSettings = {
@@ -41,25 +41,37 @@ describe('saveSettings / loadSettings', () => {
 
     saveSettings(settings, storage);
 
-    expect(loadSettings(storage)).toEqual(settings);
-    expect(readJson(storage, STORAGE_KEYS.settings)).toEqual({
-      version: SCHEMA_VERSION,
-      data: settings,
+    expect(loadSettingsResult(storage)).toEqual({ status: 'ok', settings });
+    expect(readJsonResult(storage, STORAGE_KEYS.settings)).toEqual({
+      status: 'ok',
+      value: {
+        version: SCHEMA_VERSION,
+        data: settings,
+      },
     });
   });
 
-  it('缺失、损坏或版本不匹配时回退默认设置', () => {
+  it('区分缺失、损坏和版本不匹配，并回退默认设置', () => {
     const storage = createMemoryStorage();
-    expect(loadSettings(storage)).toEqual(createDefaultSettings());
+    expect(loadSettingsResult(storage)).toEqual({
+      status: 'missing',
+      settings: createDefaultSettings(),
+    });
 
     storage.set(STORAGE_KEYS.settings, 'not-json');
-    expect(loadSettings(storage)).toEqual(createDefaultSettings());
+    expect(loadSettingsResult(storage)).toEqual({
+      status: 'corrupt',
+      settings: createDefaultSettings(),
+    });
 
     writeJson(storage, STORAGE_KEYS.settings, {
       version: SCHEMA_VERSION + 1,
       data: { size: 9 },
     });
-    expect(loadSettings(storage)).toEqual(createDefaultSettings());
+    expect(loadSettingsResult(storage)).toEqual({
+      status: 'corrupt',
+      settings: createDefaultSettings(),
+    });
   });
 
   it('保留合法字段，修复缺失/非法字段和分组名称', () => {
@@ -80,8 +92,10 @@ describe('saveSettings / loadSettings', () => {
       },
     });
 
-    const settings = loadSettings(storage);
+    const result = loadSettingsResult(storage);
+    const settings = result.settings;
 
+    expect(result.status).toBe('corrupt');
     expect(settings).toMatchObject({
       size: 4,
       gameMode: 'normal',
@@ -106,6 +120,9 @@ describe('saveSettings / loadSettings', () => {
       keys: () => [],
     };
 
-    expect(loadSettings(storage)).toEqual(createDefaultSettings());
+    expect(loadSettingsResult(storage)).toEqual({
+      status: 'unavailable',
+      settings: createDefaultSettings(),
+    });
   });
 });

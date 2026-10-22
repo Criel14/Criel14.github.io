@@ -4,7 +4,7 @@
 >
 > 当前分支：`refactor/vite-ts`
 >
-> 状态：P0–P7 已完成；P8-0 页面设计文档与三栏布局实验室已确认（2026-10-21，含最终按钮、中性灰配色与棋盘刷新按钮），P8-1 待开始（P7-3 的交互与视觉随 P8 接入手动验收）；P5/P6 详细设计见 `docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`
+> 状态：P0–P7 已完成；P8-0 页面设计文档与三栏布局实验室已确认（2026-10-21），P8-1 页面骨架已完成（2026-10-22），P8-2 待开始（P7-3 的交互与视觉随 P8 接入手动验收）；P5/P6 详细设计见 `docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`
 >
 > 标记：`[ ]` 未开始 / `[~]` 进行中 / `[x]` 已完成 / `[!]` 阻塞
 >
@@ -27,7 +27,7 @@
 | P10  | 回放页                    | P5、P6、P7 | `[ ]` |
 | P11  | 文档、清理与验收          | P8–P10     | `[ ]` |
 
-**当前进度：P0–P7 已完成，P8-0 已确认**。P8 起进入页面组装，按顺序推进，不提前写页面；游戏页详细设计和布局实验见 `docs/PUZZLE_GAME_PAGE.md`，正式实现以其中的“5.5 实现基线”为准。
+**当前进度：P0–P7 已完成，P8-0 已确认，P8-1 页面骨架已完成**。P8 起进入页面组装，按顺序推进，不提前写页面；游戏页详细设计和布局实验见 `docs/PUZZLE_GAME_PAGE.md`，后续 P8-2 起以其中的“5.5 实现基线”为准。
 
 每个阶段结束都运行：
 
@@ -358,7 +358,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
   - 抽取 `core/groups.ts` 的 `isGroupId`，供 session 与 schema 共用。
   - `StorageAdapter` 接口：`get`、`set`、`remove`、`keys`。
   - `createLocalStorage()` 与 `createMemoryStorage()`。
-  - `readJson` / `writeJson`：JSON 解析失败返回 `null`；配额/不可用转换为 `DataStoreError`。
+  - `readJsonResult` / `writeJson`：读取结果区分 `ok` / `missing` / `corrupt` / `unavailable`；写入配额/不可用转换为 `DataStoreError`。
   - `DataStoreError` 与错误码：`unavailable` / `blocked` / `quota` / `validation` / `corrupt` / `unknown`。
   - IndexedDB：`DB_NAME = 'puzzle.v2'`、`DB_VERSION = 1`，打开连接、创建 `scores` / `replays` store 和索引。
   - `closeDB()`、`deletePuzzleDB()` 用于测试/维护；`blocked` 时打开失败、`blocking` 时让出连接、`terminated` 清空缓存。
@@ -398,7 +398,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
   - 使用 `local-storage.ts` 同步读写 `puzzle.v2.settings`。
   - 默认设置：size 4、normal、slide、无自定义光标、非极简 UI。
   - 默认固定 10 个分组，ID 1–10，名称 G1–G10；只允许修改 `Group.name`，不新增、不删除、不排序；允许重名。
-  - `loadSettings` / `saveSettings`。
+  - `loadSettingsResult` / `saveSettings`；读取结果带状态，页面据此区分首次使用和损坏数据。
   - `groupId` 失效回退 `1`；缺失分组按 ID 补齐默认名称。
   - 缺失/损坏字段补默认值。
 - 测试：
@@ -413,7 +413,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 - [x] 文件：`src/games/puzzle/data/appearance-store.ts`、`appearance-store.test.ts`
 - 内容：
   - 使用 `local-storage.ts` 同步读写 `puzzle.v2.appearance`。
-  - `loadAppearance` / `saveAppearance`。
+  - `loadAppearanceResult` / `saveAppearance`；读取结果带状态。
   - activeThemeId 失效回退内置主题。
   - 内置主题不可被覆盖/删除；自定义主题列表保留。
   - 按 `theme.color.mode` 校验 palette 长度（18/10/99）、颜色、`fontColor`、`blankColor`。
@@ -528,12 +528,12 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 > 详细设计、布局实验与 P8-0～P8-6 任务见 `docs/PUZZLE_GAME_PAGE.md`。
 >
-> 当前：P8-0 已确认（2026-10-21，含最终按钮、配色与刷新按钮）；P8-1 待开始。正式实现以 `docs/PUZZLE_GAME_PAGE.md` 的“5.5 实现基线”为准，`prototype/layout-lab.html` 保留到 P8-1 验收。
+> 当前：P8-0 已确认（2026-10-21），P8-1 页面骨架已完成（2026-10-22）。后续实现以 `docs/PUZZLE_GAME_PAGE.md` 的“5.5 实现基线”为准，`prototype/layout-lab.html` 保留到 P8-1 验收。
 
 | 任务 | 内容                              | 状态  |
 | ---- | --------------------------------- | ----- |
 | P8-0 | 设计文档与布局实验                | `[x]` |
-| P8-1 | 页面骨架                          | `[ ]` |
+| P8-1 | 页面骨架                          | `[x]` |
 | P8-2 | 输入、session 与 HUD              | `[ ]` |
 | P8-3 | 结算、保存与重玩                  | `[ ]` |
 | P8-4 | 设置与外观编辑器                  | `[ ]` |

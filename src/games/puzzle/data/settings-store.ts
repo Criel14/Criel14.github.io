@@ -1,9 +1,14 @@
 import type { GameMode, GameSettings, Group, GroupId, MoveMode } from '../types';
 import { isPuzzleSize } from '../core/board';
 import { isGroupId } from '../core/groups';
-import { isDataStoreError } from './errors';
-import { createLocalStorage, readJson, writeJson, type StorageAdapter } from './local-storage';
-import { isStorageEnvelope, SCHEMA_VERSION, STORAGE_KEYS } from './schema';
+import {
+  createLocalStorage,
+  readJsonResult,
+  writeJson,
+  type StorageAdapter,
+  type StorageReadStatus,
+} from './local-storage';
+import { isGameSettings, isStorageEnvelope, SCHEMA_VERSION, STORAGE_KEYS } from './schema';
 
 const DEFAULT_SIZE = 4;
 const DEFAULT_GAME_MODE: GameMode = 'normal';
@@ -86,25 +91,35 @@ export function normalizeSettings(raw: unknown): GameSettings {
   };
 }
 
+/** 设置读取结果；无论状态如何都返回一份可用的设置。 */
+export interface SettingsLoadResult {
+  readonly status: StorageReadStatus;
+  readonly settings: GameSettings;
+}
+
 /**
- * 读取设置；缺失、损坏或 localStorage 不可用时回退默认设置。
- * 写入失败仍抛 DataStoreError，由页面提示用户。
+ * 读取设置并保留读取状态。
+ *
+ * - missing：首次使用，静默回退默认值；
+ * - corrupt：信封或字段损坏，尽量保留可恢复字段，其余回退默认值；
+ * - unavailable：localStorage 不可用，使用默认值，页面应提示用户。
  */
-export function loadSettings(storage: StorageAdapter = createLocalStorage()): GameSettings {
-  let raw: unknown;
-  try {
-    raw = readJson(storage, STORAGE_KEYS.settings);
-  } catch (error) {
-    if (isDataStoreError(error)) {
-      return createDefaultSettings();
-    }
-    throw error;
+export function loadSettingsResult(
+  storage: StorageAdapter = createLocalStorage(),
+): SettingsLoadResult {
+  const result = readJsonResult(storage, STORAGE_KEYS.settings);
+  if (result.status !== 'ok') {
+    return { status: result.status, settings: createDefaultSettings() };
   }
 
-  if (!isStorageEnvelope(raw) || raw.version !== SCHEMA_VERSION) {
-    return createDefaultSettings();
+  if (!isStorageEnvelope(result.value) || result.value.version !== SCHEMA_VERSION) {
+    return { status: 'corrupt', settings: createDefaultSettings() };
   }
-  return normalizeSettings(raw.data);
+
+  return {
+    status: isGameSettings(result.value.data) ? 'ok' : 'corrupt',
+    settings: normalizeSettings(result.value.data),
+  };
 }
 
 /** 保存设置；写入前再次归一化，避免把非法字段落库。 */

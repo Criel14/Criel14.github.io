@@ -17,6 +17,7 @@ import {
   countScoresByGroup,
   getScoreById,
   listScoresByBucket,
+  probeScoreStorage,
   removeScore,
 } from './score-store';
 
@@ -58,6 +59,12 @@ beforeEach(async () => {
 afterEach(async () => {
   await closeDB();
   await deletePuzzleDB();
+});
+
+describe('probeScoreStorage', () => {
+  it('IndexedDB 可用时正常打开连接', async () => {
+    await expect(probeScoreStorage()).resolves.toBeUndefined();
+  });
 });
 
 describe('addScoreWithReplay / loadReplay', () => {

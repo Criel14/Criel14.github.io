@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { DataStoreError } from './errors';
-import { createMemoryStorage, readJson, writeJson, type StorageAdapter } from './local-storage';
+import {
+  createMemoryStorage,
+  readJsonResult,
+  writeJson,
+  type StorageAdapter,
+} from './local-storage';
 
 describe('createMemoryStorage', () => {
   it('支持读写、删除和枚举键', () => {
@@ -19,21 +24,21 @@ describe('createMemoryStorage', () => {
   });
 });
 
-describe('readJson / writeJson', () => {
+describe('readJsonResult / writeJson', () => {
   it('往返读写 JSON', () => {
     const storage = createMemoryStorage();
     const value = { version: 2, data: { name: '测试' } };
 
     writeJson(storage, 'key', value);
 
-    expect(readJson(storage, 'key')).toEqual(value);
+    expect(readJsonResult(storage, 'key')).toEqual({ status: 'ok', value });
   });
 
-  it('缺失键和损坏 JSON 返回 null', () => {
+  it('区分缺失键和损坏 JSON', () => {
     const storage = createMemoryStorage({ broken: 'not-json' });
 
-    expect(readJson(storage, 'missing')).toBeNull();
-    expect(readJson(storage, 'broken')).toBeNull();
+    expect(readJsonResult(storage, 'missing')).toEqual({ status: 'missing' });
+    expect(readJsonResult(storage, 'broken')).toEqual({ status: 'corrupt' });
   });
 
   it('循环引用转换为 validation 错误', () => {
@@ -59,7 +64,7 @@ describe('readJson / writeJson', () => {
     expectDataStoreError(() => writeJson(storage, 'key', {}), 'quota');
   });
 
-  it('读取存储错误继续向上抛，和损坏 JSON 区分', () => {
+  it('读取存储错误返回 unavailable，和损坏 JSON 区分', () => {
     const storage: StorageAdapter = {
       get: () => {
         throw new DataStoreError('unavailable', '不可用');
@@ -69,7 +74,7 @@ describe('readJson / writeJson', () => {
       keys: () => [],
     };
 
-    expectDataStoreError(() => readJson(storage, 'key'), 'unavailable');
+    expect(readJsonResult(storage, 'key')).toEqual({ status: 'unavailable' });
   });
 });
 

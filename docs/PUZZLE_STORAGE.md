@@ -105,12 +105,15 @@ interface StorageAdapter {
 
 createLocalStorage(): StorageAdapter;
 createMemoryStorage(initial?: Readonly<Record<string, string>>): StorageAdapter;
-readJson(storage: StorageAdapter, key: string): unknown | null;
+readJsonResult(storage: StorageAdapter, key: string): JsonReadResult;
 writeJson(storage: StorageAdapter, key: string, value: unknown): void;
 ```
 
 - `createMemoryStorage` 用于 Vitest，不依赖浏览器。
-- `readJson` 只把 JSON 解析失败当作缺失数据返回 `null`；存储访问错误继续抛 `DataStoreError`，由 store 决定回退默认值。
+- `readJsonResult` 返回 `ok` / `missing` / `corrupt` / `unavailable` 四种状态：
+  - `ok` 时附带解析后的 `value`；
+  - 缺失键为 `missing`，JSON 解析失败为 `corrupt`；
+  - 存储访问失败为 `unavailable`，不再向上抛异常。
 - `writeJson` 捕获序列化错误和 `QuotaExceededError` 等异常，转换为 `DataStoreError`。
 - 页面和 core 不直接调用 `localStorage`；只有 data 层使用适配器。
 
@@ -320,6 +323,8 @@ countAllScores(): Promise<number>;
 clearScoresByBucket(filter: ScoreFilter): Promise<number>;
 clearScoresByGroup(groupId: GroupId): Promise<number>;
 clearAllScores(): Promise<void>;
+
+probeScoreStorage(): Promise<void>;
 ```
 
 `data/replay-store.ts`：
@@ -333,6 +338,7 @@ loadReplay(scoreId: string): Promise<ReplayRecord | null>;
 - 不公开独立的 `saveReplay` / `removeReplay`，避免产生孤立录像；写入和删除统一走 `score-store` 的原子操作。
 - `listScoresByBucket` 使用 `by-bucket` 索引，只返回目标桶；排序、编号、ao 仍由 core 的 `stats` / `score` 函数完成。
 - `getScoreById` 使用主键，不做全表扫描。
+- `probeScoreStorage` 只打开数据库连接，用于页面启动时探测 IndexedDB 是否可用；失败抛出 `DataStoreError`。
 - `loadReplay` 使用主键，解码失败或缺失返回 `null`。
 - `countScoresByGroup` / `countScoresByBucket` 用于清空确认框；`countAllScores` 用于“清空全部”确认。
 - `clearScoresByBucket` / `clearScoresByGroup` 返回实际删除的成绩条数。
@@ -343,18 +349,25 @@ loadReplay(scoreId: string): Promise<ReplayRecord | null>;
 `data/settings-store.ts`：
 
 ```ts
-loadSettings(storage?: StorageAdapter): GameSettings;
+loadSettingsResult(storage?: StorageAdapter): {
+  status: StorageReadStatus;
+  settings: GameSettings;
+};
 saveSettings(settings: GameSettings, storage?: StorageAdapter): void;
 ```
 
 `data/appearance-store.ts`：
 
 ```ts
-loadAppearance(storage?: StorageAdapter): AppearanceState;
+loadAppearanceResult(storage?: StorageAdapter): {
+  status: StorageReadStatus;
+  appearance: AppearanceState;
+};
 saveAppearance(appearance: AppearanceState, storage?: StorageAdapter): void;
 ```
 
 - 同步 API。
+- 读取结果保留 `ok` / `missing` / `corrupt` / `unavailable` 状态，并始终附带一份可用的回退数据；页面据此决定是否显示提示。
 - 默认使用 `createLocalStorage()`；测试可传入 `createMemoryStorage()`。
 - 页面不直接操作键名。
 
@@ -362,12 +375,13 @@ saveAppearance(appearance: AppearanceState, storage?: StorageAdapter): void;
 
 ### 6.1 游戏页
 
-1. 同步读取 settings / appearance。
-2. `?retry=<id>`：异步 `getScoreById(id)`；加载期间显示 loading。
+1. 同步读取 settings / appearance，使用结果型 API 区分缺失、损坏和不可用；缺失静默回退，损坏/不可用显示非阻塞提示。
+2. 启动时调用 `probeScoreStorage()` 探测 IndexedDB；失败显示非阻塞提示，设置和棋盘仍可使用。
+3. `?retry=<id>`：异步 `getScoreById(id)`；加载期间显示 loading。
    - 找不到成绩：显示错误，回到普通新局或提供返回成绩页入口。
-3. 复原后构造 `ScoreRecord` + `ReplayRecord`，`await addScoreWithReplay(score, replay)`。
-4. 保存失败：保留当前结果，显示非阻塞提示，允许重试；不要把失败结果直接丢掉。
-5. 保存过程中禁用“再来一局”，避免重复写入。
+4. 复原后构造 `ScoreRecord` + `ReplayRecord`，`await addScoreWithReplay(score, replay)`。
+5. 保存失败：保留当前结果，显示非阻塞提示，允许重试；不要把失败结果直接丢掉。
+6. 保存过程中禁用“再来一局”，避免重复写入。
 
 ### 6.2 成绩页
 
@@ -427,7 +441,7 @@ class DataStoreError extends Error {
 - 不因为一条损坏记录让整页崩溃。
 - `listScoresByBucket` 过滤非法成绩并记录警告；返回可用的成绩。
 - `getScoreById` / `loadReplay` 缺失或非法时返回 `null`。
-- localStorage 设置/外观损坏时回退默认值。
+- localStorage 设置/外观损坏时返回 `corrupt` 状态并回退可恢复值，页面显示非阻塞提示。
 - **不做 localStorage 降级存储**：IndexedDB 不可用时，成绩功能明确不可用，避免出现两套数据源和迁移问题。
 - 可以提示用户使用导出/清理功能；导出功能属于后续扩展。
 
@@ -452,7 +466,7 @@ npm install -D fake-indexeddb
 ### 8.2 `local-storage.test.ts`
 
 - 内存存储读写/删除。
-- 损坏 JSON 返回 `null`。
+- 缺失键、损坏 JSON、存储不可用分别返回 `missing` / `corrupt` / `unavailable`。
 - 写入异常转换为 `DataStoreError`。
 - 缺失键返回默认值。
 - 设置/外观的默认值、非法字段回退。

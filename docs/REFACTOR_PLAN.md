@@ -1,6 +1,6 @@
 # 重构计划
 
-> 状态：阶段 3 进行中（拼图 P0–P7 已完成；P8-0 页面设计文档与三栏布局实验室已确认（2026-10-21，含最终按钮、中性灰配色与棋盘刷新按钮），P8-1 页面骨架待开始；P7-3 交互与视觉随 P8 手动验收，详细设计见 `docs/PUZZLE_GAME_PAGE.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`）
+> 状态：阶段 3 进行中（拼图 P0–P7 已完成；P8-0 页面设计文档与三栏布局实验室已确认（2026-10-21），P8-1 页面骨架已完成（2026-10-22）；P8-2 输入、session 与统计待开始；P7-3 交互与视觉随 P8 手动验收，详细设计见 `docs/PUZZLE_GAME_PAGE.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`）
 >
 > 分支：`refactor/vite-ts`
 >

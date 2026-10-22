@@ -17,6 +17,14 @@ function assertFilter(filter: ScoreFilter): void {
   }
 }
 
+/**
+ * 启动时探测 IndexedDB 是否可用。
+ * 只打开连接，不读写成绩；失败时抛出已归一化的 DataStoreError。
+ */
+export async function probeScoreStorage(): Promise<void> {
+  await getDB();
+}
+
 function normalizeScoreForStorage(score: ScoreRecord): ScoreRecord {
   return {
     ...score,

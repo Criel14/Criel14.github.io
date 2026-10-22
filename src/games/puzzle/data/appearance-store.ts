@@ -2,9 +2,20 @@ import type { AppearanceState, ColorMode, Theme } from '../types';
 import { cloneTheme, isValidBlankColor, isValidHexColor } from '../core/appearance/theme';
 import { createDefaultAppearance, CUSTOM_THEME_SLOT_COUNT } from '../core/appearance/appearance';
 import { normalizeMetrics } from '../core/appearance/metrics';
-import { isDataStoreError } from './errors';
-import { createLocalStorage, readJson, writeJson, type StorageAdapter } from './local-storage';
-import { isStorageEnvelope, isTheme, SCHEMA_VERSION, STORAGE_KEYS } from './schema';
+import {
+  createLocalStorage,
+  readJsonResult,
+  writeJson,
+  type StorageAdapter,
+  type StorageReadStatus,
+} from './local-storage';
+import {
+  isAppearanceState,
+  isStorageEnvelope,
+  isTheme,
+  SCHEMA_VERSION,
+  STORAGE_KEYS,
+} from './schema';
 
 const PALETTE_LENGTHS: Record<ColorMode['mode'], number> = {
   layer: 18,
@@ -128,22 +139,35 @@ export function normalizeAppearance(raw: unknown): AppearanceState {
   return { activeThemeId, themes };
 }
 
-/** 读取外观；缺失、损坏或 localStorage 不可用时回退默认外观。 */
-export function loadAppearance(storage: StorageAdapter = createLocalStorage()): AppearanceState {
-  let raw: unknown;
-  try {
-    raw = readJson(storage, STORAGE_KEYS.appearance);
-  } catch (error) {
-    if (isDataStoreError(error)) {
-      return createDefaultAppearance();
-    }
-    throw error;
+/** 外观读取结果；无论状态如何都返回一份可用的外观。 */
+export interface AppearanceLoadResult {
+  readonly status: StorageReadStatus;
+  readonly appearance: AppearanceState;
+}
+
+/**
+ * 读取外观并保留读取状态。
+ *
+ * - missing：首次使用，静默回退默认外观；
+ * - corrupt：信封或主题损坏，保留可恢复的自定义主题，其余回退默认值；
+ * - unavailable：localStorage 不可用，使用默认外观，页面应提示用户。
+ */
+export function loadAppearanceResult(
+  storage: StorageAdapter = createLocalStorage(),
+): AppearanceLoadResult {
+  const result = readJsonResult(storage, STORAGE_KEYS.appearance);
+  if (result.status !== 'ok') {
+    return { status: result.status, appearance: createDefaultAppearance() };
   }
 
-  if (!isStorageEnvelope(raw) || raw.version !== SCHEMA_VERSION) {
-    return createDefaultAppearance();
+  if (!isStorageEnvelope(result.value) || result.value.version !== SCHEMA_VERSION) {
+    return { status: 'corrupt', appearance: createDefaultAppearance() };
   }
-  return normalizeAppearance(raw.data);
+
+  return {
+    status: isAppearanceState(result.value.data) ? 'ok' : 'corrupt',
+    appearance: normalizeAppearance(result.value.data),
+  };
 }
 
 /** 保存外观；内置主题和自定义主题都会在写入前归一化。 */

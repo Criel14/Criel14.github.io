@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { AppearanceState, Theme } from '../types';
 import { createDefaultAppearance } from '../core/appearance/appearance';
 import { DataStoreError } from './errors';
-import { createMemoryStorage, readJson, writeJson } from './local-storage';
-import { loadAppearance, normalizeAppearance, saveAppearance } from './appearance-store';
+import { createMemoryStorage, readJsonResult, writeJson } from './local-storage';
+import { loadAppearanceResult, normalizeAppearance, saveAppearance } from './appearance-store';
 import { SCHEMA_VERSION, STORAGE_KEYS } from './schema';
 
 function createCustomTheme(id = 'custom-1', name = '自定义主题'): Theme {
@@ -21,7 +21,7 @@ function createCustomTheme(id = 'custom-1', name = '自定义主题'): Theme {
   };
 }
 
-describe('saveAppearance / loadAppearance', () => {
+describe('saveAppearance / loadAppearanceResult', () => {
   it('保存并读取自定义主题与当前主题', () => {
     const storage = createMemoryStorage();
     const custom = createCustomTheme();
@@ -32,13 +32,18 @@ describe('saveAppearance / loadAppearance', () => {
 
     saveAppearance(appearance, storage);
 
-    const loaded = loadAppearance(storage);
+    const result = loadAppearanceResult(storage);
+    const loaded = result.appearance;
+    expect(result.status).toBe('ok');
     expect(loaded.activeThemeId).toBe(custom.id);
     expect(loaded.themes.map((theme) => theme.id)).toEqual(['rainbow', 'rainbow-soft', custom.id]);
     expect(loaded.themes[2]).toEqual(custom);
-    expect(readJson(storage, STORAGE_KEYS.appearance)).toEqual({
-      version: SCHEMA_VERSION,
-      data: loaded,
+    expect(readJsonResult(storage, STORAGE_KEYS.appearance)).toEqual({
+      status: 'ok',
+      value: {
+        version: SCHEMA_VERSION,
+        data: loaded,
+      },
     });
   });
 
@@ -56,21 +61,42 @@ describe('saveAppearance / loadAppearance', () => {
       },
     });
 
-    expect(loadAppearance(storage)).toEqual(createDefaultAppearance());
+    expect(loadAppearanceResult(storage)).toEqual({
+      status: 'ok',
+      appearance: createDefaultAppearance(),
+    });
   });
 
-  it('缺失、损坏或版本不匹配时回退默认外观', () => {
+  it('区分缺失、损坏和版本不匹配，并回退默认外观', () => {
     const storage = createMemoryStorage();
-    expect(loadAppearance(storage)).toEqual(createDefaultAppearance());
+    expect(loadAppearanceResult(storage)).toEqual({
+      status: 'missing',
+      appearance: createDefaultAppearance(),
+    });
 
     storage.set(STORAGE_KEYS.appearance, 'not-json');
-    expect(loadAppearance(storage)).toEqual(createDefaultAppearance());
+    expect(loadAppearanceResult(storage)).toEqual({
+      status: 'corrupt',
+      appearance: createDefaultAppearance(),
+    });
 
     writeJson(storage, STORAGE_KEYS.appearance, {
       version: SCHEMA_VERSION + 1,
       data: { activeThemeId: 'missing', themes: [] },
     });
-    expect(loadAppearance(storage)).toEqual(createDefaultAppearance());
+    expect(loadAppearanceResult(storage)).toEqual({
+      status: 'corrupt',
+      appearance: createDefaultAppearance(),
+    });
+
+    writeJson(storage, STORAGE_KEYS.appearance, {
+      version: SCHEMA_VERSION,
+      data: { activeThemeId: 'missing', themes: [] },
+    });
+    expect(loadAppearanceResult(storage)).toEqual({
+      status: 'corrupt',
+      appearance: createDefaultAppearance(),
+    });
   });
 
   it('localStorage 读取不可用时回退默认外观', () => {
@@ -83,7 +109,10 @@ describe('saveAppearance / loadAppearance', () => {
       keys: () => [],
     };
 
-    expect(loadAppearance(storage)).toEqual(createDefaultAppearance());
+    expect(loadAppearanceResult(storage)).toEqual({
+      status: 'unavailable',
+      appearance: createDefaultAppearance(),
+    });
   });
 });
 

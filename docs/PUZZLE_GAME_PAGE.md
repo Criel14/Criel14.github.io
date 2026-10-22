@@ -1,6 +1,6 @@
 # 数字华容道游戏页设计与 P8 任务
 
-> 状态：P8-0 已确认（2026-10-21，含最终按钮、中性灰配色与棋盘刷新按钮），P8-1 待开始
+> 状态：P8-0 已确认（2026-10-21），P8-1 页面骨架已完成（2026-10-22），P8-2 待开始
 >
 > 分支：`refactor/vite-ts`
 >
@@ -280,6 +280,9 @@ npm run dev
 | 分组弹框     | 10 个组名竖排，选中高亮                        | 已确认 |
 | 初始盘面     | P8-1 使用已复原预览                            | 已确认 |
 | P8-1 按钮    | 完整 UI，不绑定业务事件                        | 已确认 |
+| 初始统计     | `0.00 / 0 / 0.00 / — / —`，不显示假成绩         | 已确认 |
+| 盲玩预览     | P8-1 先显示数字；首次移动后隐藏留给 P8-2        | 已确认 |
+| 读取诊断     | store 结果型 API + `probeScoreStorage`，不建独立诊断文件 | 已确认 |
 | 配色         | 页面 `#ebebeb`，按钮 `#f8f8f8`，整体中性灰       | 已确认 |
 | 首页入口     | 左栏按钮组底部，使用主页图标链接 `/`           | 已确认 |
 | 移动端       | 本轮先不做，P8-5 处理                          | 推迟   |
@@ -403,7 +406,7 @@ P8-1 以当前实验室为视觉基线。正式实现时先复用结构和样式
 
 ### P8-1 页面骨架
 
-- [ ] 文件：`puzzle-game/puzzle.html`、`src/games/puzzle/pages/game.ts`、`src/games/puzzle/styles/game.css`；data 层诊断文件与测试
+- [x] 文件：`puzzle-game/puzzle.html`、`src/games/puzzle/pages/game.ts`、`src/games/puzzle/styles/game.css`；data 层结果型读取 API 与测试
 - 内容：
   - 替换占位页，保留原 URL。
   - 同步加载 settings / appearance；使用 `loadSettingsResult` / `loadAppearanceResult` 区分缺失、损坏和不可用。
@@ -429,6 +432,11 @@ P8-1 以当前实验室为视觉基线。正式实现时先复用结构和样式
   - localStorage / IndexedDB 不可用时页面仍可显示，提示不阻塞。
   - 窄屏不出现横向滚动；本轮不要求移动端完整布局。
 - 依赖：P6、P7、P8-0。
+- 实现备注（2026-10-22）：
+  - 静态统计初值使用 `0.00 / 0 / 0.00 / — / —`，不显示实验室里的假成绩。
+  - 盲玩设置在 P8-1 先保持数字可见；首次有效移动后隐藏留给 P8-2 的 session 接入。
+  - localStorage 读取结果放在 `loadSettingsResult` / `loadAppearanceResult`，IndexedDB 探测放在 `probeScoreStorage`；不新增单独的 diagnostics 文件。
+  - `prototype/layout-lab.*` 继续保留到 P8-1 验收后再决定清理时机。
 
 ### P8-2 输入、session 与统计
 

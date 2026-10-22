@@ -1,6 +1,6 @@
 # 数字华容道重构架构
 
-> 状态：P0–P7 已实现；P8-0 页面设计文档与三栏布局实验室已确认（2026-10-21，含最终按钮、中性灰配色与棋盘刷新按钮），P8-1 待开始（P7-3 交互与视觉随 P8 手动验收）；回放与存储的详细设计见独立文档
+> 状态：P0–P7 已实现；P8-0 页面设计文档与三栏布局实验室已确认（2026-10-21），P8-1 页面骨架已完成（2026-10-22），P8-2 待开始（P7-3 交互与视觉随 P8 手动验收）；回放与存储的详细设计见独立文档
 >
 > 分支：`refactor/vite-ts`
 >
@@ -831,7 +831,7 @@ types ← core ← ui   ← pages
 - `core/appearance/index.ts` 统一导出 appearance 的公共函数。
 - 其他 core 模块直接按文件 import，不做大而全的 barrel。
 - `data/*-store.ts` 只导出 repository 函数；页面不直接操作 localStorage / IndexedDB。
-- 设置、外观 repository 为同步 API；成绩、录像 repository 为异步 API。
+- 设置、外观 repository 为同步 API，读取返回带 `status` 的结果；成绩、录像 repository 为异步 API；`probeScoreStorage()` 用于页面启动时探测 IndexedDB。
 - `data/db.ts`、`data/local-storage.ts`、`data/replay-codec.ts` 属于 data 层内部实现，页面不直接 import。
 - `ui/board-view.ts` 不关心成绩、session、统计，只接收 `Board` + `Theme`；`Theme` 已包含 metrics。`update` 只重绘变化的格子，`setTheme` 只更新 CSS 变量和颜色。
 - `ui/board-input.ts` 只上报格子下标和原始事件，不 import `core` 的 session/moves，不判断 `moveMode`；页面决定点击、滑动或忽略。
