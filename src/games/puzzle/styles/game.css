@@ -183,6 +183,24 @@ body.game-page {
   width: 100%;
 }
 
+.board-loading {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1;
+  color: var(--muted);
+  font-size: 1rem;
+  user-select: none;
+}
+
+.icon-button:disabled,
+.group-button:disabled,
+.board-refresh:disabled,
+.popover-option:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .board-refresh {
   appearance: none;
   display: inline-flex;

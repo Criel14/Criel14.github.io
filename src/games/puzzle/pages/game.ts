@@ -1,9 +1,9 @@
 /**
- * 数字华容道游戏页入口（P8-2）。
+ * 数字华容道游戏页入口（P8-3）。
  *
- * 负责页面组装：读取设置和外观、创建/刷新对局、采集三种输入、
- * 用 rAF 更新 Time / Step / TPS、同步盲玩数字可见性，并读取当前桶的
- * ao5 / ao12。保存成绩、重玩和设置面板分别留给 P8-3、P8-4。
+ * 负责页面组装：读取设置和外观、创建/刷新对局、采集输入、驱动 HUD，
+ * 并在复原后保存成绩与录像。`?retry=<id>` 会读取原成绩的打乱创建重玩局，
+ * 重玩结果只展示、不计入成绩列表。
  */
 
 import type {
@@ -13,6 +13,8 @@ import type {
   GroupId,
   MoveMode,
   PuzzleSize,
+  ScoreFilter,
+  ScoreRecord,
   SessionConfig,
   SessionState,
 } from '../types';
@@ -20,18 +22,35 @@ import { getActiveTheme } from '../core/appearance/appearance';
 import { isPuzzleSize } from '../core/board';
 import { isGroupId } from '../core/groups';
 import { generateScramble } from '../core/scramble';
-import { createSession, getSessionView, moveByDirection, moveByTile } from '../core/session';
+import {
+  createSession,
+  getSessionResult,
+  getSessionView,
+  moveByDirection,
+  moveByTile,
+} from '../core/session';
+import { createSettlement, type Settlement } from '../core/settlement';
 import { sortScores } from '../core/score';
 import { computeAoAt } from '../core/stats';
 import { loadAppearanceResult } from '../data/appearance-store';
 import { isDataStoreError } from '../data/errors';
-import { listScoresByBucket, probeScoreStorage } from '../data/score-store';
+import {
+  addScoreWithReplay,
+  getScoreById,
+  listScoresByBucket,
+  probeScoreStorage,
+} from '../data/score-store';
 import { loadSettingsResult, saveSettings, type SettingsLoadResult } from '../data/settings-store';
 import { attachBoardInput } from '../ui/board-input';
 import { createBoardView, type BoardView } from '../ui/board-view';
 import { formatDuration, formatTps } from '../ui/format';
 import { createLifecycle, type Lifecycle } from '../ui/lifecycle';
-import { createNotifier, showStorageErrorNotice, type Notifier } from '../ui/notice';
+import {
+  createNotifier,
+  getStorageNotice,
+  showStorageErrorNotice,
+  type Notifier,
+} from '../ui/notice';
 
 interface GameElements {
   readonly sizeDisplay: HTMLElement;
@@ -216,6 +235,33 @@ function hasOpenDialog(): boolean {
   return document.querySelector('dialog[open]') !== null;
 }
 
+/** 成绩 ID 只在结算时生成；无 randomUUID 的浏览器使用时间戳 + 随机后缀。 */
+function createScoreId(): string {
+  if (typeof globalThis.crypto?.randomUUID === 'function') {
+    return globalThis.crypto.randomUUID();
+  }
+  return `score-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function readRetryId(): string | null {
+  const value = new URLSearchParams(window.location.search).get('retry');
+  if (value === null) {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+/** 重玩加载失败时清理 URL，避免刷新后反复进入错误状态。 */
+function clearRetryParam(): void {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has('retry')) {
+    return;
+  }
+  url.searchParams.delete('retry');
+  window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+}
+
 function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
   const settingsResult = loadSettingsResult();
   const appearanceResult = loadAppearanceResult();
@@ -229,9 +275,14 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
   const theme = getActiveTheme(appearanceResult.appearance);
   let session: SessionState | null = null;
   let boardView: BoardView | null = null;
+  let boardSize: PuzzleSize | null = null;
   let detachInput: (() => void) | null = null;
   let frameGeneration = 0;
   let aoRequestId = 0;
+  let retrySource: ScoreRecord | null = null;
+  let retryLoading = false;
+  let isSaving = false;
+  const pendingSettlements: Settlement[] = [];
   let openPopover: HTMLElement | null = null;
   let openTrigger: HTMLButtonElement | null = null;
   let hudSnapshot: HudSnapshot = { time: '', steps: '', tps: '' };
@@ -243,7 +294,62 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
     detachInput = null;
     boardView?.destroy();
     boardView = null;
+    boardSize = null;
   });
+
+  /** 重玩时左栏和统计使用成绩原配置；操作模式仍取当前设置。 */
+  function getDisplaySettings(): GameSettings {
+    if (retrySource === null) {
+      return settings;
+    }
+    return {
+      ...settings,
+      size: retrySource.size,
+      gameMode: retrySource.gameMode,
+      groupId: retrySource.groupId,
+    };
+  }
+
+  function getActiveFilter(): ScoreFilter {
+    const display = getDisplaySettings();
+    return {
+      size: display.size,
+      gameMode: display.gameMode,
+      groupId: display.groupId,
+    };
+  }
+
+  function isBusy(): boolean {
+    return retryLoading || isSaving;
+  }
+
+  function updateControlState(): void {
+    const busy = isBusy();
+    const retryLocked = retrySource !== null;
+
+    elements.sizeButton.disabled = busy || retryLocked;
+    elements.gameModeButton.disabled = busy || retryLocked;
+    elements.moveModeButton.disabled = busy;
+    elements.refreshButton.disabled = busy;
+
+    for (const option of elements.sizeOptions) {
+      option.disabled = busy || retryLocked;
+    }
+    for (const option of elements.gameModeOptions) {
+      option.disabled = busy || retryLocked;
+    }
+    for (const option of elements.moveModeOptions) {
+      option.disabled = busy;
+    }
+    for (const option of elements.groupOptions) {
+      option.disabled = busy;
+    }
+
+    elements.boardMount.toggleAttribute('aria-busy', retryLoading);
+    if (busy) {
+      closePopover();
+    }
+  }
 
   function setHudText(time: string, steps: string, tps: string): void {
     if (time !== hudSnapshot.time) {
@@ -283,39 +389,6 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
     lifecycle.requestFrame(tick);
   }
 
-  function commitSession(next: SessionState): void {
-    if (session === null || next === session) {
-      return;
-    }
-
-    session = next;
-    boardView?.update(session.board);
-    updateHud(performance.now());
-
-    if (session.phase === 'solved') {
-      // 棋盘锁定后移除输入监听，避免仍显示可点击光标。
-      detachInput?.();
-      detachInput = null;
-      // 冻结最后一次 HUD，并让已排队的 rAF 在下一帧退出。
-      frameGeneration += 1;
-      // P8-3 在这里保存成绩和录像；P8-2 只锁盘。
-    }
-  }
-
-  function moveTile(index: number): void {
-    if (session === null || session.phase === 'solved') {
-      return;
-    }
-    commitSession(moveByTile(session, index, performance.now()));
-  }
-
-  function moveKeyboard(direction: Direction): void {
-    if (settings.moveMode !== 'keyboard' || session === null || session.phase === 'solved') {
-      return;
-    }
-    commitSession(moveByDirection(session, direction, performance.now()));
-  }
-
   /** 按当前操作模式重新挂载棋盘输入；keyboard 模式由全局 keydown 处理。 */
   function attachInput(): void {
     detachInput?.();
@@ -344,28 +417,88 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
     );
   }
 
-  /** 阶数变化时重建棋盘；输入监听由下一局开始时重新挂到新元素。 */
-  function replaceBoard(): void {
+  function showBoardLoading(): void {
     detachInput?.();
     detachInput = null;
     boardView?.destroy();
+    boardView = null;
+    boardSize = null;
     elements.boardMount.replaceChildren();
+    elements.boardMount.setAttribute('aria-busy', 'true');
+
+    const placeholder = document.createElement('div');
+    placeholder.className = 'board-loading';
+    placeholder.textContent = '正在加载重玩…';
+    placeholder.setAttribute('aria-hidden', 'true');
+    elements.boardMount.append(placeholder);
+  }
+
+  /** 阶数变化时重建棋盘；输入监听由下一局开始时重新挂到新元素。 */
+  function replaceBoard(size: PuzzleSize): void {
+    detachInput?.();
+    detachInput = null;
+    boardView?.destroy();
+    boardView = null;
+    boardSize = null;
+    elements.boardMount.replaceChildren();
+    elements.boardMount.removeAttribute('aria-busy');
 
     boardView = createBoardView({
       root: elements.boardMount,
-      size: settings.size,
+      size,
       theme,
       numbersVisible: true,
     });
+    boardSize = size;
   }
 
-  function startNewGame(): void {
-    if (boardView === null) {
+  function ensureBoard(size: PuzzleSize): void {
+    if (boardView !== null && boardSize === size) {
       return;
+    }
+    replaceBoard(size);
+  }
+
+  function showNewGameError(error: unknown): void {
+    console.error('无法开始新的拼图对局', error);
+    notifier.show({
+      id: 'new-game-error',
+      type: 'error',
+      title: '无法开始新局',
+      message: '生成打乱或创建会话失败，请刷新后重试。',
+      duration: null,
+    });
+  }
+
+  function startSession(config: SessionConfig): boolean {
+    if (boardView === null) {
+      return false;
     }
 
     let next: SessionState;
     try {
+      next = createSession(config, performance.now());
+    } catch (error) {
+      showNewGameError(error);
+      return false;
+    }
+
+    session = next;
+    hudSnapshot = { time: '', steps: '', tps: '' };
+    boardView.update(session.board);
+    attachInput();
+    updateHud(performance.now());
+    startHudLoop();
+    return true;
+  }
+
+  function startNewGame(): boolean {
+    if (isSaving) {
+      return false;
+    }
+
+    try {
+      ensureBoard(settings.size);
       const config: SessionConfig = {
         size: settings.size,
         gameMode: settings.gameMode,
@@ -375,25 +508,220 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
         isRetry: false,
         createdAtEpochMs: Date.now(),
       };
-      next = createSession(config, performance.now());
+      return startSession(config);
     } catch (error) {
-      console.error('无法开始新的拼图对局', error);
-      notifier.show({
-        id: 'new-game-error',
-        type: 'error',
-        title: '无法开始新局',
-        message: '生成打乱或创建会话失败，请刷新后重试。',
-        duration: null,
-      });
+      showNewGameError(error);
+      return false;
+    }
+  }
+
+  function startRetryGame(): boolean {
+    if (retrySource === null || isSaving) {
+      return false;
+    }
+
+    try {
+      ensureBoard(retrySource.size);
+      const config: SessionConfig = {
+        size: retrySource.size,
+        gameMode: retrySource.gameMode,
+        moveMode: settings.moveMode,
+        groupId: retrySource.groupId,
+        scramble: retrySource.scramble,
+        isRetry: true,
+        retryOf: retrySource.id,
+        createdAtEpochMs: Date.now(),
+      };
+      return startSession(config);
+    } catch (error) {
+      showNewGameError(error);
+      return false;
+    }
+  }
+
+  function startNextGame(): void {
+    if (isBusy()) {
+      return;
+    }
+    if (retrySource !== null) {
+      startRetryGame();
+      return;
+    }
+    startNewGame();
+  }
+
+  function moveTile(index: number): void {
+    if (session === null || session.phase === 'solved') {
+      return;
+    }
+    commitSession(moveByTile(session, index, performance.now()));
+  }
+
+  function moveKeyboard(direction: Direction): void {
+    if (settings.moveMode !== 'keyboard' || session === null || session.phase === 'solved') {
+      return;
+    }
+    commitSession(moveByDirection(session, direction, performance.now()));
+  }
+
+  function commitSession(next: SessionState): void {
+    if (session === null || next === session) {
       return;
     }
 
     session = next;
-    hudSnapshot = { time: '', steps: '', tps: '' };
-    boardView.update(session.board);
-    attachInput();
+    boardView?.update(session.board);
     updateHud(performance.now());
-    startHudLoop();
+
+    if (session.phase === 'solved') {
+      // 棋盘锁定后移除输入监听，避免仍显示可点击光标。
+      detachInput?.();
+      detachInput = null;
+      // 冻结最后一次 HUD，并让已排队的 rAF 在下一帧退出。
+      frameGeneration += 1;
+      handleSolvedSession(session);
+    }
+  }
+
+  function handleSolvedSession(state: SessionState): void {
+    const result = getSessionResult(state);
+    if (result === null) {
+      notifier.show({
+        id: 'score-result-error',
+        type: 'error',
+        title: '无法结算本局',
+        message: '完成状态异常，本局成绩未保存。',
+        duration: 8_000,
+      });
+      return;
+    }
+
+    // 重玩只用于复现同一打乱，完成结果不进入成绩列表。
+    if (result.isRetry) {
+      notifier.show({
+        id: 'retry-finished',
+        type: 'success',
+        title: '重玩完成',
+        message: '本局不计入成绩列表。',
+        duration: 4_000,
+      });
+      return;
+    }
+
+    let settlement: Settlement;
+    try {
+      settlement = createSettlement(createScoreId(), result);
+    } catch (error) {
+      console.error('无法生成成绩记录', error);
+      notifier.show({
+        id: 'score-result-error',
+        type: 'error',
+        title: '无法结算本局',
+        message: '成绩数据生成失败，本局成绩未保存。',
+        duration: 8_000,
+      });
+      return;
+    }
+
+    pendingSettlements.push(settlement);
+    void flushSettlements();
+  }
+
+  function showSaveLoading(): void {
+    notifier.dismiss('score-save');
+    notifier.show({
+      id: 'score-save',
+      type: 'loading',
+      title: '正在保存成绩',
+      message: `正在保存 ${pendingSettlements.length} 局成绩和录像…`,
+      duration: null,
+      dismissible: false,
+    });
+  }
+
+  function showSaveError(error: unknown): void {
+    const code = isDataStoreError(error) ? error.code : 'unknown';
+    const content = getStorageNotice(code);
+    notifier.dismiss('score-save');
+    notifier.show({
+      ...content,
+      id: 'score-save',
+      title: '成绩未保存',
+      message: `${content.message} 当前还有 ${pendingSettlements.length} 局成绩待保存。`,
+      duration: null,
+      dismissible: false,
+      actionLabel: '重试保存',
+      onAction: () => {
+        void flushSettlements();
+      },
+    });
+  }
+
+  function showSaveSuccess(count: number): void {
+    if (count <= 0) {
+      return;
+    }
+    notifier.dismiss('score-save');
+    notifier.show({
+      id: 'score-save',
+      type: 'success',
+      title: '成绩已保存',
+      message: count > 1 ? `已保存 ${count} 局成绩和录像。` : '本局成绩和录像已保存。',
+      duration: 2_500,
+      dismissible: true,
+    });
+  }
+
+  /**
+   * 串行写入待保存队列。失败项保留在队列中，页面可以继续新局；
+   * 用户通过错误提示上的“重试保存”再次触发，不会产生重复成绩。
+   */
+  async function flushSettlements(): Promise<void> {
+    if (isSaving || pendingSettlements.length === 0) {
+      return;
+    }
+
+    isSaving = true;
+    updateControlState();
+    showSaveLoading();
+
+    let savedCount = 0;
+    let failure: unknown = null;
+    let failed = false;
+    try {
+      while (pendingSettlements.length > 0) {
+        const settlement = pendingSettlements[0];
+        if (settlement === undefined) {
+          break;
+        }
+        await addScoreWithReplay(settlement.score, settlement.replay);
+        pendingSettlements.shift();
+        savedCount += 1;
+      }
+    } catch (error) {
+      failure = error;
+      failed = true;
+    } finally {
+      isSaving = false;
+      updateControlState();
+    }
+
+    if (lifecycle.signal.aborted) {
+      return;
+    }
+
+    if (failed) {
+      showSaveError(failure);
+      if (savedCount > 0) {
+        void loadCurrentAo();
+      }
+      return;
+    }
+
+    showSaveSuccess(savedCount);
+    if (savedCount > 0) {
+      void loadCurrentAo();
+    }
   }
 
   /**
@@ -402,11 +730,7 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
    */
   async function loadCurrentAo(): Promise<void> {
     const requestId = ++aoRequestId;
-    const filter = {
-      size: settings.size,
-      gameMode: settings.gameMode,
-      groupId: settings.groupId,
-    };
+    const filter = getActiveFilter();
 
     try {
       const scores = await listScoresByBucket(filter);
@@ -472,41 +796,47 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
 
   function selectSize(value: PuzzleSize): void {
     closePopover(true);
-    if (value === settings.size) {
+    if (isBusy() || retrySource !== null || value === settings.size) {
       return;
     }
 
     settings = { ...settings, size: value };
-    renderSettings(settings, elements);
+    renderSettings(getDisplaySettings(), elements);
     persistSettings();
-    replaceBoard();
     startNewGame();
     void loadCurrentAo();
+    updateControlState();
   }
 
   function selectGameMode(value: GameMode): void {
     closePopover(true);
-    if (value === settings.gameMode) {
+    if (isBusy() || retrySource !== null || value === settings.gameMode) {
       return;
     }
 
     settings = { ...settings, gameMode: value };
-    renderSettings(settings, elements);
+    renderSettings(getDisplaySettings(), elements);
     persistSettings();
     startNewGame();
     void loadCurrentAo();
+    updateControlState();
   }
 
   function selectMoveMode(value: MoveMode): void {
     closePopover(true);
-    if (value === settings.moveMode) {
+    if (isBusy() || value === settings.moveMode) {
       return;
     }
 
     settings = { ...settings, moveMode: value };
-    renderSettings(settings, elements);
+    renderSettings(getDisplaySettings(), elements);
     persistSettings();
-    startNewGame();
+    if (retrySource !== null) {
+      startRetryGame();
+    } else {
+      startNewGame();
+    }
+    updateControlState();
   }
 
   function handleKeydown(event: Event): void {
@@ -522,17 +852,17 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
       return;
     }
 
-    // 弹框、对话框和文本输入优先；避免游戏快捷键打断它们。
+    // 弹框、对话框和文本输入优先。
     if (openPopover !== null || hasOpenDialog() || isTextInputTarget(event.target)) {
       return;
     }
 
     if (event.key === ' ' || event.code === 'Space') {
-      if (event.repeat || consumesSpace(event.target)) {
+      if (isBusy() || event.repeat || consumesSpace(event.target)) {
         return;
       }
       event.preventDefault();
-      startNewGame();
+      startNextGame();
       return;
     }
 
@@ -602,17 +932,110 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
     });
   }
 
-  lifecycle.listen(elements.refreshButton, 'click', () => {
+  function showRetryFallback(error: unknown, failed: boolean): void {
+    if (failed) {
+      const code = isDataStoreError(error) ? error.code : 'unknown';
+      const content = getStorageNotice(code);
+      notifier.show({
+        ...content,
+        id: 'retry-load-error',
+        title: '重玩加载失败',
+        message: `${content.message} 已开始普通新局。`,
+        duration: content.duration,
+      });
+      return;
+    }
+
+    notifier.show({
+      id: 'retry-missing',
+      type: 'warning',
+      title: '未找到重玩成绩',
+      message: '成绩可能已被删除或损坏，已开始普通新局。',
+      duration: 8_000,
+    });
+  }
+
+  async function initializePage(): Promise<void> {
+    const retryId = readRetryId();
+    if (retryId === null) {
+      startNewGame();
+      void loadCurrentAo();
+      void probeScoreStorage().catch((error: unknown) => {
+        reportStorageError(notifier, error);
+      });
+      return;
+    }
+
+    retryLoading = true;
+    updateControlState();
+    showBoardLoading();
+    notifier.show({
+      id: 'retry-loading',
+      type: 'loading',
+      title: '正在加载重玩',
+      message: '正在读取成绩和打乱…',
+      duration: null,
+      dismissible: false,
+    });
+
+    let score: ScoreRecord | null = null;
+    let failure: unknown = null;
+    let loadFailed = false;
+    try {
+      score = await getScoreById(retryId);
+    } catch (error) {
+      failure = error;
+      loadFailed = true;
+      console.error('加载重玩成绩失败', error);
+    }
+
+    if (lifecycle.signal.aborted) {
+      return;
+    }
+
+    notifier.dismiss('retry-loading');
+
+    let startFailed = false;
+    if (score !== null) {
+      retrySource = score;
+      renderSettings(getDisplaySettings(), elements);
+      if (startRetryGame()) {
+        retryLoading = false;
+        updateControlState();
+        void loadCurrentAo();
+        return;
+      }
+      startFailed = true;
+      retrySource = null;
+    }
+
+    retryLoading = false;
+    clearRetryParam();
+    renderSettings(settings, elements);
+    updateControlState();
+    if (!startFailed) {
+      showRetryFallback(failure, loadFailed);
+    }
     startNewGame();
+    void loadCurrentAo();
+  }
+
+  lifecycle.listen(elements.refreshButton, 'click', () => {
+    startNextGame();
   });
   lifecycle.listen(document, 'keydown', handleKeydown);
   bindPopovers();
+  updateControlState();
 
-  replaceBoard();
-  startNewGame();
-  void loadCurrentAo();
-  void probeScoreStorage().catch((error: unknown) => {
-    reportStorageError(notifier, error);
+  void initializePage().catch((error: unknown) => {
+    console.error('数字华容道游戏页初始化失败', error);
+    notifier.show({
+      id: 'game-init-error',
+      type: 'error',
+      title: '页面初始化失败',
+      message: '页面未能完整加载，请刷新后重试。',
+      duration: null,
+    });
   });
 }
 

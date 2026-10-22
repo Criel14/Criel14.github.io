@@ -1,6 +1,6 @@
 # 数字华容道重构架构
 
-> 状态：P0–P7 已实现；P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计已完成（2026-10-22），P8-3 待开始（P7-3 交互与视觉随 P8 手动验收）；回放与存储的详细设计见独立文档
+> 状态：P0–P7 已实现；P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩已完成（2026-10-22），P8-4 待开始（P7-3 交互与视觉随 P8 手动验收）；回放与存储的详细设计见独立文档
 >
 > 分支：`refactor/vite-ts`
 >
@@ -262,7 +262,7 @@ IndexedDB 索引：
 - 成绩、录像：异步 repository；新增、删除、按桶/按组清空都在**同一个 IndexedDB 事务**中完成，不再需要写入顺序和回滚逻辑。
 - 统计页只调用 `listScoresByBucket(filter)`，不加载录像；回放页只加载一条成绩和一条录像。
 - 所有读取都经过 schema 校验；非法成绩跳过，非法/缺失录像返回 `null`，不让整页崩溃。
-- 写入失败（配额不足、IndexedDB 不可用、blocked）返回明确的 `DataStoreError`；当前结果保留在内存中，允许重试。
+- 写入失败（配额不足、IndexedDB 不可用、blocked）返回明确的 `DataStoreError`；游戏页保留待保存队列，并通过提示上的“重试保存”再次写入，已成功写入的数据不受影响。
 - 不做多标签页实时同步；IndexedDB 事务本身安全，页面刷新后可见其他标签页的修改。
 
 ### 5.3 录像编码
@@ -486,7 +486,7 @@ getSessionResult(state: SessionState): SessionResult | null;
 - `createdAtMs`、`firstMoveAtMs`、`solvedAtMs` 都是单调时钟值；映射到 epoch 时必须先减去 `createdAtMs`，不能把 `performance.now()` 的起始值直接加到 `createdAtEpochMs` 上。
 - `moveCount = moves.length`。
 - `manhattanDistance` 由初始 `scramble` 计算，不随移动变化。
-- `isRetry` 结果不写入成绩；core 只标记，页面决定不保存。
+- `isRetry` 结果不写入成绩；core 只标记，页面用 `createSettlement` 拒绝并为普通结果生成可保存的成绩/录像对。
 
 ## 8. Stats
 
@@ -674,7 +674,9 @@ IndexedDB 中由 data 层存为 `StoredReplayV2 { scoreId, directions, timeDelta
 
 - 回放：`replay.html?score=<id>`。
 - 重玩：`puzzle.html?retry=<id>`。
-- 重玩只读取成绩的 `size`、`gameMode`、`scramble`；`moveMode` 使用当前设置；结果不保存。
+- 重玩读取成绩的 `size`、`gameMode`、`groupId`、`scramble`；`moveMode` 使用当前设置；结果不保存。
+- 重玩加载期间显示 loading；阶数/游戏模式锁定，切换操作模式或刷新/`Space` 都保留同一打乱。
+- 重玩读取失败时清理 `retry` 参数，提示后回退普通新局。
 - 回放使用当前外观主题；如果以后需要“忠实回放当时主题”，在成绩中增加 `themeId` 即可，不影响当前结构。
 
 ## 10. Appearance
@@ -841,7 +843,7 @@ types ← core ← ui   ← pages
 | 页面     | URL                                                       | 说明                               |
 | -------- | --------------------------------------------------------- | ---------------------------------- |
 | 游戏页   | `/puzzle-game/puzzle.html`                                | 设置从 `puzzle.v2.settings` 读取   |
-| 重玩     | `/puzzle-game/puzzle.html?retry=<scoreId>`                | 使用该成绩的打乱，不保存结果       |
+| 重玩     | `/puzzle-game/puzzle.html?retry=<scoreId>`                | 使用该成绩的配置与打乱，不保存结果 |
 | 成绩页   | `/puzzle-game/score-list.html?size=4&mode=normal&group=1` | 筛选条件可分享；group 使用固定编号 |
 | 成绩详情 | 同上，追加 `&score=<id>`                                  | 原生 `<dialog>`，可刷新恢复        |
 | 回放页   | `/puzzle-game/replay.html?score=<id>`                     | 缺少/非法 id 显示空状态            |

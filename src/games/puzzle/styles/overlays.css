@@ -214,6 +214,30 @@
   line-height: 1.5;
 }
 
+.puzzle-notice__action {
+  flex: none;
+  align-self: center;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid var(--color-border-muted);
+  border-radius: 0.375rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.puzzle-notice__action:hover {
+  background: var(--color-surface-hover);
+}
+
+.puzzle-notice__action:focus-visible {
+  outline: 2px solid var(--color-text);
+  outline-offset: 2px;
+}
+
 .puzzle-notice__close {
   display: inline-flex;
   flex: none;
@@ -238,6 +262,7 @@
 }
 
 /* hidden 属性的 UA 样式优先级低于类选择器，需要显式兜底。 */
+.puzzle-notice__action[hidden],
 .puzzle-notice__close[hidden],
 .puzzle-notice__title[hidden] {
   display: none;

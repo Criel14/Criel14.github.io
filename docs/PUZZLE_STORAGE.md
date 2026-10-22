@@ -376,12 +376,14 @@ saveAppearance(appearance: AppearanceState, storage?: StorageAdapter): void;
 ### 6.1 游戏页
 
 1. 同步读取 settings / appearance，使用结果型 API 区分缺失、损坏和不可用；缺失静默回退，损坏/不可用显示非阻塞提示。
-2. 启动时调用 `probeScoreStorage()` 探测 IndexedDB；失败显示非阻塞提示，设置和棋盘仍可使用。
-3. `?retry=<id>`：异步 `getScoreById(id)`；加载期间显示 loading。
-   - 找不到成绩：显示错误，回到普通新局或提供返回成绩页入口。
-4. 复原后构造 `ScoreRecord` + `ReplayRecord`，`await addScoreWithReplay(score, replay)`。
-5. 保存失败：保留当前结果，显示非阻塞提示，允许重试；不要把失败结果直接丢掉。
-6. 保存过程中禁用“再来一局”，避免重复写入。
+2. 普通启动时调用 `probeScoreStorage()` 探测 IndexedDB；失败显示非阻塞提示，设置和棋盘仍可使用。重玩启动用 `getScoreById` 完成读取，不再额外探测。
+3. `?retry=<id>`：异步 `getScoreById(id)`；加载期间显示棋盘占位和 loading。
+   - 重玩使用成绩的 `size` / `gameMode` / `groupId` / `scramble`，`moveMode` 使用当前设置。
+   - 找不到或读取失败：显示提示，清理 `retry` 参数，回到普通新局。
+4. 普通局复原后用 `createSettlement` 构造 `ScoreRecord` + `ReplayRecord`，加入待保存队列，按顺序 `await addScoreWithReplay(score, replay)`。
+   - 重玩结果不进入队列，不写入 IndexedDB。
+5. 保存失败：保留失败项和后续待保存项，显示可重试的常驻提示；已成功写入的记录不回滚。
+6. 保存过程中禁用刷新、`Space` 和参数切换，避免重复写入；失败后允许继续新局，队列仍保留。
 
 ### 6.2 成绩页
 

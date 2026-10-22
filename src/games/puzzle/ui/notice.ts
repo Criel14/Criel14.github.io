@@ -17,6 +17,10 @@ export interface NoticeOptions {
   readonly id?: string;
   /** 是否显示关闭按钮；默认 true。 */
   readonly dismissible?: boolean;
+  /** 可选操作按钮文案；与 onAction 同时提供才显示。 */
+  readonly actionLabel?: string;
+  /** 操作按钮回调；不自动关闭提示，由调用方更新或关闭。 */
+  readonly onAction?: () => void;
 }
 
 export interface NoticeUpdate {
@@ -30,6 +34,10 @@ export interface NoticeUpdate {
    */
   readonly duration?: number | null;
   readonly dismissible?: boolean;
+  /** null 表示清除操作按钮；不传则保留。 */
+  readonly actionLabel?: string | null;
+  /** null 表示清除操作按钮回调；不传则保留。 */
+  readonly onAction?: (() => void) | null;
 }
 
 export interface NoticeHandle {
@@ -181,18 +189,23 @@ export function createNotifier(options: NotifierOptions = {}): Notifier {
     const messageElement = document.createElement('p');
     messageElement.className = 'puzzle-notice__message';
     content.append(titleElement, messageElement);
+    const actionButton = document.createElement('button');
+    actionButton.type = 'button';
+    actionButton.className = 'puzzle-notice__action';
     const closeButton = document.createElement('button');
     closeButton.type = 'button';
     closeButton.className = 'puzzle-notice__close';
     closeButton.setAttribute('aria-label', '关闭提示');
     closeButton.textContent = '×';
-    element.append(icon, content, closeButton);
+    element.append(icon, content, actionButton, closeButton);
 
     let type = noticeOptions.type ?? 'info';
     let title = noticeOptions.title ?? null;
     let message = noticeOptions.message;
     let duration = resolveDuration(type, noticeOptions.duration);
     let dismissible = noticeOptions.dismissible ?? true;
+    let actionLabel = noticeOptions.actionLabel ?? null;
+    let onAction = noticeOptions.onAction ?? null;
     let timerId: ReturnType<typeof globalThis.setTimeout> | null = null;
     let dismissed = false;
 
@@ -229,6 +242,9 @@ export function createNotifier(options: NotifierOptions = {}): Notifier {
       titleElement.textContent = title ?? '';
       messageElement.textContent = message;
       closeButton.hidden = !dismissible;
+      const hasAction = actionLabel !== null && actionLabel.trim().length > 0 && onAction !== null;
+      actionButton.hidden = !hasAction;
+      actionButton.textContent = hasAction ? actionLabel : '';
     }
 
     function dismiss(): void {
@@ -260,6 +276,12 @@ export function createNotifier(options: NotifierOptions = {}): Notifier {
       if (patch.dismissible !== undefined) {
         dismissible = patch.dismissible;
       }
+      if (patch.actionLabel !== undefined) {
+        actionLabel = patch.actionLabel;
+      }
+      if (patch.onAction !== undefined) {
+        onAction = patch.onAction;
+      }
       render();
       schedule();
     }
@@ -269,6 +291,16 @@ export function createNotifier(options: NotifierOptions = {}): Notifier {
       'click',
       (event) => {
         if (!(event.target instanceof Element)) {
+          return;
+        }
+        if (event.target.closest('.puzzle-notice__action') !== null) {
+          if (onAction !== null) {
+            try {
+              onAction();
+            } catch (error) {
+              console.error('提示操作执行失败', error);
+            }
+          }
           return;
         }
         if (event.target.closest('.puzzle-notice__close') !== null) {
