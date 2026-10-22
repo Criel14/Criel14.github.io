@@ -42,6 +42,7 @@ P8 的总体目标：
 | `observing`    | 当前阶数、模式、操作模式可查看 | 已打乱，可观察                   | 计时 0；步数/TPS 初始；ao5/ao12 历史  |
 | `running`      | 可切换参数；切换后丢弃当前局   | 可移动                           | 计时/步数/TPS 实时更新                |
 | `blind` 运行中 | 模式图标显示盲玩               | 首次移动后隐藏数字               | 计时包含观察时间                      |
+| 重玩中         | 阶数/游戏模式锁定，操作模式可切换 | 使用原打乱                     | 隐藏 ao；TPS 下方显示退出图标和“重玩中”标签 |
 | `solved`       | 当前参数保持                   | 棋盘锁定，完成盘面               | 显示最终时间/步数/TPS；ao5/ao12 更新   |
 | 保存中         | 当前参数冻结                   | 完成盘面保持                     | 显示保存状态；禁止新局                |
 | 保存失败       | 当前参数恢复                   | 完成盘面保持                     | 常驻提示，允许重试保存                |
@@ -293,6 +294,8 @@ npm run dev
 | 重玩配置     | 原 size/gameMode/groupId + 当前 moveMode；阶数/游戏模式锁定 | 已确认 |
 | 重玩刷新     | 刷新和 `Space` 重开同一打乱；切换操作模式也保留打乱 | 已确认 |
 | 重玩保存     | 重玩结果只展示，不进入成绩列表                  | 已确认 |
+| 重玩标识     | 隐藏 ao5/ao12，在 TPS 下方显示退出图标和“重玩中”标签 | 已确认 |
+| 退出重玩     | 清理 URL、丢弃重玩局，按当前 settings 开始普通新局 | 已确认 |
 | 保存失败     | 待保存队列保留，错误提示可重试；失败后允许继续新局 | 已确认 |
 | 重玩读取失败 | 提示后清理 `retry` 参数并回退普通新局           | 已确认 |
 | 配色         | 页面 `#ebebeb`，按钮 `#f8f8f8`，整体中性灰       | 已确认 |
@@ -471,13 +474,16 @@ P8-1 以当前实验室为视觉基线。正式实现时先复用结构和样式
 
 ### P8-3 结算、保存与重玩
 
-- [x] 文件：`src/games/puzzle/pages/game.ts`、`src/games/puzzle/core/settlement.ts`、`src/games/puzzle/core/settlement.test.ts`、`src/games/puzzle/ui/notice.ts`、`src/games/puzzle/styles/game.css`、`src/games/puzzle/styles/overlays.css`
+- [x] 文件：`puzzle-game/puzzle.html`、`src/games/puzzle/pages/game.ts`、`src/games/puzzle/core/settlement.ts`、`src/games/puzzle/core/settlement.test.ts`、`src/games/puzzle/ui/notice.ts`、`src/games/puzzle/styles/game.css`、`src/games/puzzle/styles/overlays.css`
 - 内容：
   - solved 后用 `createSettlement` 构造 `ScoreRecord` + `ReplayRecord`，通过串行保存队列 `await addScoreWithReplay` 写入。
   - 保存中显示 loading 并禁用新局；保存失败保留队列，错误提示提供“重试保存”。
   - 保存成功后刷新右栏 ao5/ao12；多局待保存时按顺序写入。
   - `?retry=<id>`：异步读取成绩的 size / gameMode / groupId / scramble，创建 retry session；moveMode 使用当前设置。
   - 重玩加载期间显示棋盘占位与 loading；阶数/游戏模式锁定，操作模式可切换且保留同一打乱。
+  - 重玩时隐藏 ao5/ao12，在 TPS 下方、成绩列表/分组入口上方显示退出图标按钮和“重玩中”标签；加载期间也可退出。
+  - 退出按钮与成绩列表按钮同尺寸、左对齐；标签高度与按钮一致，宽度随文字自适应。
+  - 退出重玩清理 URL 中的 `retry`，丢弃重玩结果，并按当前 settings 开始普通新局。
   - 重玩完成只显示结果，不进入保存队列；刷新和 `Space` 重开同一打乱。
   - 成绩不存在、损坏或读取失败时显示提示，清理 `retry` 参数并回退普通新局。
 - 验收：正常成绩与录像落库；重玩不落库；保存后 ao 更新；刷新后成绩和录像仍在。
@@ -485,6 +491,9 @@ P8-1 以当前实验室为视觉基线。正式实现时先复用结构和样式
 - 实现备注（2026-10-22）：
   - 重玩结果不写入成绩列表，这是 P8-3 的明确边界。
   - 重玩期间左栏显示成绩原阶数、游戏模式和分组；操作模式仍取当前 settings。
+  - 右侧状态行放在 TPS 与统计入口之间；退出按钮复用成绩列表按钮的图标按钮样式。
+  - “重玩中”标签复用按钮的边框、背景和阴影；状态行与下方入口行的间距采用左栏按钮行间距 `0.65rem`。
+  - 退出重玩会让正在进行的 `getScoreById` 结果失效，因此加载中点击退出不会又被迟到结果拉回重玩。
   - `notice` 增加可选 `actionLabel` / `onAction`，用于保存失败后的手动重试；不改变现有提示调用方。
   - 保存队列保存在内存中；页面刷新会丢失尚未保存的结果，已成功写入的 IndexedDB 数据不受影响。
 
@@ -598,6 +607,11 @@ npm run build
 - 完成一局普通游戏后出现保存状态；成功后 ao5/ao12 刷新。
 - 在 DevTools → Application → IndexedDB → `puzzle.v2` 中确认 `scores` 与 `replays` 有同 ID 记录；刷新页面后仍在。
 - 打开 `puzzle.html?retry=<scoreId>`：显示加载占位，随后使用原打乱；阶数/游戏模式锁定，切换操作模式后仍是同一打乱。
+- 重玩时 ao5/ao12 隐藏，TPS 下方、成绩列表/分组入口上方显示退出图标按钮和“重玩中”标签。
+- 退出按钮与成绩列表按钮大小一致、左对齐；标签高度与按钮一致，宽度随文字自适应，阴影和边框与按钮一致。
+- “重玩中”状态行与下方成绩列表/分组入口行的间距，和左栏两行按钮的间距一致。
+- 点击退出图标：URL 中的 `retry` 被清理，重玩结果被丢弃，并按当前 settings 开始普通新局；ao 行恢复。
+- 重玩加载期间点击退出图标也能直接取消，不会被迟到的成绩结果重新拉回重玩。
 - 重玩完成后不新增成绩或录像；刷新/`Space` 重玩同一打乱。
 - 打开不存在的 `?retry=...`：提示后清理参数并进入普通新局。
 - 模拟 IndexedDB 写入失败时，当前结果保留在待保存队列，提示上的“重试保存”可再次写入。

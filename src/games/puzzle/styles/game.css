@@ -292,6 +292,43 @@ body.game-page {
   text-align: right;
 }
 
+/* 重玩状态行：TPS 下方、统计入口上方；退出按钮与成绩列表按钮同尺寸。 */
+.retry-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: clamp(1rem, 2vh, 1.35rem);
+}
+
+.stats-row[hidden],
+.retry-row[hidden] {
+  display: none;
+}
+
+.retry-exit {
+  width: 50px;
+  height: 50px;
+}
+
+.retry-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 50px;
+  padding: 0 0.95rem;
+  border: 1px solid var(--button-line);
+  border-radius: 11px;
+  background: var(--button-face);
+  color: var(--ink);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.95),
+    0 2px 4px rgb(0 0 0 / 0.08),
+    0 1px 1px rgb(0 0 0 / 0.04);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
 .stats-actions {
   display: flex;
   flex-wrap: wrap;
@@ -299,6 +336,11 @@ body.game-page {
   gap: 0.7rem;
   max-width: 100%;
   margin-top: clamp(1.25rem, 2.5vh, 1.8rem);
+}
+
+/* 和左栏两行按钮的间距保持一致。 */
+.stats-actions--retry {
+  margin-top: 0.65rem;
 }
 
 .stats-actions .icon-button {

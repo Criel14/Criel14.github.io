@@ -676,6 +676,7 @@ IndexedDB 中由 data 层存为 `StoredReplayV2 { scoreId, directions, timeDelta
 - 重玩：`puzzle.html?retry=<id>`。
 - 重玩读取成绩的 `size`、`gameMode`、`groupId`、`scramble`；`moveMode` 使用当前设置；结果不保存。
 - 重玩加载期间显示 loading；阶数/游戏模式锁定，切换操作模式或刷新/`Space` 都保留同一打乱。
+- 重玩时隐藏 ao5/ao12，在 TPS 下方、统计入口上方显示退出图标按钮和“重玩中”标签；退出会清理 `retry` 参数并按当前 settings 开始普通新局。
 - 重玩读取失败时清理 `retry` 参数，提示后回退普通新局。
 - 回放使用当前外观主题；如果以后需要“忠实回放当时主题”，在成绩中增加 `themeId` 即可，不影响当前结构。
 

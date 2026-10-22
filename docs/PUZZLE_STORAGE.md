@@ -379,6 +379,7 @@ saveAppearance(appearance: AppearanceState, storage?: StorageAdapter): void;
 2. 普通启动时调用 `probeScoreStorage()` 探测 IndexedDB；失败显示非阻塞提示，设置和棋盘仍可使用。重玩启动用 `getScoreById` 完成读取，不再额外探测。
 3. `?retry=<id>`：异步 `getScoreById(id)`；加载期间显示棋盘占位和 loading。
    - 重玩使用成绩的 `size` / `gameMode` / `groupId` / `scramble`，`moveMode` 使用当前设置。
+   - 重玩期间隐藏 ao5/ao12，在 TPS 下方、统计入口上方显示退出图标按钮和“重玩中”标签；退出会清理 `retry` 参数并按当前 settings 开始普通新局。
    - 找不到或读取失败：显示提示，清理 `retry` 参数，回到普通新局。
 4. 普通局复原后用 `createSettlement` 构造 `ScoreRecord` + `ReplayRecord`，加入待保存队列，按顺序 `await addScoreWithReplay(score, replay)`。
    - 重玩结果不进入队列，不写入 IndexedDB。

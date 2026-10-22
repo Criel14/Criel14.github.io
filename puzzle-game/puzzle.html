@@ -307,15 +307,32 @@
               <dt>TPS</dt>
               <dd data-stat="tps">0.00</dd>
             </div>
-            <div class="stats-row">
+            <div class="stats-row" data-ao-row>
               <dt>ao5</dt>
               <dd data-stat="ao5">—</dd>
             </div>
-            <div class="stats-row">
+            <div class="stats-row" data-ao-row>
               <dt>ao12</dt>
               <dd data-stat="ao12">—</dd>
             </div>
           </dl>
+
+          <div class="retry-row" data-retry-panel hidden>
+            <button
+              class="icon-button retry-exit"
+              type="button"
+              data-action="exit-retry"
+              aria-label="退出重玩"
+              title="退出重玩"
+            >
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M14 4h5v16h-5"></path>
+                <path d="M4 12h11"></path>
+                <path d="m11 7 5 5-5 5"></path>
+              </svg>
+            </button>
+            <span class="retry-badge">重玩中</span>
+          </div>
         </div>
 
         <div class="stats-actions">

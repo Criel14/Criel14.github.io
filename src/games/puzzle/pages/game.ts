@@ -68,6 +68,10 @@ interface GameElements {
   readonly statTps: HTMLElement;
   readonly statAo5: HTMLElement;
   readonly statAo12: HTMLElement;
+  readonly aoRows: readonly HTMLElement[];
+  readonly retryPanel: HTMLElement;
+  readonly retryExitButton: HTMLButtonElement;
+  readonly statsActions: HTMLElement;
   readonly refreshButton: HTMLButtonElement;
   readonly boardMount: HTMLElement;
 }
@@ -103,6 +107,10 @@ function getElements(): GameElements {
     statTps: requireElement<HTMLElement>('[data-stat="tps"]'),
     statAo5: requireElement<HTMLElement>('[data-stat="ao5"]'),
     statAo12: requireElement<HTMLElement>('[data-stat="ao12"]'),
+    aoRows: [...document.querySelectorAll<HTMLElement>('[data-ao-row]')],
+    retryPanel: requireElement<HTMLElement>('[data-retry-panel]'),
+    retryExitButton: requireElement<HTMLButtonElement>('[data-action="exit-retry"]'),
+    statsActions: requireElement<HTMLElement>('.stats-actions'),
     refreshButton: requireElement<HTMLButtonElement>('[data-action="refresh"]'),
     boardMount: requireElement<HTMLElement>('#puzzle-board'),
   };
@@ -280,7 +288,9 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
   let frameGeneration = 0;
   let aoRequestId = 0;
   let retrySource: ScoreRecord | null = null;
+  let retryMode = false;
   let retryLoading = false;
+  let retryRequestId = 0;
   let isSaving = false;
   const pendingSettlements: Settlement[] = [];
   let openPopover: HTMLElement | null = null;
@@ -290,6 +300,7 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
   lifecycle.onDispose(() => {
     frameGeneration += 1;
     aoRequestId += 1;
+    retryRequestId += 1;
     detachInput?.();
     detachInput = null;
     boardView?.destroy();
@@ -323,14 +334,23 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
     return retryLoading || isSaving;
   }
 
+  function updateRetryUi(): void {
+    for (const row of elements.aoRows) {
+      row.hidden = retryMode;
+    }
+    elements.retryPanel.hidden = !retryMode;
+    elements.statsActions.classList.toggle('stats-actions--retry', retryMode);
+  }
+
   function updateControlState(): void {
     const busy = isBusy();
-    const retryLocked = retrySource !== null;
+    const retryLocked = retryMode;
 
     elements.sizeButton.disabled = busy || retryLocked;
     elements.gameModeButton.disabled = busy || retryLocked;
     elements.moveModeButton.disabled = busy;
     elements.refreshButton.disabled = busy;
+    elements.retryExitButton.disabled = isSaving;
 
     for (const option of elements.sizeOptions) {
       option.disabled = busy || retryLocked;
@@ -346,6 +366,7 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
     }
 
     elements.boardMount.toggleAttribute('aria-busy', retryLoading);
+    updateRetryUi();
     if (busy) {
       closePopover();
     }
@@ -543,7 +564,7 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
     if (isBusy()) {
       return;
     }
-    if (retrySource !== null) {
+    if (retryMode) {
       startRetryGame();
       return;
     }
@@ -729,6 +750,11 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
    * ao 需要完整窗口；不足 5 / 12 条或跨 5 分钟间隔时显示 —。
    */
   async function loadCurrentAo(): Promise<void> {
+    // 重玩结果不进入统计，重玩期间 ao 区域由状态面板替代。
+    if (retryMode) {
+      return;
+    }
+
     const requestId = ++aoRequestId;
     const filter = getActiveFilter();
 
@@ -796,7 +822,7 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
 
   function selectSize(value: PuzzleSize): void {
     closePopover(true);
-    if (isBusy() || retrySource !== null || value === settings.size) {
+    if (isBusy() || retryMode || value === settings.size) {
       return;
     }
 
@@ -810,7 +836,7 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
 
   function selectGameMode(value: GameMode): void {
     closePopover(true);
-    if (isBusy() || retrySource !== null || value === settings.gameMode) {
+    if (isBusy() || retryMode || value === settings.gameMode) {
       return;
     }
 
@@ -831,7 +857,7 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
     settings = { ...settings, moveMode: value };
     renderSettings(getDisplaySettings(), elements);
     persistSettings();
-    if (retrySource !== null) {
+    if (retryMode) {
       startRetryGame();
     } else {
       startNewGame();
@@ -932,6 +958,36 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
     });
   }
 
+  function exitRetry(): void {
+    if (!retryMode || isSaving) {
+      return;
+    }
+
+    // 让正在进行的 getScoreById 结果失效，加载中也可以直接退出。
+    retryRequestId += 1;
+    retryMode = false;
+    retryLoading = false;
+    retrySource = null;
+
+    notifier.dismiss('retry-loading');
+    notifier.dismiss('retry-finished');
+    clearRetryParam();
+    renderSettings(settings, elements);
+    updateControlState();
+
+    const started = startNewGame();
+    void loadCurrentAo();
+    if (started) {
+      notifier.show({
+        id: 'retry-exited',
+        type: 'info',
+        title: '已退出重玩',
+        message: '已开始普通新局。',
+        duration: 2_500,
+      });
+    }
+  }
+
   function showRetryFallback(error: unknown, failed: boolean): void {
     if (failed) {
       const code = isDataStoreError(error) ? error.code : 'unknown';
@@ -966,7 +1022,9 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
       return;
     }
 
+    retryMode = true;
     retryLoading = true;
+    const requestId = ++retryRequestId;
     updateControlState();
     showBoardLoading();
     notifier.show({
@@ -989,7 +1047,7 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
       console.error('加载重玩成绩失败', error);
     }
 
-    if (lifecycle.signal.aborted) {
+    if (requestId !== retryRequestId || lifecycle.signal.aborted) {
       return;
     }
 
@@ -1002,7 +1060,6 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
       if (startRetryGame()) {
         retryLoading = false;
         updateControlState();
-        void loadCurrentAo();
         return;
       }
       startFailed = true;
@@ -1010,6 +1067,7 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
     }
 
     retryLoading = false;
+    retryMode = false;
     clearRetryParam();
     renderSettings(settings, elements);
     updateControlState();
@@ -1022,6 +1080,9 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
 
   lifecycle.listen(elements.refreshButton, 'click', () => {
     startNextGame();
+  });
+  lifecycle.listen(elements.retryExitButton, 'click', () => {
+    exitRetry();
   });
   lifecycle.listen(document, 'keydown', handleKeydown);
   bindPopovers();
