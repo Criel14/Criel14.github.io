@@ -35,7 +35,7 @@
 - 部署：GitHub Actions 构建 `dist` 发布 GitHub Pages；Netlify 使用同一构建命令。
 - 存储：localStorage（设置/外观）+ IndexedDB（成绩/录像）；IndexedDB 使用 `idb` 轻量封装，测试使用 `fake-indexeddb`。
 - 图表：ECharts 按需引入，仅成绩页加载；如果后续仍然偏重，再评估 uPlot。
-- 图标：使用 Lucide / Iconify 等图标源，构建时打包为本地 SVG；生产环境不依赖运行时 CDN。
+- 图标：使用 Lucide 单色线性图标，统一维护在 `src/shared/icons/sprite.svg`，构建时内联到 HTML；生产环境不依赖运行时 CDN。详见 `docs/ICONS.md`。
 - 国际化：轻量 typed module + 原生 `Intl`；规模变大后再评估 i18next / intl-messageformat。
 - 组件库：不使用 Vue/React 组件库；复杂交互优先原生 HTML + 少量 headless 库。
 
@@ -57,7 +57,7 @@
 ├─ puzzle-game/                  # HTML 入口保留原路径
 ├─ snake-game/
 ├─ src/
-│  ├─ shared/                    # 通用 ui、styles、time、i18n
+│  ├─ shared/                    # 通用 ui、styles、icons、time、i18n
 │  └─ games/
 │     ├─ puzzle/
 │     │  ├─ core/                # board、moves、scramble、session、stats、replay、appearance
@@ -135,7 +135,7 @@
 
 ## 9. 待讨论
 
-- 图标库最终选择：Lucide / Iconify；图标风格是否统一替换。
+- 图标：游戏页已全部迁移到本地 sprite；待定线宽是否从 `1.8` 统一为 `2`，以及 `←` / `×` / `→` 是否也纳入 sprite。详见 `docs/ICONS.md`。
 - 国际化：自研 typed module / i18next / intl-messageformat；默认语言和切换入口。
 - 自定义光标：保留 PNG / 改为 SVG data URI。
 - 贪吃蛇渲染：DOM diff / Canvas 2D。
@@ -154,6 +154,7 @@
 - 回放设计：`docs/PUZZLE_REPLAY.md`
 - 数据存储设计：`docs/PUZZLE_STORAGE.md`
 - 拼图任务清单：`docs/PUZZLE_TASKS.md`
+- 图标规范与清单：`docs/ICONS.md`
 - 旧版本基线：git tag `pre-refactor-2026-10`
 - 旧代码只读 worktree：`D:\Project\Criel14.github.io-legacy`（detached HEAD，指向基线 tag；供重构期间随时检索旧实现，不修改、不提交）
   - 缺失时重建：`git worktree add ../Criel14.github.io-legacy pre-refactor-2026-10 --detach`

@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="../src/games/puzzle/prototype/layout-lab.css" />
   </head>
   <body class="lab">
+    <!-- icon-sprite -->
     <main class="game-layout">
       <aside class="game-menu" aria-label="游戏菜单">
         <div class="game-menu__size" data-size-display>4×4</div>
@@ -26,8 +27,7 @@
               title="切换阶数"
             >
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <rect x="3.5" y="3.5" width="17" height="17" rx="2.5"></rect>
-                <path d="M9.2 3.5v17M14.8 3.5v17M3.5 9.2h17M3.5 14.8h17"></path>
+                <use href="#icon-size"></use>
               </svg>
             </button>
 
@@ -137,8 +137,7 @@
                 aria-hidden="true"
                 focusable="false"
               >
-                <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
+                <use href="#icon-mode-normal"></use>
               </svg>
               <svg
                 class="icon mode-icon mode-icon--blind"
@@ -146,11 +145,7 @@
                 aria-hidden="true"
                 focusable="false"
               >
-                <path d="M4 4l16 16"></path>
-                <path
-                  d="M10.6 6.2A9.7 9.7 0 0 1 12 6c6 0 9.5 6 9.5 6a17 17 0 0 1-3.1 3.7M6.6 6.7C3.9 8.5 2.5 12 2.5 12s3.5 6 9.5 6a10 10 0 0 0 4.1-.9"
-                ></path>
-                <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"></path>
+                <use href="#icon-mode-blind"></use>
               </svg>
             </button>
 
@@ -194,7 +189,7 @@
                 aria-hidden="true"
                 focusable="false"
               >
-                <path d="M6 3.5 18.5 11l-5.5 1.3L10 18 6 3.5Z"></path>
+                <use href="#icon-move-click"></use>
               </svg>
               <svg
                 class="icon move-icon move-icon--slide"
@@ -202,7 +197,7 @@
                 aria-hidden="true"
                 focusable="false"
               >
-                <path d="M4 12h16M7 9l-3 3 3 3M17 9l3 3-3 3"></path>
+                <use href="#icon-move-slide"></use>
               </svg>
               <svg
                 class="icon move-icon move-icon--keyboard"
@@ -210,8 +205,7 @@
                 aria-hidden="true"
                 focusable="false"
               >
-                <rect x="2.5" y="6" width="19" height="12" rx="2"></rect>
-                <path d="M6 10h.01M9.5 10h.01M13 10h.01M16.5 10h.01M6 14h12"></path>
+                <use href="#icon-move-keyboard"></use>
               </svg>
             </button>
 
@@ -255,10 +249,7 @@
               title="设置（后续接入）"
             >
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M4 7h10M18 7h2M4 12h2M10 12h10M4 17h8M16 17h4"></path>
-                <circle cx="16" cy="7" r="2"></circle>
-                <circle cx="8" cy="12" r="2"></circle>
-                <circle cx="14" cy="17" r="2"></circle>
+                <use href="#icon-settings"></use>
               </svg>
             </button>
           </div>
@@ -266,9 +257,7 @@
           <div class="menu-action menu-action--home">
             <a class="icon-button" href="/" aria-label="回到主页" title="回到主页">
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="m3.5 10.5 8.5-7 8.5 7"></path>
-                <path d="M5.5 9.5V20h13V9.5"></path>
-                <path d="M9.5 20v-6h5v6"></path>
+                <use href="#icon-home"></use>
               </svg>
             </a>
           </div>
@@ -281,8 +270,7 @@
         </div>
         <button class="board-refresh" type="button" aria-label="刷新棋盘" title="刷新棋盘">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M20.5 11a8.5 8.5 0 1 1-2.3-5.8"></path>
-            <path d="M20.5 4.5V10h-5.5"></path>
+            <use href="#icon-refresh"></use>
           </svg>
         </button>
       </section>
@@ -319,10 +307,7 @@
             title="成绩列表"
           >
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M9 6h11M9 12h11M9 18h11"></path>
-              <circle cx="4.5" cy="6" r="1"></circle>
-              <circle cx="4.5" cy="12" r="1"></circle>
-              <circle cx="4.5" cy="18" r="1"></circle>
+              <use href="#icon-scores"></use>
             </svg>
           </a>
 
@@ -342,9 +327,7 @@
                 aria-hidden="true"
                 focusable="false"
               >
-                <circle cx="9" cy="8" r="3"></circle>
-                <path d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5"></path>
-                <path d="M15.5 5.5a3 3 0 0 1 0 5.8M16.5 14c2.4.4 4 2.2 4 5"></path>
+                <use href="#icon-groups"></use>
               </svg>
               <span class="group-button__name" data-group-name>G1</span>
               <svg
@@ -353,7 +336,7 @@
                 aria-hidden="true"
                 focusable="false"
               >
-                <path d="m7 10 5 5 5-5"></path>
+                <use href="#icon-chevron-down"></use>
               </svg>
             </button>
 
