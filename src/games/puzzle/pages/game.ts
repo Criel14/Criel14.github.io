@@ -67,6 +67,8 @@ interface GameElements {
   readonly moveModeOptions: readonly HTMLButtonElement[];
   readonly groupButton: HTMLButtonElement;
   readonly groupName: HTMLElement;
+  readonly groupPopoverSize: HTMLElement;
+  readonly groupPopoverMode: HTMLElement;
   readonly groupOptions: readonly HTMLButtonElement[];
   readonly statTime: HTMLElement;
   readonly statSteps: HTMLElement;
@@ -106,6 +108,8 @@ function getElements(): GameElements {
     moveModeOptions: [...document.querySelectorAll<HTMLButtonElement>('[data-move-mode-option]')],
     groupButton: requireElement<HTMLButtonElement>('[data-popover-trigger="group"]'),
     groupName: requireElement<HTMLElement>('[data-group-name]'),
+    groupPopoverSize: requireElement<HTMLElement>('[data-group-popover-size]'),
+    groupPopoverMode: requireElement<HTMLElement>('[data-group-popover-mode]'),
     groupOptions: [...document.querySelectorAll<HTMLButtonElement>('[data-group-option]')],
     statTime: requireElement<HTMLElement>('[data-stat="time"]'),
     statSteps: requireElement<HTMLElement>('[data-stat="steps"]'),
@@ -123,6 +127,11 @@ function getElements(): GameElements {
 
 function getGroupName(settings: GameSettings, id: GroupId): string {
   return resolveGroupName(settings.groups, settings.size, settings.gameMode, id);
+}
+
+/** 事件显示名，例如 `3×3 普通`；用于完整分组标题和 aria-label。 */
+function getEventLabel(size: PuzzleSize, gameMode: GameMode): string {
+  return `${size}×${size} ${gameMode === 'normal' ? '普通' : '盲玩'}`;
 }
 
 function setPressed(
@@ -156,9 +165,12 @@ function renderSettings(settings: GameSettings, elements: GameElements): void {
   elements.moveModeButton.setAttribute('aria-label', elements.moveModeButton.title);
   setPressed(elements.moveModeOptions, 'moveModeOption', settings.moveMode);
 
+  const eventLabel = getEventLabel(settings.size, settings.gameMode);
   const groupName = getGroupName(settings, settings.groupId);
   elements.groupName.textContent = groupName;
-  elements.groupButton.title = `切换分组：${groupName}`;
+  elements.groupPopoverSize.textContent = sizeLabel;
+  elements.groupPopoverMode.textContent = gameModeLabel;
+  elements.groupButton.title = `切换分组：${eventLabel} · ${groupName}`;
   elements.groupButton.setAttribute('aria-label', elements.groupButton.title);
 
   for (const option of elements.groupOptions) {
@@ -167,9 +179,10 @@ function renderSettings(settings: GameSettings, elements: GameElements): void {
       continue;
     }
     const name = getGroupName(settings, id);
+    const fullName = `${eventLabel} · ${name}`;
     option.textContent = name;
-    option.title = name;
-    option.setAttribute('aria-label', `选择分组：${name}`);
+    option.title = fullName;
+    option.setAttribute('aria-label', `选择分组：${fullName}`);
     option.setAttribute('aria-pressed', String(id === settings.groupId));
   }
 }
@@ -345,6 +358,16 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
     return retryLoading || isSaving;
   }
 
+  /** 观察阶段和完成后的等待阶段都允许切换；running/重玩/保存/加载中锁定。 */
+  function canSwitchGroup(): boolean {
+    return (
+      !isBusy() &&
+      !retryMode &&
+      session !== null &&
+      (session.phase === 'observing' || session.phase === 'solved')
+    );
+  }
+
   function updateRetryUi(): void {
     for (const row of elements.aoRows) {
       row.hidden = retryMode;
@@ -356,10 +379,12 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
   function updateControlState(): void {
     const busy = isBusy();
     const retryLocked = retryMode;
+    const groupEnabled = canSwitchGroup();
 
     elements.sizeButton.disabled = busy || retryLocked;
     elements.gameModeButton.disabled = busy || retryLocked;
     elements.moveModeButton.disabled = busy;
+    elements.groupButton.disabled = !groupEnabled;
     elements.refreshButton.disabled = busy;
     elements.retryExitButton.disabled = isSaving;
 
@@ -373,12 +398,12 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
       option.disabled = busy;
     }
     for (const option of elements.groupOptions) {
-      option.disabled = busy;
+      option.disabled = !groupEnabled;
     }
 
     elements.boardMount.toggleAttribute('aria-busy', retryLoading);
     updateRetryUi();
-    if (busy) {
+    if (busy || (!groupEnabled && openTrigger === elements.groupButton)) {
       closePopover();
     }
   }
@@ -516,6 +541,7 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
     }
 
     session = next;
+    updateControlState();
     hudSnapshot = { time: '', steps: '', tps: '' };
     boardView.update(session.board);
     attachInput();
@@ -601,9 +627,15 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
       return;
     }
 
+    const phaseChanged = session.phase !== next.phase;
     session = next;
     boardView?.update(session.board);
     updateHud(performance.now());
+
+    if (phaseChanged) {
+      // observing → running 后分组必须锁定；solved 也保持锁定直到开新局。
+      updateControlState();
+    }
 
     if (session.phase === 'solved') {
       // 棋盘锁定后移除输入监听，避免仍显示可点击光标。
@@ -876,6 +908,28 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
     updateControlState();
   }
 
+  /**
+   * 观察阶段切换分组：保留当前打乱和计时，不重开本局。
+   * 完成后切换只影响下一次开局，不修改已完成成绩的分组。
+   * 观察阶段同步 session.config.groupId，保证本局结算写入新分组。
+   */
+  function selectGroup(value: GroupId): void {
+    closePopover(true);
+    if (!canSwitchGroup() || value === settings.groupId) {
+      return;
+    }
+
+    settings = { ...settings, groupId: value };
+    if (session !== null && session.phase === 'observing') {
+      session = { ...session, config: { ...session.config, groupId: value } };
+    }
+
+    renderSettings(getDisplaySettings(), elements);
+    persistSettings();
+    void loadCurrentAo();
+    updateControlState();
+  }
+
   function handleKeydown(event: Event): void {
     if (!(event instanceof KeyboardEvent)) {
       return;
@@ -926,6 +980,9 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
     lifecycle.listen(elements.moveModeButton, 'click', () => {
       togglePopover(elements.moveModeButton, 'move-mode');
     });
+    lifecycle.listen(elements.groupButton, 'click', () => {
+      togglePopover(elements.groupButton, 'group');
+    });
 
     for (const option of elements.sizeOptions) {
       lifecycle.listen(option, 'click', () => {
@@ -950,6 +1007,15 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
         const value = option.dataset.moveModeOption;
         if (value === 'click' || value === 'slide' || value === 'keyboard') {
           selectMoveMode(value);
+        }
+      });
+    }
+
+    for (const option of elements.groupOptions) {
+      lifecycle.listen(option, 'click', () => {
+        const value = Number(option.dataset.groupOption);
+        if (isGroupId(value)) {
+          selectGroup(value);
         }
       });
     }

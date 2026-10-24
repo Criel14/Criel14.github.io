@@ -392,6 +392,15 @@ body.lab {
   line-height: 1.4;
 }
 
+.popover__title[data-group-popover-title] {
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+  letter-spacing: 0;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
 .size-grid,
 .option-list,
 .group-list {

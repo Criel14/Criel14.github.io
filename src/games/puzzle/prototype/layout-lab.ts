@@ -7,7 +7,7 @@
 
 import type { GameMode, GroupId, MoveMode, PuzzleSize } from '../types';
 import { createSolvedBoard, isPuzzleSize } from '../core/board';
-import { isGroupId } from '../core/groups';
+import { GROUP_IDS, getDefaultGroupName, isGroupId } from '../core/groups';
 import { BUILTIN_THEMES } from '../core/appearance/presets';
 import { createBoardView, type BoardView } from '../ui/board-view';
 
@@ -20,7 +20,7 @@ function requireElement<T extends Element>(selector: string): T {
 }
 
 const THEME = BUILTIN_THEMES[0];
-const GROUP_NAMES = Array.from({ length: 10 }, (_, index) => `G${index + 1}`);
+const GROUP_NAMES = GROUP_IDS.map((id) => getDefaultGroupName(id));
 
 const sizeDisplay = requireElement<HTMLElement>('[data-size-display]');
 const boardMount = requireElement<HTMLElement>('#lab-board');
@@ -29,6 +29,8 @@ const modeButton = requireElement<HTMLButtonElement>('[data-popover-trigger="gam
 const moveButton = requireElement<HTMLButtonElement>('[data-popover-trigger="move-mode"]');
 const groupButton = requireElement<HTMLButtonElement>('[data-popover-trigger="group"]');
 const groupName = requireElement<HTMLElement>('[data-group-name]');
+const groupPopoverSize = requireElement<HTMLElement>('[data-group-popover-size]');
+const groupPopoverMode = requireElement<HTMLElement>('[data-group-popover-mode]');
 
 const sizeOptions = [...document.querySelectorAll<HTMLButtonElement>('[data-size-option]')];
 const gameModeOptions = [
@@ -48,7 +50,7 @@ let openPopover: HTMLElement | null = null;
 let openTrigger: HTMLButtonElement | null = null;
 
 function getGroupName(id: GroupId): string {
-  return GROUP_NAMES[id - 1] ?? `G${id}`;
+  return GROUP_NAMES[id - 1] ?? getDefaultGroupName(id);
 }
 
 function syncPressedByValue(
@@ -99,8 +101,11 @@ function updateMoveButton(): void {
 
 function updateGroupButton(): void {
   const name = getGroupName(groupId);
+  const eventLabel = `${size}×${size} ${gameMode === 'normal' ? '普通' : '盲玩'}`;
   groupName.textContent = name;
-  groupButton.title = `切换分组：${name}`;
+  groupPopoverSize.textContent = `${size}×${size}`;
+  groupPopoverMode.textContent = gameMode === 'normal' ? '普通' : '盲玩';
+  groupButton.title = `切换分组：${eventLabel} · ${name}`;
   groupButton.setAttribute('aria-label', groupButton.title);
 }
 
@@ -119,6 +124,7 @@ function setSize(next: PuzzleSize): void {
   if (size !== next) {
     size = next;
     updateSizeDisplay();
+    updateGroupButton();
     renderBoard();
   }
   syncPressedByValue(sizeOptions, 'sizeOption', size);
@@ -127,6 +133,7 @@ function setSize(next: PuzzleSize): void {
 function setGameMode(next: GameMode): void {
   gameMode = next;
   updateModeButton();
+  updateGroupButton();
   boardView?.setNumbersVisible(next === 'normal');
   syncPressedByString(gameModeOptions, 'gameModeOption', gameMode);
 }

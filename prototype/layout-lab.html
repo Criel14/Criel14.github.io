@@ -318,8 +318,8 @@
               data-popover-trigger="group"
               aria-haspopup="true"
               aria-expanded="false"
-              aria-label="切换分组：G1"
-              title="切换分组：G1"
+              aria-label="切换分组：分组1"
+              title="切换分组：分组1"
             >
               <svg
                 class="icon icon--small"
@@ -329,7 +329,7 @@
               >
                 <use href="#icon-groups"></use>
               </svg>
-              <span class="group-button__name" data-group-name>G1</span>
+              <span class="group-button__name" data-group-name>分组1</span>
               <svg
                 class="icon icon--chevron"
                 viewBox="0 0 24 24"
@@ -341,7 +341,10 @@
             </button>
 
             <div class="popover popover--above popover--group" data-popover="group" hidden>
-              <p class="popover__title">分组</p>
+              <p class="popover__title" data-group-popover-title>
+                <span data-group-popover-size>4×4</span>
+                <span data-group-popover-mode>普通</span>
+              </p>
               <div class="group-list" role="group" aria-label="选择分组">
                 <button
                   class="popover-option group-option"
@@ -349,7 +352,7 @@
                   data-group-option="1"
                   aria-pressed="true"
                 >
-                  G1
+                  分组1
                 </button>
                 <button
                   class="popover-option group-option"
@@ -357,7 +360,7 @@
                   data-group-option="2"
                   aria-pressed="false"
                 >
-                  G2
+                  分组2
                 </button>
                 <button
                   class="popover-option group-option"
@@ -365,7 +368,7 @@
                   data-group-option="3"
                   aria-pressed="false"
                 >
-                  G3
+                  分组3
                 </button>
                 <button
                   class="popover-option group-option"
@@ -373,7 +376,7 @@
                   data-group-option="4"
                   aria-pressed="false"
                 >
-                  G4
+                  分组4
                 </button>
                 <button
                   class="popover-option group-option"
@@ -381,47 +384,7 @@
                   data-group-option="5"
                   aria-pressed="false"
                 >
-                  G5
-                </button>
-                <button
-                  class="popover-option group-option"
-                  type="button"
-                  data-group-option="6"
-                  aria-pressed="false"
-                >
-                  G6
-                </button>
-                <button
-                  class="popover-option group-option"
-                  type="button"
-                  data-group-option="7"
-                  aria-pressed="false"
-                >
-                  G7
-                </button>
-                <button
-                  class="popover-option group-option"
-                  type="button"
-                  data-group-option="8"
-                  aria-pressed="false"
-                >
-                  G8
-                </button>
-                <button
-                  class="popover-option group-option"
-                  type="button"
-                  data-group-option="9"
-                  aria-pressed="false"
-                >
-                  G9
-                </button>
-                <button
-                  class="popover-option group-option"
-                  type="button"
-                  data-group-option="10"
-                  aria-pressed="false"
-                >
-                  G10
+                  分组5
                 </button>
               </div>
             </div>
