@@ -20,7 +20,7 @@ import type {
 } from '../types';
 import { getActiveTheme } from '../core/appearance/appearance';
 import { isPuzzleSize } from '../core/board';
-import { isGroupId } from '../core/groups';
+import { getGroupName as resolveGroupName, isGroupId } from '../core/groups';
 import { generateScramble } from '../core/scramble';
 import {
   createSession,
@@ -40,7 +40,12 @@ import {
   listScoresByBucket,
   probeScoreStorage,
 } from '../data/score-store';
-import { loadSettingsResult, saveSettings, type SettingsLoadResult } from '../data/settings-store';
+import {
+  createDefaultSettings,
+  ensureSettingsResult,
+  saveSettings,
+  type SettingsLoadResult,
+} from '../data/settings-store';
 import { attachBoardInput } from '../ui/board-input';
 import { createBoardView, type BoardView } from '../ui/board-view';
 import { formatDuration, formatTps } from '../ui/format';
@@ -117,7 +122,7 @@ function getElements(): GameElements {
 }
 
 function getGroupName(settings: GameSettings, id: GroupId): string {
-  return settings.groups.find((group) => group.id === id)?.name ?? `G${id}`;
+  return resolveGroupName(settings.groups, settings.size, settings.gameMode, id);
 }
 
 function setPressed(
@@ -271,7 +276,13 @@ function clearRetryParam(): void {
 }
 
 function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
-  const settingsResult = loadSettingsResult();
+  let settingsResult: SettingsLoadResult;
+  try {
+    settingsResult = ensureSettingsResult();
+  } catch {
+    settingsResult = { status: 'unavailable', settings: createDefaultSettings() };
+  }
+
   const appearanceResult = loadAppearanceResult();
   reportLoadStatus(notifier, 'settings', settingsResult.status);
   reportLoadStatus(notifier, 'appearance', appearanceResult.status);

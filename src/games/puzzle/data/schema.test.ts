@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { AppearanceState, GameSettings, GroupId, ReplayRecord, ScoreRecord } from '../types';
+import type { AppearanceState, GameSettings, ReplayRecord, ScoreRecord } from '../types';
 import { createDefaultAppearance } from '../core/appearance/appearance';
 import { createSolvedBoard } from '../core/board';
+import { createDefaultGroups, GROUP_COUNT } from '../core/groups';
 import {
   isAppearanceState,
   isGameSettings,
@@ -17,17 +18,12 @@ import {
 const EPOCH = 1_700_000_000_000;
 
 function createSettings(overrides: Partial<GameSettings> = {}): GameSettings {
-  const groups = Array.from({ length: 10 }, (_, index) => ({
-    id: (index + 1) as GroupId,
-    name: `G${index + 1}`,
-  }));
-
   return {
     size: 4,
     gameMode: 'normal',
     moveMode: 'slide',
     groupId: 1,
-    groups,
+    groups: createDefaultGroups(),
     customCursor: false,
     minimalUi: false,
     ...overrides,
@@ -71,6 +67,7 @@ describe('isScoreRecord', () => {
     expect(isScoreRecord(createScore({ id: '' }))).toBe(false);
     expect(isScoreRecord({ ...createScore(), size: 11 })).toBe(false);
     expect(isScoreRecord({ ...createScore(), groupId: 0 })).toBe(false);
+    expect(isScoreRecord({ ...createScore(), groupId: 6 })).toBe(false);
     expect(isScoreRecord(createScore({ scramble: [1, 2, 3] }))).toBe(false);
   });
 
@@ -109,17 +106,41 @@ describe('isMoveRecord / isReplayRecord', () => {
 });
 
 describe('isGameSettings', () => {
-  it('接受默认的 10 组设置', () => {
+  it('接受默认的 90 组设置', () => {
     expect(isGameSettings(createSettings())).toBe(true);
   });
 
-  it('拒绝分组数量、顺序或名称非法', () => {
+  it('拒绝分组数量、顺序、事件或名称非法', () => {
     const settings = createSettings();
-    expect(isGameSettings({ ...settings, groups: settings.groups.slice(0, 9) })).toBe(false);
+    expect(isGameSettings({ ...settings, groups: settings.groups.slice(0, GROUP_COUNT - 1) })).toBe(
+      false,
+    );
     expect(
       isGameSettings({
         ...settings,
         groups: [settings.groups[1], settings.groups[0], ...settings.groups.slice(2)],
+      }),
+    ).toBe(false);
+    expect(
+      isGameSettings({
+        ...settings,
+        groups: settings.groups.map((group, index) =>
+          index === 0 ? { ...group, size: 3 } : group,
+        ),
+      }),
+    ).toBe(false);
+    expect(
+      isGameSettings({
+        ...settings,
+        groups: settings.groups.map((group, index) =>
+          index === 0 ? { ...group, gameMode: 'blind' } : group,
+        ),
+      }),
+    ).toBe(false);
+    expect(
+      isGameSettings({
+        ...settings,
+        groups: settings.groups.map((group, index) => (index === 0 ? { ...group, id: 2 } : group)),
       }),
     ).toBe(false);
     expect(
@@ -144,7 +165,7 @@ describe('isGameSettings', () => {
     expect(isGameSettings({ ...createSettings(), size: 11 })).toBe(false);
     expect(isGameSettings({ ...createSettings(), gameMode: 'other' })).toBe(false);
     expect(isGameSettings({ ...createSettings(), moveMode: 'other' })).toBe(false);
-    expect(isGameSettings({ ...createSettings(), groupId: 11 })).toBe(false);
+    expect(isGameSettings({ ...createSettings(), groupId: 6 })).toBe(false);
   });
 });
 

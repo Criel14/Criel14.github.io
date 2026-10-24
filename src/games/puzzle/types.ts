@@ -26,15 +26,17 @@ export interface MoveRecord {
   readonly timeMs: number;
 }
 
-/** 固定分组编号：1–10；分组数量固定，不新增、不删除。 */
-export type GroupId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+/** 事件内固定分组槽位：1–5；分组数量固定，不新增、不删除。 */
+export type GroupId = 1 | 2 | 3 | 4 | 5;
 
 /**
- * 用户可见的成绩分组；固定 10 个，ID 为 1–10。
- * 只允许修改名称，不允许新增、删除、排序或复用旧编号。
+ * 某个事件（阶数 + 游戏模式）下的固定分组。
+ * 分组身份由 size + gameMode + id 共同确定；改名不改变身份。
  */
 export interface Group {
-  /** 固定编号 1–10；改名不改变 ID。 */
+  readonly size: PuzzleSize;
+  readonly gameMode: GameMode;
+  /** 事件内槽位 1–5；改名不改变 ID。 */
   readonly id: GroupId;
   /** 用户可见名称；允许重名，trim 后不能为空，最长 30 字符。 */
   readonly name: string;
@@ -45,9 +47,9 @@ export interface GameSettings {
   readonly size: PuzzleSize;
   readonly gameMode: GameMode;
   readonly moveMode: MoveMode;
-  /** 当前选中的分组编号。 */
+  /** 当前选中的分组槽位 1–5，跨事件共享。 */
   readonly groupId: GroupId;
-  /** 固定 10 个分组，按 ID 1–10 排列；只允许修改 name。 */
+  /** 固定 90 个分组：18 个事件 × 5 个槽位；只允许修改 name。 */
   readonly groups: readonly Group[];
   readonly customCursor: boolean;
   readonly minimalUi: boolean;
@@ -56,7 +58,8 @@ export interface GameSettings {
 /**
  * 已保存的一局成绩，只含无法重新计算的事实字段。
  * tps、number、ao5/ao12、格式化时间、device 等派生或展示信息都不落库。
- * groupId 是固定编号 1–10，分组不会新增或删除，因此不需要处理引用失效。
+ * groupId 是事件内槽位 1–5，事件由 size + gameMode 确定；分组不会新增或删除，
+ * 因此不需要处理引用失效。
  */
 export interface ScoreRecord {
   /** 全局唯一；新成绩使用 crypto.randomUUID()，无该 API 时用带随机后缀的回退实现。 */
@@ -64,7 +67,7 @@ export interface ScoreRecord {
   readonly size: PuzzleSize;
   readonly gameMode: GameMode;
   readonly moveMode: MoveMode;
-  /** 本局所属的固定分组编号 1–10。 */
+  /** 本局所属的事件内分组槽位 1–5。 */
   readonly groupId: GroupId;
   /** 有效用时，单位 ms，必须 >= 0；normal 不含观察时间，blind 含观察时间。 */
   readonly durationMs: number;
@@ -100,7 +103,7 @@ export interface SessionConfig {
   readonly size: PuzzleSize;
   readonly gameMode: GameMode;
   readonly moveMode: MoveMode;
-  /** 本局所属的固定分组编号 1–10。 */
+  /** 本局所属的事件内分组槽位 1–5。 */
   readonly groupId: GroupId;
   readonly scramble: Board;
   readonly isRetry: boolean;
@@ -141,7 +144,7 @@ export interface SessionResult {
   readonly size: PuzzleSize;
   readonly gameMode: GameMode;
   readonly moveMode: MoveMode;
-  /** 本局所属的固定分组编号 1–10。 */
+  /** 本局所属的事件内分组槽位 1–5。 */
   readonly groupId: GroupId;
   /** 有效用时，单位 ms；normal 不含观察时间，blind 含观察时间。 */
   readonly durationMs: number;
@@ -227,7 +230,7 @@ export interface AppearanceState {
 export interface ScoreFilter {
   readonly size: PuzzleSize;
   readonly gameMode: GameMode;
-  /** 固定分组编号 1–10，不是分组名称。 */
+  /** 事件内槽位 1–5，不是分组名称；事件由 size + gameMode 确定。 */
   readonly groupId: GroupId;
 }
 

@@ -1,4 +1,4 @@
-import type { GroupId, ReplayRecord, ScoreFilter, ScoreRecord } from '../types';
+import type { GameMode, PuzzleSize, ReplayRecord, ScoreFilter, ScoreRecord } from '../types';
 import { isPuzzleSize } from '../core/board';
 import { isGroupId } from '../core/groups';
 import { getDB } from './db';
@@ -14,6 +14,12 @@ function assertFilter(filter: ScoreFilter): void {
     !isGroupId(filter.groupId)
   ) {
     throw new DataStoreError('validation', '成绩筛选条件非法');
+  }
+}
+
+function assertEvent(size: PuzzleSize, gameMode: GameMode): void {
+  if (!isPuzzleSize(size) || (gameMode !== 'normal' && gameMode !== 'blind')) {
+    throw new DataStoreError('validation', '事件参数非法');
   }
 }
 
@@ -140,14 +146,12 @@ export async function countScoresByBucket(filter: ScoreFilter): Promise<number> 
   }
 }
 
-export async function countScoresByGroup(groupId: GroupId): Promise<number> {
-  if (!isGroupId(groupId)) {
-    throw new DataStoreError('validation', '分组编号非法');
-  }
+export async function countScoresByEvent(size: PuzzleSize, gameMode: GameMode): Promise<number> {
+  assertEvent(size, gameMode);
 
   try {
     const database = await getDB();
-    return await database.countFromIndex('scores', 'by-group', groupId);
+    return await database.countFromIndex('scores', 'by-event', [size, gameMode]);
   } catch (error) {
     throw toDataStoreError(error, 'unknown');
   }
@@ -191,18 +195,16 @@ export async function clearScoresByBucket(filter: ScoreFilter): Promise<number> 
   }
 }
 
-/** 清空一个分组下所有阶数/模式的成绩与录像，保留分组和名称。 */
-export async function clearScoresByGroup(groupId: GroupId): Promise<number> {
-  if (!isGroupId(groupId)) {
-    throw new DataStoreError('validation', '分组编号非法');
-  }
+/** 清空一个事件下所有分组的成绩与录像，保留分组和名称。 */
+export async function clearScoresByEvent(size: PuzzleSize, gameMode: GameMode): Promise<number> {
+  assertEvent(size, gameMode);
 
   try {
     const database = await getDB();
     const transaction = database.transaction(['scores', 'replays'], 'readwrite');
     const scores = transaction.objectStore('scores');
     const replays = transaction.objectStore('replays');
-    const keys = await scores.index('by-group').getAllKeys(groupId);
+    const keys = await scores.index('by-event').getAllKeys([size, gameMode]);
 
     const requests: Promise<unknown>[] = [];
     for (const key of keys) {

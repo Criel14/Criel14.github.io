@@ -12,11 +12,11 @@ import type {
 } from '../types';
 import { isValidBlankColor, isValidHexColor } from '../core/appearance/theme';
 import { isPuzzleSize, isValidBoard } from '../core/board';
-import { isGroupId } from '../core/groups';
+import { EVENT_GAME_MODES, EVENT_SIZES, GROUP_COUNT, GROUP_IDS, isGroupId } from '../core/groups';
 import { isDirection } from '../core/moves';
 import { MAX_REPLAY_MOVES } from './replay-codec';
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export const STORAGE_KEYS = {
   settings: 'puzzle.v2.settings',
@@ -129,7 +129,7 @@ export function isAppearanceState(value: unknown): value is AppearanceState {
   return value.themes.some((theme) => theme.id === value.activeThemeId);
 }
 
-/** 校验设置；固定 10 组、名称 trim 后非空且不超过 30 字符。 */
+/** 校验设置；固定 90 组，按阶数升序、普通在前、槽位 1–5 排列。 */
 export function isGameSettings(value: unknown): value is GameSettings {
   if (!isRecord(value)) {
     return false;
@@ -144,21 +144,30 @@ export function isGameSettings(value: unknown): value is GameSettings {
   if (typeof value.groupId !== 'number' || !isGroupId(value.groupId)) {
     return false;
   }
-  if (!Array.isArray(value.groups) || value.groups.length !== 10) {
+  if (!Array.isArray(value.groups) || value.groups.length !== GROUP_COUNT) {
     return false;
   }
 
-  for (let index = 0; index < value.groups.length; index += 1) {
-    const group = value.groups[index];
-    if (!isRecord(group) || typeof group.id !== 'number' || !isGroupId(group.id)) {
-      return false;
-    }
-    if (group.id !== index + 1 || typeof group.name !== 'string') {
-      return false;
-    }
-    const name = group.name.trim();
-    if (name.length === 0 || name.length > 30) {
-      return false;
+  let index = 0;
+  for (const size of EVENT_SIZES) {
+    for (const gameMode of EVENT_GAME_MODES) {
+      for (const id of GROUP_IDS) {
+        const group = value.groups[index];
+        index += 1;
+        if (
+          !isRecord(group) ||
+          group.size !== size ||
+          group.gameMode !== gameMode ||
+          group.id !== id ||
+          typeof group.name !== 'string'
+        ) {
+          return false;
+        }
+        const name = group.name.trim();
+        if (name.length === 0 || name.length > 30) {
+          return false;
+        }
+      }
     }
   }
 

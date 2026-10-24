@@ -1,6 +1,6 @@
 # 重构计划
 
-> 状态：阶段 3 进行中（拼图 P0–P7 已完成；P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23）；P8-4 设置面板与分组弹框、P8-5 光标/极简 UI/可访问性、P8-6 E2E 待开始；P7-3 交互与视觉随 P8 手动验收，详细设计见 `docs/PUZZLE_GAME_PAGE.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`）
+> 状态：阶段 3 进行中（拼图 P0–P7 已完成；P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层已完成（2026-10-24），P8-4a 分组弹框、P8-4b 设置面板、P8-5 光标/极简 UI/可访问性、P8-6 E2E 待开始；P7-3 交互与视觉随 P8 手动验收，详细设计见 `docs/PUZZLE_GAME_PAGE.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`、`docs/PUZZLE_SCORE_PAGE.md`）
 >
 > 分支：`refactor/vite-ts`
 >
@@ -102,14 +102,16 @@
 
 - **拼图旧数据不迁移、不兼容**。旧键 `config`、`scores`、`currentScore`、`currentScoreList` 不再读取。
 - 旧键只提供显式清理入口（`src/games/puzzle/data/legacy.ts`），不自动删除；GitHub Pages 与 Netlify 需分别清理。
-- **存储分层**：设置、外观存 localStorage；成绩列表和录像存 IndexedDB（DB `puzzle.v2`，stores `scores` / `replays`，索引 `by-bucket` / `by-group`）。
+- **存储分层**：设置、外观存 localStorage；成绩列表和录像存 IndexedDB（DB `puzzle.v2`，stores `scores` / `replays`，索引 `by-bucket` / `by-event`）。
+- **录像先全量保存**：每条成绩保留对应录像；容量评估见 `docs/PUZZLE_STORAGE.md` 4.5，后续再按需增加保留策略。
 - **录像紧凑编码**：IndexedDB 中存 `directions` + `timeDeltas`，读取时解码为 `ReplayRecord`；不存储逐帧棋盘。持久化时间保留 3 位小数。
 - 成绩只存事实；`tps`、`number`、`ao5`、`ao12`、格式化时间等派生值读时计算。详见 `docs/PUZZLE_ARCHITECTURE.md` 与 `docs/PUZZLE_STORAGE.md`。
 - 成绩 ID 使用 `crypto.randomUUID()`（含回退实现），不使用雪花 ID；ID 用于稳定引用，展示编号由桶内排序派生。
-- 拼图分组固定 10 个（ID 1–10），只允许修改名称；不新增、不删除分组，只提供按分组清空成绩与录像。
+- 拼图分组按事件划分：事件 = 阶数 + 游戏模式，共 18 个；每个事件固定 5 个分组（ID 1–5），共 90 个。只允许修改名称，不新增、不删除分组；清空当前分组即清空对应成绩桶，清空当前事件删除该事件 5 个分组的成绩与录像。
+- 分组管理集中在成绩页；游戏页只负责切换。详见 `docs/PUZZLE_SCORE_PAGE.md`。
 - 页面间不通过 localStorage 传状态；回放、重玩使用 URL 参数 + score id。
 - 统计筛选、选中成绩等页面状态使用 URL 参数；旧页面 URL 路径保留。
-- 版本管理：localStorage envelope 使用 `version: 2`；IndexedDB 使用 `DB_VERSION`。不再使用 `puzzle.v2.meta`；当前 v2 不做旧版本迁移。
+- 版本管理：localStorage envelope 使用 `version: 3`；IndexedDB 使用 `DB_VERSION = 2`。不再使用 `puzzle.v2.meta`；当前 v2 不做旧版本迁移，分组模型变更后清一次缓存即可。
 - 不做 localStorage 降级成绩存储；IndexedDB 不可用时明确提示，避免两套数据源。
 - 贪吃蛇旧数据策略在其重构阶段单独决定，默认同样优先新键、不迁移旧记录。
 - 旧代码只作为行为参考，不复制进新目录；需要对照时使用 git tag、`git show` 或 worktree。
@@ -119,7 +121,7 @@
 - 以 README、`docs/PUZZLE_GAME.md` 和实际行为为准，维护一份功能清单。
 - 每个功能实现前先讨论：旧行为是什么、是否保留或优化、如何验收。
 - 必须覆盖：
-  - 拼图：三种操作模式、盲玩、计时/观察时间、ao5/ao12 规则、三种着色模式（降阶/按行/固定色）、主题级字号/间隙/圆角、盲玩隐藏数字颜色、预设与自定义主题、自定义光标、录像回放、录像重玩、固定分组、按组清空成绩与删除成绩。
+  - 拼图：三种操作模式、盲玩、计时/观察时间、ao5/ao12 规则、三种着色模式（降阶/按行/固定色）、主题级字号/间隙/圆角、盲玩隐藏数字颜色、预设与自定义主题、自定义光标、录像回放、录像重玩、事件级分组、按分组/事件清空成绩与删除成绩、全量保存录像。
   - 贪吃蛇：三种模式、碰撞缓冲、锁定冲刺、计分、最佳记录、速度设置、中英文、深浅主题。
 - 数据：拼图旧成绩、旧配置、旧自定义方案不迁移；提供显式清理入口。成绩/录像使用 IndexedDB，设置/外观使用 localStorage；长录像不占满 localStorage。贪吃蛇在对应阶段决定。
 - 质量：构建通过、核心测试通过、移动端和键盘可用、无控制台错误。
@@ -136,11 +138,13 @@
 ## 9. 待讨论
 
 - 图标：游戏页已全部迁移到本地 sprite；待定线宽是否从 `1.8` 统一为 `2`，以及 `←` / `×` / `→` 是否也纳入 sprite。详见 `docs/ICONS.md`。
-- 国际化：自研 typed module / i18next / intl-messageformat；默认语言和切换入口。
+- 国际化：自研 typed module / i18next / intl-messageformat；默认语言和切换入口；默认分组名 `分组N` / `GroupN` 的生成时机。
 - 自定义光标：保留 PNG / 改为 SVG data URI。
 - 贪吃蛇渲染：DOM diff / Canvas 2D。
 - 自由模式当前“暂无”的处理：实现还是移除对应文案。
 - 外观自定义主题是否支持命名、删除、排序（当前 3 个槽位；主题已支持三种着色模式和独立 metrics）。
+- 分组数量扩展（超过每事件 5 组）需要 schema/UI 调整；当前固定 5 组/事件。
+- 录像保留策略：当前全量保存；后续是否增加“只删除录像、保留成绩”“只保留最近 N 个月”或“只保留最佳成绩录像”。
 - 成绩 / 录像 / 设置导入导出 JSON（v2 schema 稳定后再做）。
 - 长录像时间轴是否改为 checkpoint / 按需物化盘面（当前保留完整帧）。
 - 是否使用 `navigator.storage.persist()` 申请持久化存储。
@@ -150,6 +154,7 @@
 
 - 现有功能说明：`README.md`、`docs/PUZZLE_GAME.md`
 - 游戏页设计与 P8 任务：`docs/PUZZLE_GAME_PAGE.md`
+- 成绩页与分组管理：`docs/PUZZLE_SCORE_PAGE.md`
 - 拼图架构契约：`docs/PUZZLE_ARCHITECTURE.md`
 - 回放设计：`docs/PUZZLE_REPLAY.md`
 - 数据存储设计：`docs/PUZZLE_STORAGE.md`

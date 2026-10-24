@@ -4,7 +4,7 @@ import { DataStoreError, toDataStoreError } from './errors';
 import type { StoredReplayV2 } from './replay-codec';
 
 export const DB_NAME = 'puzzle.v2';
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 
 export interface PuzzleDB extends DBSchema {
   scores: {
@@ -12,7 +12,7 @@ export interface PuzzleDB extends DBSchema {
     value: ScoreRecord;
     indexes: {
       'by-bucket': [PuzzleSize, GameMode, GroupId];
-      'by-group': GroupId;
+      'by-event': [PuzzleSize, GameMode];
     };
   };
   replays: {
@@ -30,10 +30,21 @@ function openPuzzleDatabase(): Promise<IDBPDatabase<PuzzleDB>> {
   });
 
   const openPromise = openDB<PuzzleDB>(DB_NAME, DB_VERSION, {
-    upgrade(database) {
+    upgrade(database, oldVersion) {
+      if (oldVersion === 1) {
+        // v2 尚未上线：旧版本使用全局 groupId 1–10 和 by-group 索引，
+        // 分组模型改为事件级后直接重建 store，避免新旧槽位混在一起。
+        if (database.objectStoreNames.contains('scores')) {
+          database.deleteObjectStore('scores');
+        }
+        if (database.objectStoreNames.contains('replays')) {
+          database.deleteObjectStore('replays');
+        }
+      }
+
       const scores = database.createObjectStore('scores', { keyPath: 'id' });
       scores.createIndex('by-bucket', ['size', 'gameMode', 'groupId']);
-      scores.createIndex('by-group', 'groupId');
+      scores.createIndex('by-event', ['size', 'gameMode']);
       database.createObjectStore('replays', { keyPath: 'scoreId' });
     },
     blocked() {

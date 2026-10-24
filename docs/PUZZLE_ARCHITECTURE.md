@@ -1,12 +1,12 @@
 # 数字华容道重构架构
 
-> 状态：P0–P7 已实现；P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23），P8-4～P8-6 待开始（P7-3 交互与视觉随 P8 手动验收）；回放与存储的详细设计见独立文档
+> 状态：P0–P7 已实现；P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层已完成（2026-10-24），P8-4a～P8-6 待开始（P7-3 交互与视觉随 P8 手动验收）；回放、存储和成绩页的详细设计见独立文档
 >
 > 分支：`refactor/vite-ts`
 >
 > 范围：拼图模块（`puzzle-game`）；贪吃蛇不在本文范围
 >
-> 配套文档：`docs/PUZZLE_GAME_PAGE.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`、`docs/PUZZLE_TASKS.md`、`docs/REFACTOR_PLAN.md`、`docs/PUZZLE_GAME.md`
+> 配套文档：`docs/PUZZLE_GAME_PAGE.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`、`docs/PUZZLE_SCORE_PAGE.md`、`docs/PUZZLE_TASKS.md`、`docs/REFACTOR_PLAN.md`、`docs/PUZZLE_GAME.md`
 >
 > 注意：`docs/PUZZLE_GAME.md` 描述的是旧版行为和历史数据格式，仅作功能参考；回放细节以 `docs/PUZZLE_REPLAY.md` 为准，存储细节以 `docs/PUZZLE_STORAGE.md` 为准，本文保留架构级约束。
 
@@ -15,7 +15,8 @@
 - **旧数据不迁移、不兼容**。旧键只提供显式清理入口，新实现不读取旧成绩、旧配置和旧录像。
 - **存储分层**：设置、外观继续用 localStorage；成绩列表和录像使用 IndexedDB（`puzzle.v2`），利用索引查询和原子事务。详见 `docs/PUZZLE_STORAGE.md`。
 - **录像紧凑编码**：core / UI 使用 `ReplayRecord`，IndexedDB 中由 data 层编码为 `directions + timeDeltas`，读取时解码。
-- **分组固定为 10 个**。`GroupId` 固定为 1–10，只允许修改名称；不新增、不删除分组，只提供按分组清空成绩。
+- **分组按事件划分**。事件 = 阶数 + 游戏模式，共 18 个；每个事件固定 5 个分组，`GroupId` 为 1–5，共 90 个。只允许修改名称，不新增、不删除；成绩桶由 `size + gameMode + groupId` 组成。分组管理见 `docs/PUZZLE_SCORE_PAGE.md`。
+- **录像先全量保存**。每条成绩保留对应录像；容量评估和后续清理策略见 `docs/PUZZLE_STORAGE.md`。
 - **纯逻辑优先**。`core` 不碰 DOM / localStorage / IndexedDB；`data` 负责持久化与校验；`ui` 只做 DOM；`pages` 负责组装。
 - **成绩只存事实**。`tps`、`number`、`ao5`、`ao12`、时间格式化全部读时派生。
 - **页面间不通过 localStorage 传状态**。回放、重玩使用 URL 参数 + score id。
@@ -38,7 +39,7 @@
 
 - 不迁移旧 `scores` / `config` / `currentScore` / `currentScoreList`。
 - 不做旧页面双写或旧数据兼容层。
-- 不做自定义分组、分组新增/删除/排序；固定 10 组，仅支持改名。
+- 不做分组新增/删除/排序；每个事件固定 5 个槽位，仅支持改名。
 - 本轮不做贪吃蛇重构。
 - 不做后端、账号、云同步。
 - 不做通用插件系统或通用指标注册表。
@@ -79,9 +80,10 @@
 | `Session`         | 从创建打乱到复原的一局游戏                                          |
 | `ScoreRecord`     | 已保存的一局成绩，只含事实字段                                      |
 | `ReplayRecord`    | 与某条成绩对应的移动序列                                            |
-| `Bucket`          | `size + gameMode + groupId` 组成的一个成绩分组                      |
-| `GroupId`         | 固定分组编号 1–10；成绩、筛选和 URL 使用编号，不随名称变化          |
-| `Group`           | 用户可见的成绩分组，固定 10 个，ID 为 1–10；只允许修改名称          |
+| `Event`           | `size + gameMode` 组成的事件；共 18 个，每个事件有 5 个固定分组     |
+| `Bucket`          | `size + gameMode + groupId` 组成的一个成绩桶，即“事件 + 分组”       |
+| `GroupId`         | 事件内的固定分组槽位 1–5；成绩、筛选和 URL 使用编号，不随名称变化   |
+| `Group`           | 某个事件下的固定分组，共 90 个；只允许修改名称                      |
 | `ColorMode`       | 主题的着色模式：降阶、按行或固定色，包含色板、空白色、字体色        |
 | `Theme`           | 统一外观入口：名称 + `ColorMode` + `BoardMetrics`，内置主题不可修改 |
 | `BoardMetrics`    | 某个主题自带的字号、间隙、圆角比例，用户可调整                      |
@@ -102,23 +104,29 @@ export interface MoveRecord {
   timeMs: number;
 }
 
-/** 固定分组编号：1–10；分组数量固定，不新增、不删除。 */
-export type GroupId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+/** 事件内固定分组槽位：1–5；分组数量固定，不新增、不删除。 */
+export type GroupId = 1 | 2 | 3 | 4 | 5;
 
+/**
+ * 某个事件（阶数 + 游戏模式）下的固定分组。
+ * 分组身份由 size + gameMode + id 共同确定；改名不改变身份。
+ */
 export interface Group {
-  /** 固定编号 1–10；改名不改变 ID。 */
-  id: GroupId;
+  readonly size: PuzzleSize;
+  readonly gameMode: GameMode;
+  /** 事件内槽位 1–5；改名不改变 ID。 */
+  readonly id: GroupId;
   /** 用户可见名称；允许重名，trim 后不能为空，最长 30 字符。 */
-  name: string;
+  readonly name: string;
 }
 
 export interface GameSettings {
   size: PuzzleSize;
   gameMode: GameMode;
   moveMode: MoveMode;
-  /** 当前选中的分组编号。 */
+  /** 当前选中的分组槽位 1–5，跨事件共享。 */
   groupId: GroupId;
-  /** 固定 10 个分组，按 ID 1–10 排列；只允许修改 name。 */
+  /** 固定 90 个分组：18 个事件 × 5 个槽位；只允许修改 name。 */
   groups: readonly Group[];
   customCursor: boolean;
   minimalUi: boolean;
@@ -129,7 +137,7 @@ export interface ScoreRecord {
   size: PuzzleSize;
   gameMode: GameMode;
   moveMode: MoveMode;
-  /** 固定分组编号 1–10。 */
+  /** 本局所属的事件内分组槽位 1–5；事件由 size + gameMode 确定。 */
   groupId: GroupId;
   /** normal 不含观察时间；blind 含观察时间。单位 ms。 */
   durationMs: number;
@@ -225,9 +233,10 @@ export interface AppearanceState {
 - 开局时刻不落库：`startedAt = finishedAt - durationMs`，由 `getScoreStartedAt(score)` 统一派生。
 - 曼哈顿距离不落库：由 `scramble` + `size` 用 `manhattanDistance()` 派生。
 - `ScoreRecord.moveCount === ReplayRecord.moves.length`；回放数据不完整时标记为损坏，不猜测补齐。
-- `GameSettings.groups` 固定包含 10 项，按 ID 1–10 排列；不允许新增、删除、排序或修改 ID。
-- `Group.name` 允许重名；`trim()` 后不能为空，长度不超过 30；非法/损坏名称显示时回退为 `G{id}`。
-- `ScoreRecord.groupId`、`GameSettings.groupId`、`ScoreFilter.groupId` 必须是 1–10 的整数。分组固定存在，因此不需要处理“分组被删除”的引用失效。
+- `GameSettings.groups` 固定包含 90 项：9 种阶数 × 2 种游戏模式 × 5 个槽位；按 `size` 升序、`gameMode` 普通在前、`id` 1–5 排列。不允许新增、删除、排序或修改事件/槽位。
+- `Group.name` 允许重名；`trim()` 后不能为空，长度不超过 30；非法/损坏名称显示时回退为 `分组{id}`。
+- `ScoreRecord.groupId`、`GameSettings.groupId`、`ScoreFilter.groupId` 必须是 1–5 的整数。分组身份由 `size + gameMode + groupId` 共同确定；分组固定存在，因此不需要处理“分组被删除”的引用失效。
+- 分组只允许改名，不允许改变所属事件或槽位；改名不影响已保存成绩。
 - `ScoreRecord.id` 全局唯一；新成绩用 `crypto.randomUUID()`，无该 API 时使用带随机后缀的回退实现。
 - `Theme.color.palette` 长度由 mode 决定：layer 18、row 10、fixed 99；`palette` 颜色统一为 `#rrggbb`，`blankColor` 允许 `transparent` 或 `#rrggbb`，`fontColor` 允许 `auto` 或 `#rrggbb`。
 - `Theme.blindTileColor` 必须是 `#rrggbb`；默认 `#66ccff`，只用于盲玩隐藏数字时的非空方块，空白块仍使用 `blankColor`。
@@ -244,22 +253,23 @@ export interface AppearanceState {
 
 | 数据 | 存储 | 位置 |
 | --- | --- | --- |
-| 游戏设置 | localStorage | `puzzle.v2.settings`，`{ version: 2, data: GameSettings }` |
-| 外观主题 | localStorage | `puzzle.v2.appearance`，`{ version: 2, data: AppearanceState }` |
+| 游戏设置 | localStorage | `puzzle.v2.settings`，`{ version: 3, data: GameSettings }` |
+| 外观主题 | localStorage | `puzzle.v2.appearance`，`{ version: 3, data: AppearanceState }` |
 | 成绩摘要 | IndexedDB | DB `puzzle.v2` → store `scores`，主键 `id` |
 | 录像 | IndexedDB | DB `puzzle.v2` → store `replays`，主键 `scoreId` |
 
 IndexedDB 索引：
 
 - `scores.by-bucket: [size, gameMode, groupId]`：统计页只加载目标桶。
-- `scores.by-group: groupId`：按分组计数和清空。
+- `scores.by-event: [size, gameMode]`：按事件统计和清空该事件的所有分组。
+- 不再使用全局 `by-group: groupId`；分组属于事件，跨所有阶数/模式按 `groupId` 清空没有意义。
 
-不再使用 `puzzle.v2.meta`；localStorage envelope 自带 `version`，IndexedDB 使用 `DB_VERSION`。之前计划中的 `puzzle.v2.scores`、`puzzle.v2.replay.<scoreId>` 也已取消（v2 未上线，不做迁移）。
+不再使用 `puzzle.v2.meta`；localStorage envelope 自带 `version`，IndexedDB 使用 `DB_VERSION = 2`。之前计划中的 `puzzle.v2.scores`、`puzzle.v2.replay.<scoreId>` 也已取消（v2 未上线，不做迁移）。
 
 ### 5.2 读写规则
 
 - 设置、外观：同步读写；缺失或损坏时回退默认值；写入失败显示非阻塞提示。
-- 成绩、录像：异步 repository；新增、删除、按桶/按组清空都在**同一个 IndexedDB 事务**中完成，不再需要写入顺序和回滚逻辑。
+- 成绩、录像：异步 repository；新增、删除、按桶/按事件清空都在**同一个 IndexedDB 事务**中完成，不再需要写入顺序和回滚逻辑。
 - 统计页只调用 `listScoresByBucket(filter)`，不加载录像；回放页只加载一条成绩和一条录像。
 - 所有读取都经过 schema 校验；非法成绩跳过，非法/缺失录像返回 `null`，不让整页崩溃。
 - 写入失败（配额不足、IndexedDB 不可用、blocked）返回明确的 `DataStoreError`；游戏页保留待保存队列，并通过提示上的“重试保存”再次写入，已成功写入的数据不受影响。
@@ -328,8 +338,8 @@ bucketKey = `${size}:${gameMode}:${groupId}`;
 ```
 
 - `moveMode` 不参与桶。
-- `groupId` 是固定编号 1–10，不是名称；改名不影响桶键和历史成绩。
-- 统计页筛选条件与桶一致。
+- `groupId` 是事件内槽位 1–5，不是名称；事件由 `size + gameMode` 确定，改名不影响桶键和历史成绩。
+- 统计页筛选条件与桶一致；清空当前分组即清空当前桶。
 
 ### 6.4 平均
 
@@ -581,8 +591,9 @@ buildChartSeries(scores): ChartSeries;
 
 ### 8.6 页面状态
 
-- 统计筛选放 URL：`?size=4&mode=normal&group=1`。
-- `group` 使用固定编号 1–10；页面显示对应 `Group.name`，改名不影响已分享链接。
+- 统计筛选放 URL：`?size=4&mode=normal&group=1`；事件由 `size + mode` 确定。
+- `group` 使用事件内槽位 1–5；页面显示对应 `Group.name`，改名不影响已分享链接。
+- 成绩页筛选采用“事件 → 分组”二级下拉，具体交互见 `docs/PUZZLE_SCORE_PAGE.md`。
 - 选中成绩放 URL：`&score=<id>`，详情用原生 `<dialog>`。
 - 筛选变化使用 `history.pushState`；浏览器前进/后退可恢复。
 - 筛选切换会异步查询 IndexedDB；页面需忽略过期请求，避免旧结果覆盖新筛选。
@@ -740,7 +751,7 @@ function getTileLayer(tile: number, size: PuzzleSize): number {
 - 设置页编辑当前自定义主题的着色模式、色板、空白色、字体色和 metrics。
 - 内置主题只读；用户修改内置主题时，先复制成自定义主题，再编辑副本。
 - 自定义主题第一版展示 3 个 UI 槽位；数据模型允许列表扩展。
-- 分组固定 10 个（ID 1–10），设置页只允许修改名称，不提供新增/删除/排序；清空分组数据在成绩页执行。
+- 分组按事件划分：每个事件固定 5 个（`GroupId` 1–5），设置页只允许修改当前事件的名称；分组管理入口和成绩页行为见 `docs/PUZZLE_SCORE_PAGE.md`。
 - 自定义光标、极简 UI 属于 `GameSettings`，不属于 `Theme`。
 - 预设加载/自定义方案加载只修改内存状态；保存后才写 `puzzle.v2.appearance`。
 
@@ -845,13 +856,13 @@ types ← core ← ui   ← pages
 | -------- | --------------------------------------------------------- | ---------------------------------- |
 | 游戏页   | `/puzzle-game/puzzle.html`                                | 设置从 `puzzle.v2.settings` 读取   |
 | 重玩     | `/puzzle-game/puzzle.html?retry=<scoreId>`                | 使用该成绩的配置与打乱，不保存结果 |
-| 成绩页   | `/puzzle-game/score-list.html?size=4&mode=normal&group=1` | 筛选条件可分享；group 使用固定编号 |
+| 成绩页   | `/puzzle-game/score-list.html?size=4&mode=normal&group=1` | 事件 + 分组筛选；group 使用事件内槽位 1–5 |
 | 成绩详情 | 同上，追加 `&score=<id>`                                  | 原生 `<dialog>`，可刷新恢复        |
 | 回放页   | `/puzzle-game/replay.html?score=<id>`                     | 缺少/非法 id 显示空状态            |
 | 首页     | `/`                                                       | 不变                               |
 
 - 不使用 `currentScore` / `currentScoreList` 作为页面间通道。
-- 非法参数回退：`size` 回退 settings 中的阶数，`mode` 回退 `normal`，`group` 回退 `1`（或 settings 中的当前有效分组）。
+- 非法参数回退：`size` 回退 settings 中的阶数，`mode` 回退 `normal`，`group` 回退 1–5 中的有效槽位（优先 settings 当前槽位）。
 - 筛选变化用 `history.pushState`；详情打开/关闭同步 `score` 参数。
 - 旧 URL 路径保留，不新增重定向。
 
@@ -877,7 +888,7 @@ types ← core ← ui   ← pages
 - replay：0 步、正常回放、盲玩偏移、非法 move、倍速切换、暂停恢复、seek 边界、10×10 约 3,000 步长录像。
 - appearance：2–10 层映射、三种着色模式取色、两套内置主题不可变、主题级 metrics clamp、自定义主题复制/删除、主题切换不重建棋盘。
 - ui：lifecycle 的 signal / 监听器 / 定时器 / rAF 清理；dialog / notice 的 Esc、焦点回收、非阻塞提示在 P8 手动验收。
-- data：localStorage 设置/外观读写、IndexedDB 原子事务、`by-bucket` / `by-group` 索引、按桶/组/全部清空、录像编码往返、固定 10 组与改名、旧键不读取、清理旧键。
+- data：localStorage 设置/外观读写、IndexedDB 原子事务、`by-bucket` / `by-event` 索引、按桶/事件/全部清空、录像编码往返、90 个事件级分组与改名、旧键不读取、清理旧键。
 
 ## 14. 决策记录
 
@@ -887,9 +898,11 @@ types ← core ← ui   ← pages
 | 存储分层   | localStorage（设置/外观）+ IndexedDB（成绩/录像） | 小数据同步读写；大数据支持索引、配额和原子事务 |
 | 成绩模型   | 只存事实，派生值读时算                   | 消除 time/tps/ao/number 不一致                          |
 | 平均       | 算术平均；ao 才用去尾平均                | 数学语义清晰，旧数据已丢弃                              |
-| 分组       | 固定 10 组，ID 1–10，仅允许改名          | 避免自定义分组的引用完整性和管理 UI；分组本身占存储很小 |
-| 分组清空   | 只清空成绩与录像，不删除分组             | 分组是固定结构，名称保留；按 groupId 跨 size/mode 执行  |
-| 录像存储   | 与成绩摘要分开，IndexedDB 紧凑编码       | 统计页不加载 moves；长录像体积更小、读取更快            |
+| 分组       | 事件级固定 5 组，`GroupId` 1–5，仅允许改名 | 分组属于 `size + gameMode` 事件；避免全局分组与模式错位；90 组存储可忽略 |
+| 分组清空   | 只清空成绩与录像，不删除分组             | 分组是固定结构，名称保留；按桶（事件+分组）或事件执行  |
+| 分组管理   | 集中到成绩页；游戏页只切换               | 管理需要事件上下文；避免三处重复实现                    |
+| 录像存储   | 与成绩摘要分开，IndexedDB 紧凑编码；先全量保存 | 统计页不加载 moves；长录像体积更小、读取更快；容量评估后暂不设保留策略 |
+| 成绩页筛选 | 事件（阶数+模式）→ 分组二级下拉          | 阶数是桶的必要维度；两级选择与分组模型一致              |
 | 页面状态   | URL 参数 + repository                    | 去掉 `currentScore` 过期与配置错位                      |
 | 计时       | `performance.now()`，不做暂停            | 后台不继续累计 tick 误差；语义更接近真实                |
 | 回放       | 时间轴 + rAF                             | 倍速、暂停、seek 都可用同一套状态                       |
@@ -908,7 +921,9 @@ types ← core ← ui   ← pages
 
 以下不阻塞当前实现：
 
-- 分组数量扩展（超过 10 组）需要 IndexedDB / localStorage schema 迁移；当前固定 10 组。
+- 分组数量扩展（超过每事件 5 组）需要 IndexedDB / localStorage schema 迁移；当前固定 5 组/事件。
+- 分组名称 i18n：默认名按浏览器语言切换 `分组N` / `GroupN`，已有名称不自动翻译；见 `docs/PUZZLE_SCORE_PAGE.md`。
+- 录像保留策略（只保留最近 N 月、只保留最佳成绩录像、只删录像保留成绩）；当前先全量保存。
 - 更多内置预设（按行/固定色）与预设管理；当前只保留两套降阶内置主题。
 - 成绩 / 录像 / 设置导入导出 JSON。
 - 长录像时间轴改为 checkpoint / 按需物化盘面；当前保留完整帧。

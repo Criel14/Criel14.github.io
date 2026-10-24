@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { GroupId, MoveRecord, ReplayRecord, ScoreRecord } from '../types';
+import type { GameMode, MoveRecord, PuzzleSize, ReplayRecord, ScoreRecord } from '../types';
 import { createSolvedBoard } from '../core/board';
 import { closeDB, deletePuzzleDB, getDB } from './db';
 import { DataStoreError } from './errors';
@@ -11,10 +11,10 @@ import {
   addScoreWithReplay,
   clearAllScores,
   clearScoresByBucket,
-  clearScoresByGroup,
+  clearScoresByEvent,
   countAllScores,
   countScoresByBucket,
-  countScoresByGroup,
+  countScoresByEvent,
   getScoreById,
   listScoresByBucket,
   probeScoreStorage,
@@ -133,7 +133,7 @@ describe('addScoreWithReplay / loadReplay', () => {
 });
 
 describe('查询与计数', () => {
-  it('按桶读取，按分组跨阶数/模式计数', async () => {
+  it('按桶读取，按事件跨分组计数', async () => {
     await addScoreWithReplay(createScore({ id: 'a' }), createReplay('a'));
     await addScoreWithReplay(createScore({ id: 'b', size: 4 }), createReplay('b'));
     await addScoreWithReplay(createScore({ id: 'c', gameMode: 'blind' }), createReplay('c'));
@@ -142,8 +142,9 @@ describe('查询与计数', () => {
     const bucket = { size: 3, gameMode: 'normal', groupId: 1 } as const;
     expect((await listScoresByBucket(bucket)).map((score) => score.id)).toEqual(['a']);
     expect(await countScoresByBucket(bucket)).toBe(1);
-    expect(await countScoresByGroup(1)).toBe(3);
-    expect(await countScoresByGroup(2)).toBe(1);
+    expect(await countScoresByEvent(3, 'normal')).toBe(2);
+    expect(await countScoresByEvent(3, 'blind')).toBe(1);
+    expect(await countScoresByEvent(4, 'normal')).toBe(1);
     expect(await countAllScores()).toBe(4);
   });
 
@@ -177,16 +178,22 @@ describe('清空', () => {
     await expectNoOrphanReplays();
   });
 
-  it('按分组清空跨所有阶数和模式，其他组保留', async () => {
+  it('按事件清空只删除该事件的 5 个分组，其他事件保留', async () => {
     await addScoreWithReplay(createScore({ id: 'a' }), createReplay('a'));
-    await addScoreWithReplay(createScore({ id: 'b', size: 4 }), createReplay('b'));
+    await addScoreWithReplay(createScore({ id: 'b', groupId: 2 }), createReplay('b'));
     await addScoreWithReplay(createScore({ id: 'c', gameMode: 'blind' }), createReplay('c'));
-    await addScoreWithReplay(createScore({ id: 'd', groupId: 2 }), createReplay('d'));
+    await addScoreWithReplay(createScore({ id: 'd', size: 4 }), createReplay('d'));
+    await addScoreWithReplay(createScore({ id: 'e', groupId: 5 }), createReplay('e'));
 
-    expect(await clearScoresByGroup(1)).toBe(3);
+    expect(await clearScoresByEvent(3, 'normal')).toBe(3);
 
-    expect(await countScoresByGroup(1)).toBe(0);
+    expect(await countScoresByEvent(3, 'normal')).toBe(0);
+    expect(await getScoreById('a')).toBeNull();
+    expect(await getScoreById('b')).toBeNull();
+    expect(await getScoreById('e')).toBeNull();
+    expect(await getScoreById('c')).not.toBeNull();
     expect(await getScoreById('d')).not.toBeNull();
+    expect(await loadReplay('c')).not.toBeNull();
     expect(await loadReplay('d')).not.toBeNull();
     await expectNoOrphanReplays();
   });
@@ -232,11 +239,14 @@ describe('参数边界', () => {
     await expect(removeScore('')).resolves.toBeUndefined();
   });
 
-  it('非法分组编号拒绝按组操作', async () => {
-    await expect(countScoresByGroup(0 as GroupId)).rejects.toMatchObject({
+  it('非法事件参数拒绝按事件操作', async () => {
+    await expect(countScoresByEvent(11 as PuzzleSize, 'normal')).rejects.toMatchObject({
       code: 'validation',
     });
-    await expect(clearScoresByGroup(11 as GroupId)).rejects.toMatchObject({
+    await expect(countScoresByEvent(3, 'other' as GameMode)).rejects.toMatchObject({
+      code: 'validation',
+    });
+    await expect(clearScoresByEvent(3, 'other' as GameMode)).rejects.toMatchObject({
       code: 'validation',
     });
   });

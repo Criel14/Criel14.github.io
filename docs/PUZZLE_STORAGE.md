@@ -1,24 +1,26 @@
 # 数字华容道数据存储设计
 
-> 状态：P6 已完成（数据层与旧数据清理均已实现）
+> 状态：P6 已完成（数据层与旧数据清理均已实现）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层已完成（2026-10-24）
 >
 > 分支：`refactor/vite-ts`
 >
-> 范围：localStorage / IndexedDB 分层、数据库 schema、repository API、录像紧凑编码、错误处理
+> 范围：localStorage / IndexedDB 分层、数据库 schema、repository API、录像紧凑编码、错误处理、容量估算
 >
-> 配套文档：`docs/PUZZLE_ARCHITECTURE.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_TASKS.md`
+> 配套文档：`docs/PUZZLE_ARCHITECTURE.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_SCORE_PAGE.md`、`docs/PUZZLE_TASKS.md`
 
 ## 0. 决策摘要
 
 - **设置和外观继续用 localStorage**：数据小、同步读写、页面启动即可用。
 - **成绩列表和录像改用 IndexedDB**：数据大、需要按桶查询、需要原子事务。
 - **不使用 `puzzle.v2.meta`**：localStorage 的 envelope 自带 `version`，IndexedDB 用 `DB_VERSION`。
-- **数据库**：`puzzle.v2`，版本从 `1` 开始；object store 为 `scores` 和 `replays`，两者分开。
+- **分组按事件划分**：事件 = 阶数 + 游戏模式，共 18 个；每个事件固定 5 个分组，共 90 个。`GroupId` 为事件内槽位 1–5，只允许改名。详见 `docs/PUZZLE_SCORE_PAGE.md`。
+- **数据库**：`puzzle.v2`，`DB_VERSION = 2`；object store 为 `scores` 和 `replays`，两者分开。
+- **录像先全量保存**：每条成绩保留对应录像；容量评估见 4.4，后续再按需增加保留策略。
 - **录像紧凑编码**：IndexedDB 中存 `directions` 字符串 + `timeDeltas` 增量数组，读取时解码为 `ReplayRecord`。
 - **时间精度**：持久化的移动时间和时长统一保留 3 位小数；session 运行时仍使用完整精度。
 - **IndexedDB 封装**：使用 `idb` 运行时依赖；测试使用 `fake-indexeddb`。
 - **原子事务**：新增、删除成绩和录像都在同一个事务中完成，不再需要“先写 replay、失败回滚”。
-- **v2 尚未上线，不做旧 v2 数据迁移**；旧版 localStorage 键只提供显式清理入口。
+- **v2 尚未上线，不做旧 v2 数据迁移**；旧版 localStorage 键只提供显式清理入口；分组模型变更后清一次浏览器缓存即可。
 - **不做多标签页实时同步**：IndexedDB 事务本身安全，但页面刷新后才能看到其他标签页的修改。
 
 ## 1. 存储分层
@@ -55,11 +57,12 @@ v2 没有正式上线，不提供从这些键迁移到 IndexedDB 的逻辑。若
 
 | 键 | 内容 |
 | --- | --- |
-| `puzzle.v2.settings` | `{ version: 2, data: GameSettings }` |
-| `puzzle.v2.appearance` | `{ version: 2, data: AppearanceState }` |
+| `puzzle.v2.settings` | `{ version: 3, data: GameSettings }` |
+| `puzzle.v2.appearance` | `{ version: 3, data: AppearanceState }` |
 
-- 所有键统一 `puzzle.v2.` 前缀。
+- 所有键统一 `puzzle.v2.` 前缀；存储代际不变，envelope 版本随 schema 升级。
 - 缺失键返回默认设置 / 默认外观。
+- 旧 envelope 版本（2）在清缓存后不再存在；如未清理，会按损坏数据处理并回退默认值。
 - JSON 解析失败、schema 非法时回退默认值，并记录一次警告，不让页面崩溃。
 - 写入失败（配额不足、存储不可用）抛出 `DataStoreError`，由页面显示非阻塞提示。
 - localStorage 是同步 API，设置/外观读取不需要 loading 状态。
@@ -72,15 +75,18 @@ v2 没有正式上线，不提供从这些键迁移到 IndexedDB 的逻辑。若
 - `gameMode: 'normal'`
 - `moveMode: 'slide'`
 - `groupId: 1`
-- `groups`: 固定 10 个，ID 1–10，默认名称 `G1`–`G10`
+- `groups`: 固定 90 个；18 个事件 × 5 个槽位，默认名称 `分组1`–`分组5`
 - `customCursor: false`
 - `minimalUi: false`
 
 约束：
 
-- `groups` 固定 10 项，按 ID 1–10 排列；只允许修改 `name`。
+- 事件 = `size + gameMode`；每个事件固定 5 项，`id` 为 1–5。`groups` 按阶数升序、普通在前、槽位 1–5 排列。
+- 分组身份由 `size + gameMode + id` 共同确定；只允许修改 `name`，不允许改变事件/槽位，也不新增、删除或排序。
 - 名称允许重名，`trim()` 后不能为空，最长 30 字符。
-- 非法 `groupId` 回退 `1`；缺失分组按 ID 补齐默认名称。
+- 非法 `groupId` 回退 `1`；缺失分组按 `(size, gameMode, id)` 补齐默认名称。
+- 默认名当前固定中文 `分组N`；`TODO(i18n)` 接入语言检测后再按语言返回 `GroupN`。
+- 首次加载且键缺失时，页面写入默认设置，确保 90 个分组存在；损坏数据不自动覆盖。
 - 保存设置只写 `puzzle.v2.settings`，不影响成绩和录像。
 
 ### 2.3 外观
@@ -123,13 +129,13 @@ writeJson(storage: StorageAdapter, key: string, value: unknown): void;
 
 ```text
 DB: puzzle.v2
-version: 1
+version: 2
 
 scores
   keyPath: id
   indexes:
     by-bucket: [size, gameMode, groupId]
-    by-group: groupId
+    by-event: [size, gameMode]
 
 replays
   keyPath: scoreId
@@ -140,7 +146,8 @@ replays
 - `scores` 只存 `ScoreRecord`，不包含 moves；统计页不会加载录像。
 - `replays` 以 `scoreId` 为主键，和成绩一一对应。
 - `by-bucket` 用于统计页按 `size + gameMode + groupId` 查询，只返回目标桶。
-- `by-group` 用于“按分组清空全部成绩”和分组条数统计，跨所有 size / gameMode。
+- `by-event` 用于“清空当前事件的所有分组”和事件级计数。
+- 不再使用全局 `by-group: groupId`；分组属于事件，跨所有阶数/模式按 `groupId` 清空没有意义。
 - 不在 IndexedDB 中存 `number`、`tps`、`ao5`、`ao12` 等派生值。
 - 不存 `puzzle.v2.meta`；版本由 `DB_VERSION` 和 localStorage envelope 管理。
 
@@ -152,7 +159,7 @@ import type { GameMode, GroupId, PuzzleSize, ScoreRecord } from '../types';
 import type { StoredReplayV2 } from './replay-codec';
 
 export const DB_NAME = 'puzzle.v2';
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 
 export interface PuzzleDB extends DBSchema {
   scores: {
@@ -160,7 +167,7 @@ export interface PuzzleDB extends DBSchema {
     value: ScoreRecord;
     indexes: {
       'by-bucket': [PuzzleSize, GameMode, GroupId];
-      'by-group': GroupId;
+      'by-event': [PuzzleSize, GameMode];
     };
   };
   replays: {
@@ -181,7 +188,8 @@ deletePuzzleDB(): Promise<void>; // 测试或维护入口使用
 ```
 
 - 使用模块级 `dbPromise` 单例；同一页面只打开一次连接。
-- `upgrade` 中创建 object store 和索引；当前 `DB_VERSION = 1`。
+- `upgrade` 中创建 object store 和索引；当前 `DB_VERSION = 2`。
+- 从旧版本 1 升级时，先删除旧的 `scores` / `replays` store 再重建，避免旧的全局 `groupId 1–10` 和新的事件级槽位混在一起；v2 尚未上线，这属于开发期重置。
 - 监听 `blocked` / `blocking` / `terminated`：
   - `blocked`：其他标签页占用旧版本，提示用户关闭后重试。
   - `blocking`：本页阻塞升级，关闭连接并提示刷新。
@@ -208,7 +216,7 @@ await tx.done;
 - 任意一边失败，事务回滚，不会留下孤立成绩或孤立录像。
 - 新增使用 `add` 而不是 `put`：`id` / `scoreId` 重复时明确失败，避免覆盖已有成绩。
 - 删除成绩时同时删除对应录像。
-- 按桶/按组清空时，在同一个事务中删除两个 store。
+- 按桶/按事件清空时，在同一个事务中删除两个 store。
 - 清空全部时，在同一个事务中 `clear()` 两个 store。
 
 IndexedDB 的事务只应包含数据库请求；不要在事务中 `await` 与数据库无关的异步操作，否则事务可能提前提交。
@@ -303,6 +311,44 @@ IndexedDB 本身配额远大于 localStorage，但紧凑编码仍然有价值：
 
 暂不做二进制/bit packing/base64：对 10,000 步只能再省一部分，但会显著增加编码、解码和测试复杂度。若未来确实需要，再评估 `Uint8Array` 或压缩。
 
+### 4.5 全量保存录像的容量估算
+
+当前决策：**先全量保存每条成绩对应的录像**，不按成绩等级或时间裁剪。
+
+保守估算：
+
+```text
+单条录像 ≈ 9–10 字节/步 + 约 200 字节固定开销
+单条成绩 + 索引 ≈ 0.5–1.5KB（随阶数增长）
+```
+
+| 单局步数 | 录像约 | 成绩+索引约 | 单局合计约 |
+| --- | --- | --- | --- |
+| 100 步（4×4 常见） | 1–1.5KB | 0.6KB | 2KB |
+| 300 步（5×5 左右） | 3–3.5KB | 0.8KB | 4KB |
+| 1,000 步 | 9–11KB | 1KB | 11KB |
+| 3,000 步（10×10 常见） | 27–33KB | 1.3KB | 29KB |
+| 10,000 步（长局） | 90–110KB | 1.5KB | 100KB |
+
+按不同规模估算：
+
+| 成绩数量 | 平均步数 | 估算占用 |
+| --- | --- | --- |
+| 1,000 局 | 150 | 约 2.5MB |
+| 10,000 局 | 150 | 约 25MB |
+| 10,000 局 | 300 | 约 40MB |
+| 10,000 局 | 2,500（偏 10×10） | 约 250MB |
+| 100,000 局 | 300 | 约 400MB |
+| 100,000 局 | 2,500 | 约 2.5GB |
+
+结论：
+
+- 90 个分组名称在 localStorage 中约 6–12KB，和录像相比可以忽略，不需要为了存储限制分组数量。
+- 以 3×3 / 4×4 为主时，1 万局约 20–30MB，桌面浏览器通常很轻松。
+- 大量 10×10 长局时，1 万局可能到 200–300MB；桌面通常可接受，移动 Safari 需要留意配额和回收。
+- 浏览器配额不是固定值；后续可在设置/维护区显示 `navigator.storage.estimate()` 的实际用量。
+- 暂不做保留策略；后续如需要，再加“只删除录像、保留成绩”“只保留最近 N 个月”或“只保留最佳成绩录像”。
+
 ## 5. Repository API
 
 ### 5.1 成绩与录像
@@ -317,11 +363,11 @@ addScoreWithReplay(score: ScoreRecord, replay: ReplayRecord): Promise<void>;
 removeScore(id: string): Promise<void>;
 
 countScoresByBucket(filter: ScoreFilter): Promise<number>;
-countScoresByGroup(groupId: GroupId): Promise<number>;
+countScoresByEvent(size: PuzzleSize, gameMode: GameMode): Promise<number>;
 countAllScores(): Promise<number>;
 
 clearScoresByBucket(filter: ScoreFilter): Promise<number>;
-clearScoresByGroup(groupId: GroupId): Promise<number>;
+clearScoresByEvent(size: PuzzleSize, gameMode: GameMode): Promise<number>;
 clearAllScores(): Promise<void>;
 
 probeScoreStorage(): Promise<void>;
@@ -340,8 +386,8 @@ loadReplay(scoreId: string): Promise<ReplayRecord | null>;
 - `getScoreById` 使用主键，不做全表扫描。
 - `probeScoreStorage` 只打开数据库连接，用于页面启动时探测 IndexedDB 是否可用；失败抛出 `DataStoreError`。
 - `loadReplay` 使用主键，解码失败或缺失返回 `null`。
-- `countScoresByGroup` / `countScoresByBucket` 用于清空确认框；`countAllScores` 用于“清空全部”确认。
-- `clearScoresByBucket` / `clearScoresByGroup` 返回实际删除的成绩条数。
+- `countScoresByBucket` / `countScoresByEvent` 用于清空确认框；`countAllScores` 用于“清空全部”确认。
+- `clearScoresByBucket` / `clearScoresByEvent` 返回实际删除的成绩条数；清空分组即清空当前桶，分组本身和名称保留。
 - `removeScore` 和清空操作在同一个事务里同时删除成绩和录像。
 
 ### 5.2 设置与外观
@@ -353,8 +399,12 @@ loadSettingsResult(storage?: StorageAdapter): {
   status: StorageReadStatus;
   settings: GameSettings;
 };
+ensureSettingsResult(storage?: StorageAdapter): SettingsLoadResult;
 saveSettings(settings: GameSettings, storage?: StorageAdapter): void;
 ```
+
+- `ensureSettingsResult` 只在完全缺失时写入默认设置（含 90 个分组），保证首次打开页面后分组数据存在；损坏数据不自动覆盖。
+- 设置默认值和归一化规则见 2.2。
 
 `data/appearance-store.ts`：
 
@@ -388,14 +438,17 @@ saveAppearance(appearance: AppearanceState, storage?: StorageAdapter): void;
 
 ### 6.2 成绩页
 
-1. 解析 URL 的 `size / mode / group`。
+1. 解析 URL 的 `size / mode / group`；第一级是事件（阶数+模式），第二级是当前事件的 5 个分组。
 2. `await listScoresByBucket(filter)`；只加载当前桶。
 3. 用 core 的 `sortScores` / `assignNumbers` / `computeScoreStats` 计算展示数据。
 4. 删除单条：`await removeScore(id)`，局部更新。
-5. 清空当前筛选：`await clearScoresByBucket(filter)`。
-6. 清空分组：先 `countScoresByGroup(groupId)`，确认后 `clearScoresByGroup(groupId)`。
+5. 清空当前分组：`await clearScoresByBucket(filter)`，先 `countScoresByBucket(filter)`。
+6. 清空当前事件的所有分组：先 `countScoresByEvent(size, gameMode)`，确认后 `clearScoresByEvent(size, gameMode)`。
 7. 清空全部：先 `countAllScores()`，确认后 `clearAllScores()`。
-8. 筛选快速切换时使用请求序号或取消标记，忽略过期结果，避免旧数据覆盖新筛选。
+8. 分组改名：修改当前事件的 5 个名称，显式保存到 settings；成绩只引用槽位，不需要迁移。
+9. 筛选快速切换时使用请求序号或取消标记，忽略过期结果，避免旧数据覆盖新筛选。
+
+详细页面交互见 `docs/PUZZLE_SCORE_PAGE.md`。
 
 统计页永远不调用 `loadReplay`。
 
@@ -487,10 +540,10 @@ npm install -D fake-indexeddb
 - 新增成绩 + 录像后两者都可读。
 - 重复 `id` 导致事务回滚，不留下孤立录像。
 - `listScoresByBucket` 只返回目标 `size + gameMode + groupId`。
-- `by-group` 查询/计数跨 size 和 gameMode。
+- `by-event` 查询/计数覆盖当前事件的所有 5 个分组。
 - 删除单条同时删除录像。
 - 清空当前桶只删除目标桶。
-- 清空分组只删除目标组，其他组保留。
+- 清空当前事件只删除该事件的分组，其他事件保留。
 - 清空全部清空两个 store。
 - 损坏成绩记录被过滤；损坏录像返回 `null`。
 - 成绩和录像数量一致；没有孤立数据。
@@ -513,7 +566,8 @@ Playwright 阶段补充真实浏览器 IndexedDB 冒烟：
 
 - 完成一局后刷新，成绩和录像仍在。
 - 删除成绩后录像不存在。
-- 清空分组后该组为空，其他组保留。
+- 清空当前分组后该桶为空，分组本身和其他组保留；清空当前事件后其他事件保留。
+- 分组改名后刷新仍生效，成绩和录像不受影响。
 - 设置和外观刷新后仍在（localStorage）。
 - 隐私模式/存储不可用的提示（可手动验收）。
 
@@ -547,6 +601,7 @@ src/games/puzzle/data/
 
 - `docs/PUZZLE_ARCHITECTURE.md` 第 5 节改为存储分层摘要，详细规则以本文为准。
 - `docs/PUZZLE_REPLAY.md` 负责回放时间轴、播放器和录像编码约定。
+- `docs/PUZZLE_SCORE_PAGE.md` 负责成绩页、分组管理和“事件 → 分组”筛选交互。
 - `docs/PUZZLE_TASKS.md` 的 P6-1 / P6-2 / P6-5 按本文重写。
 - `docs/REFACTOR_PLAN.md` 第 6 节数据策略、第 9 节待讨论同步更新。
 - P7–P10 页面任务需要补充异步加载、loading、错误提示和请求竞态处理。
@@ -556,6 +611,8 @@ src/games/puzzle/data/
 
 - 不从旧版 localStorage 成绩/录像迁移。
 - 不从已取消的 `puzzle.v2.scores` / `puzzle.v2.replay.*` 迁移。
+- 不迁移旧的全局 10 分组设置；分组模型改为事件级后，开发环境清一次缓存即可。
+- 不在 P6 做保留策略；当前先全量保存录像。
 - 不做 localStorage 降级存储。
 - 不做多标签页实时同步。
 - 不在 P6 做二进制/压缩编码。

@@ -1,6 +1,6 @@
-import type { GameMode, GameSettings, Group, GroupId, MoveMode } from '../types';
+import type { GameMode, GameSettings, GroupId, MoveMode } from '../types';
 import { isPuzzleSize } from '../core/board';
-import { isGroupId } from '../core/groups';
+import { createDefaultGroups, getDefaultGroupName, getGroupKey, isGroupId } from '../core/groups';
 import {
   createLocalStorage,
   readJsonResult,
@@ -14,7 +14,6 @@ const DEFAULT_SIZE = 4;
 const DEFAULT_GAME_MODE: GameMode = 'normal';
 const DEFAULT_MOVE_MODE: MoveMode = 'slide';
 const DEFAULT_GROUP_ID: GroupId = 1;
-const DEFAULT_GROUP_COUNT = 10;
 const MAX_GROUP_NAME_LENGTH = 30;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -23,26 +22,21 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function normalizeGroupName(value: unknown, id: GroupId): string {
   if (typeof value !== 'string') {
-    return `G${id}`;
+    return getDefaultGroupName(id);
   }
 
   const name = value.trim().slice(0, MAX_GROUP_NAME_LENGTH);
-  return name.length > 0 ? name : `G${id}`;
+  return name.length > 0 ? name : getDefaultGroupName(id);
 }
 
 /** 创建默认设置；每次返回新对象，避免调用方共享分组数组。 */
 export function createDefaultSettings(): GameSettings {
-  const groups: Group[] = Array.from({ length: DEFAULT_GROUP_COUNT }, (_, index) => {
-    const id = (index + 1) as GroupId;
-    return { id, name: `G${id}` };
-  });
-
   return {
     size: DEFAULT_SIZE,
     gameMode: DEFAULT_GAME_MODE,
     moveMode: DEFAULT_MOVE_MODE,
     groupId: DEFAULT_GROUP_ID,
-    groups,
+    groups: createDefaultGroups(),
     customCursor: false,
     minimalUi: false,
   };
@@ -52,7 +46,8 @@ export function createDefaultSettings(): GameSettings {
  * 修复设置数据。
  *
  * 设置是用户偏好，单字段损坏不应丢掉整份数据：
- * 非法枚举回退默认值，缺失分组按固定 ID 补齐默认名称。
+ * 非法枚举回退默认值；分组按 `(size, gameMode, id)` 匹配，
+ * 缺失/非法槽位补齐默认名称，旧版全局 10 组数据会被忽略。
  */
 export function normalizeSettings(raw: unknown): GameSettings {
   const record = isRecord(raw) ? raw : {};
@@ -72,13 +67,34 @@ export function normalizeSettings(raw: unknown): GameSettings {
       : DEFAULT_GROUP_ID;
 
   const rawGroups = Array.isArray(record.groups) ? record.groups : [];
-  const groups: Group[] = Array.from({ length: DEFAULT_GROUP_COUNT }, (_, index) => {
-    const id = (index + 1) as GroupId;
-    const candidate = rawGroups.find(
-      (group): group is Record<string, unknown> => isRecord(group) && group.id === id,
-    );
-    return { id, name: normalizeGroupName(candidate?.name, id) };
-  });
+  const namesByKey = new Map<string, unknown>();
+  for (const group of rawGroups) {
+    if (!isRecord(group)) {
+      continue;
+    }
+    if (typeof group.size !== 'number' || !isPuzzleSize(group.size)) {
+      continue;
+    }
+    if (group.gameMode !== 'normal' && group.gameMode !== 'blind') {
+      continue;
+    }
+    if (typeof group.id !== 'number' || !isGroupId(group.id)) {
+      continue;
+    }
+    const key = getGroupKey(group.size, group.gameMode, group.id);
+    // 重复记录保留第一条，避免后出现的损坏数据覆盖已恢复名称。
+    if (!namesByKey.has(key)) {
+      namesByKey.set(key, group.name);
+    }
+  }
+
+  const groups = createDefaultGroups().map((group) => ({
+    ...group,
+    name: normalizeGroupName(
+      namesByKey.get(getGroupKey(group.size, group.gameMode, group.id)),
+      group.id,
+    ),
+  }));
 
   return {
     size,
@@ -120,6 +136,25 @@ export function loadSettingsResult(
     status: isGameSettings(result.value.data) ? 'ok' : 'corrupt',
     settings: normalizeSettings(result.value.data),
   };
+}
+
+/**
+ * 确保设置键存在。
+ *
+ * 只在完全缺失时写入默认设置（含 90 个分组）；损坏数据保持原样，
+ * 由页面提示用户清理缓存，避免静默覆盖可能想恢复的数据。
+ * 写入失败会抛 DataStoreError，由页面回退默认设置并提示。
+ */
+export function ensureSettingsResult(
+  storage: StorageAdapter = createLocalStorage(),
+): SettingsLoadResult {
+  const result = loadSettingsResult(storage);
+  if (result.status !== 'missing') {
+    return result;
+  }
+
+  saveSettings(result.settings, storage);
+  return { status: 'ok', settings: result.settings };
 }
 
 /** 保存设置；写入前再次归一化，避免把非法字段落库。 */

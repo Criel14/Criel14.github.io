@@ -101,7 +101,7 @@ describe('sortScores', () => {
 describe('getBucketKey', () => {
   it('由阶数、模式和分组组成桶键', () => {
     expect(getBucketKey({ size: 4, gameMode: 'normal', groupId: 1 })).toBe('4:normal:1');
-    expect(getBucketKey({ size: 10, gameMode: 'blind', groupId: 10 })).toBe('10:blind:10');
+    expect(getBucketKey({ size: 10, gameMode: 'blind', groupId: 5 })).toBe('10:blind:5');
   });
 });
 
