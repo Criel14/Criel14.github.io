@@ -4,7 +4,7 @@
 >
 > 分支：`refactor/vite-ts`
 >
-> 范围：拼图模块（`puzzle-game`）；贪吃蛇不在本文范围
+> 范围：拼图模块（`puzzle-game`）；其他游戏不在本文范围，接入约定见 `docs/GAMES.md`
 >
 > 配套文档：`docs/PUZZLE_GAME_PAGE.md`、`docs/SETTINGS_PAGE.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`、`docs/PUZZLE_SCORE_PAGE.md`、`docs/PUZZLE_TASKS.md`、`docs/REFACTOR_PLAN.md`、`docs/PUZZLE_GAME.md`
 >
@@ -41,7 +41,7 @@
 - 不迁移旧 `scores` / `config` / `currentScore` / `currentScoreList`。
 - 不做旧页面双写或旧数据兼容层。
 - 不做分组新增/删除/排序；每个事件固定 5 个槽位，仅支持改名。
-- 本轮不做贪吃蛇重构。
+- 其他游戏不在本文范围，接入约定见 `docs/GAMES.md`。
 - 不做后端、账号、云同步。
 - 不做通用插件系统或通用指标注册表。
 - 不为了“看起来工程化”引入额外依赖。

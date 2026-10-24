@@ -57,7 +57,6 @@ export default defineConfig({
         puzzleSettings: entry('./puzzle-game/settings.html'),
         puzzleScores: entry('./puzzle-game/score-list.html'),
         puzzleReplay: entry('./puzzle-game/replay.html'),
-        snake: entry('./snake-game/snake.html'),
       },
     },
   },

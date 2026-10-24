@@ -53,6 +53,25 @@
   background-color: var(--color-surface-hover);
 }
 
+/* 未上线的预留卡位：不可点击，弱化视觉但仍然占住游戏列表的编号。 */
+.game-card--soon {
+  border-style: dashed;
+  border-color: var(--color-border-muted);
+  color: var(--color-muted);
+}
+
+.game-card--soon .game-title {
+  font-weight: 500;
+}
+
+.game-card--soon:hover {
+  background-color: transparent;
+}
+
+.game-card--soon:hover .game-arrow {
+  transform: none;
+}
+
 .game-index {
   font-family: var(--font-mono);
   font-size: 0.75rem;

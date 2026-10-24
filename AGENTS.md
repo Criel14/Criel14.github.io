@@ -5,6 +5,7 @@
 ## 必读
 
 - `docs/REFACTOR_PLAN.md`：重构目标、技术选型、阶段划分与工作方式，动手前先读。
+- `docs/GAMES.md`：游戏清单、目录分层与新游戏接入约定。
 - `README.md`、`docs/PUZZLE_GAME.md`：现有功能与玩法说明。
 
 ## 开发
@@ -39,11 +40,11 @@ D:\Project\Criel14.github.io-legacy
 - 拼图游戏：`puzzle-game/puzzle.html`、`puzzle-game/js/puzzle.js`、`puzzle-game/js/defaultConfig.js`
 - 成绩页：`puzzle-game/score-list.html`、`puzzle-game/js/scoreList.js`、`puzzle-game/js/scoreListChart.js`
 - 回放页：`puzzle-game/replay.html`、`puzzle-game/js/replay.js`
-- 贪吃蛇：`snake-game/snake.html`、`snake-game/snake.js`、`snake-game/snake.css`
 
 ## 代码与注释规范
 
 - 使用 TypeScript strict；核心逻辑优先写成纯函数，`core` 不碰 DOM，`data` 不直接操作页面。
+- 新游戏按 `docs/GAMES.md` 的目录与入口约定接入；只在两个以上游戏真正复用时才把模块放进 `src/shared`。
 - 优先使用不可变数据：返回新数组/新对象，不修改入参。
 - 公开函数、类型和领域常量要有中文注释，说明“为什么”和“边界”，不要逐行复述代码。
 - 领域约定必须写进注释或类型，例如：
