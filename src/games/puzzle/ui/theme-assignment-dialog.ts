@@ -9,6 +9,9 @@ export interface ThemeAssignmentDialogOptions {
   readonly appearance: AppearanceState;
 }
 
+/** 等 CSS 退场动画结束再移除对话框；比 160ms 的过渡略长。 */
+const DIALOG_EXIT_MS = 180;
+
 interface AssignmentOption {
   readonly size: PuzzleSize;
   readonly label: HTMLLabelElement;
@@ -21,6 +24,7 @@ function createOption(size: PuzzleSize, locked: boolean): AssignmentOption {
   label.className = 'theme-assignment-option';
 
   const input = document.createElement('input');
+  input.className = 'theme-assignment-option__input';
   input.type = 'checkbox';
   input.value = String(size);
   input.checked = locked;
@@ -106,7 +110,7 @@ export function openThemeAssignmentDialog(
     grid.append(selectAllButton);
 
     handle = createDialog({
-      title: `应用到：${options.theme.name}`,
+      title: '请选择应用的阶数',
       content: grid,
       actions: [
         { label: '取消', variant: 'secondary' },
@@ -127,7 +131,9 @@ export function openThemeAssignmentDialog(
       },
       onClose(reason) {
         resolve(reason === 'confirm' ? confirmedSizes : null);
-        handle?.destroy();
+        window.setTimeout(() => {
+          handle?.destroy();
+        }, DIALOG_EXIT_MS);
       },
     });
 

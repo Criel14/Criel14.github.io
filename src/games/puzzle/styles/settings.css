@@ -614,20 +614,144 @@ body.settings-page {
   margin-top: 1rem;
 }
 
-/* “应用到”对话框：桌面 5 列，窄屏 3 列；当前已应用项选中并锁定。 */
-.theme-assignment-dialog {
+/*
+ * “应用到”对话框：复用设置页的浮起表面；桌面 5 列，窄屏 3 列；
+ * 当前已应用项选中并锁定。
+ */
+.puzzle-dialog.theme-assignment-dialog {
   width: min(92vw, 34rem);
+  border-color: var(--settings-border);
+  border-radius: var(--settings-radius);
+  background: var(--settings-surface);
+  box-shadow:
+    var(--settings-raised-shadow),
+    0 1.5rem 4rem rgb(0 0 0 / 0.22);
+  opacity: 0;
+  transform: translateY(0.5rem) scale(0.985);
+  transition:
+    opacity 160ms ease-out,
+    transform 160ms ease-out,
+    display 160ms allow-discrete,
+    overlay 160ms allow-discrete;
+}
+
+.puzzle-dialog.theme-assignment-dialog[open] {
+  opacity: 1;
+  transform: none;
+}
+
+.puzzle-dialog.theme-assignment-dialog:not([open]) {
+  pointer-events: none;
+}
+
+@starting-style {
+  .puzzle-dialog.theme-assignment-dialog[open] {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.985);
+  }
+}
+
+.puzzle-dialog.theme-assignment-dialog::backdrop {
+  opacity: 0;
+  transition:
+    opacity 160ms ease-out,
+    display 160ms allow-discrete,
+    overlay 160ms allow-discrete;
+}
+
+.puzzle-dialog.theme-assignment-dialog[open]::backdrop {
+  opacity: 1;
+}
+
+@starting-style {
+  .puzzle-dialog.theme-assignment-dialog[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+.theme-assignment-dialog .puzzle-dialog__header {
+  padding: 1.25rem 1.25rem 0.5rem;
+  border-bottom: 0;
+}
+
+.theme-assignment-dialog .puzzle-dialog__title {
+  font-size: 1.15rem;
+}
+
+.theme-assignment-dialog .puzzle-dialog__body {
+  padding: 0.5rem 1.25rem 0.75rem;
+}
+
+.theme-assignment-dialog .puzzle-dialog__footer {
+  gap: 0.6rem;
+  padding: 0.25rem 1.25rem 1.25rem;
+  border-top: 0;
+  background: transparent;
+}
+
+/* 取消/确定与设置页保存条按钮保持同一套扁平高光样式。 */
+.theme-assignment-dialog .puzzle-button {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 0.9rem;
+  border: 1px solid var(--settings-border);
+  border-radius: var(--settings-radius-sm);
+  background: var(--settings-surface);
+  color: var(--settings-text);
+  box-shadow: var(--settings-raised-shadow);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    box-shadow 90ms ease,
+    transform 90ms ease;
+}
+
+.theme-assignment-dialog .puzzle-button:hover:not(:disabled) {
+  background: var(--settings-surface-hover);
+}
+
+.theme-assignment-dialog .puzzle-button:active:not(:disabled) {
+  transform: scale(0.96);
+  box-shadow: var(--settings-raised-shadow-active);
+}
+
+.theme-assignment-dialog .puzzle-button:focus-visible {
+  outline: 2px solid #1f6f9f;
+  outline-offset: 3px;
+}
+
+.theme-assignment-dialog .puzzle-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .theme-assignment-dialog .puzzle-button--primary {
   border-color: var(--color-accent);
   background: var(--color-accent);
   color: var(--color-on-accent);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.28),
+    0 2px 4px rgb(52 152 219 / 0.24),
+    0 1px 1px rgb(0 0 0 / 0.04);
 }
 
 .theme-assignment-dialog .puzzle-button--primary:hover:not(:disabled) {
   border-color: var(--color-accent-hover);
   background: var(--color-accent-hover);
+}
+
+.theme-assignment-dialog .puzzle-button--primary:active:not(:disabled) {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.2),
+    0 1px 2px rgb(52 152 219 / 0.2);
 }
 
 .theme-assignment-grid {
@@ -641,7 +765,6 @@ body.settings-page {
   min-height: 2.65rem;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
   padding: 0.35rem;
   border: 1px solid var(--settings-border);
   border-radius: 8px;
@@ -654,6 +777,11 @@ body.settings-page {
   transition:
     border-color 120ms ease,
     background-color 120ms ease;
+}
+
+.theme-assignment-option:has(.theme-assignment-option__input:focus-visible) {
+  outline: 2px solid #1f6f9f;
+  outline-offset: 2px;
 }
 
 .theme-assignment-option:hover {
@@ -676,19 +804,20 @@ body.settings-page {
   background: var(--color-accent-soft);
 }
 
-.theme-assignment-option input {
-  width: 1rem;
-  height: 1rem;
-  margin: 0;
-  accent-color: var(--color-accent);
+/* 原生 checkbox 只保留语义和键盘行为；视觉上整块 label 就是勾选项。 */
+.theme-assignment-option__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
-.theme-assignment-option input:focus-visible {
-  outline: 2px solid #1f6f9f;
-  outline-offset: 2px;
-}
-
-.theme-assignment-option input:disabled {
+.theme-assignment-option--locked .theme-assignment-option__input {
   cursor: not-allowed;
 }
 
@@ -932,8 +1061,25 @@ body.settings-page {
   border-radius: var(--settings-radius);
   background: var(--settings-surface);
   box-shadow: var(--settings-raised-shadow);
+  opacity: 1;
   transform: translateX(-50%);
-  animation: savebar-in 160ms ease-out;
+  transition:
+    opacity 160ms ease-out,
+    transform 160ms ease-out,
+    display 160ms allow-discrete;
+}
+
+.settings-savebar[hidden] {
+  opacity: 0;
+  transform: translate(-50%, 0.5rem);
+  pointer-events: none;
+}
+
+@starting-style {
+  .settings-savebar:not([hidden]) {
+    opacity: 0;
+    transform: translate(-50%, 0.5rem);
+  }
 }
 
 .settings-savebar__info {
@@ -978,18 +1124,6 @@ body.settings-page {
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
-}
-
-@keyframes savebar-in {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 0.5rem);
-  }
-
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
 }
 
 @media (max-width: 899px) {
@@ -1100,7 +1234,9 @@ body.settings-page {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .settings-savebar {
-    animation: none;
+  .settings-savebar,
+  .puzzle-dialog.theme-assignment-dialog,
+  .puzzle-dialog.theme-assignment-dialog::backdrop {
+    transition: none;
   }
 }
