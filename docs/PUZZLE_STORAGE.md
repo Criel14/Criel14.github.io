@@ -1,6 +1,6 @@
 # 数字华容道数据存储设计
 
-> 状态：P6 已完成（数据层与旧数据清理均已实现）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层已完成（2026-10-24）；P8-4b 独立设置页与 `site.v1.preferences` 已实现（2026-10-24，待手动验收）；P8-4c-1 主题存储与选择已实现（2026-10-24，待手动验收）；P8-4c-2 设计确认（2026-10-24），P8-4c-2a 外观 v4 领域模型与存储已实现（2026-10-24，不做 v3 迁移，自动检查通过），P8-4c-2b～e 待开始
+> 状态：P6 已完成（数据层与旧数据清理均已实现）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层已完成（2026-10-24）；P8-4b 独立设置页与 `site.v1.preferences` 已实现（2026-10-24，待手动验收）；P8-4c-1 主题存储与选择已实现（2026-10-24，待手动验收）；P8-4c-2 设计确认（2026-10-24），P8-4c-2a 外观 v4 领域模型与存储已实现（2026-10-24，不做 v3 迁移，自动检查通过），P8-4c-2b 设置页按阶数分配已实现（2026-10-25，自动检查通过，待手动验收），P8-4c-2c～e 待开始
 >
 > 分支：`refactor/vite-ts`
 >
@@ -447,12 +447,14 @@ saveSettings(settings: GameSettings, storage?: StorageAdapter): void;
 loadAppearanceResult(storage?: StorageAdapter): {
   status: StorageReadStatus;
   appearance: AppearanceState;
+  issue?: AppearanceReadIssue;
 };
 saveAppearance(appearance: AppearanceState, storage?: StorageAdapter): void;
 ```
 
 - 同步 API。
 - 读取结果保留 `ok` / `missing` / `corrupt` / `unavailable` 状态，并始终附带一份可用的回退数据；页面据此决定是否显示提示。
+- `corrupt` 时另带 `issue`：`invalid-json`、`invalid-envelope`、`legacy-version`、`unknown-version` 或 `invalid-data`，用于区分“清理旧版本外观”和普通损坏提示；`status` 四态不变，游戏页仍按状态统一处理。
 - `missing` 使用默认彩虹外观；`corrupt` 尽量保留可恢复的自定义主题和有效分配，无法解析的阶数使用 `FALLBACK_THEME`；`unavailable` / 版本不兼容使用回退外观（所有阶数指向 `FALLBACK_THEME`）。
 - 外观 version 4；设置 version 3；不读取 version 3 外观，也不做迁移。
 - 保存前调用 `normalizeAppearance`，写入完整 `themeIdBySize` 和 `themes`。
@@ -546,6 +548,7 @@ class DataStoreError extends Error {
 - `listScoresByBucket` 过滤非法成绩并记录警告；返回可用的成绩。
 - `getScoreById` / `loadReplay` 缺失或非法时返回 `null`。
 - localStorage 设置/外观损坏时返回 `corrupt` 状态并回退可恢复值；外观无法解析的阶数使用系统回退主题，页面显示非阻塞提示。
+- 外观 `corrupt` 结果带 `issue`，设置页据此区分普通损坏和版本不兼容；游戏页只依赖四态 `status`。
 - 外观 v3 或未知版本不迁移，使用回退外观并提示清理 `puzzle.v2.appearance`。
 - **不做 localStorage 降级存储**：IndexedDB 不可用时，成绩功能明确不可用，避免出现两套数据源和迁移问题。
 - 可以提示用户使用导出/清理功能；导出功能属于后续扩展。

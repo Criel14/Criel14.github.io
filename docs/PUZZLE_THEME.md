@@ -1,6 +1,6 @@
 # 数字华容道游戏主题与按阶数分配（P8-4c）
 
-> 状态：P8-4c-1 设置页主题列表已实现（2026-10-24），待手动验收；P8-4c-2 设计确认（2026-10-24），P8-4c-2a 领域模型与存储已实现并通过自动检查（2026-10-24），P8-4c-2b 设置页按阶数分配、P8-4c-2c 游戏页回退提示、P8-4c-2d 主题编辑器、P8-4c-2e 最终验收待开始。P8-4c-2 拆成 P8-4c-2a 领域模型与存储、P8-4c-2b 设置页按阶数分配、P8-4c-2c 游戏页按阶数解析、P8-4c-2d 主题编辑器、P8-4c-2e 测试与验收。
+> 状态：P8-4c-1 设置页主题列表已实现（2026-10-24），待手动验收；P8-4c-2 设计确认（2026-10-24），P8-4c-2a 领域模型与存储已实现并通过自动检查（2026-10-24），P8-4c-2b 设置页按阶数分配已实现并通过自动检查（2026-10-25），待手动验收；P8-4c-2c 游戏页回退提示、P8-4c-2d 主题编辑器、P8-4c-2e 最终验收待开始。P8-4c-2 拆成 P8-4c-2a 领域模型与存储、P8-4c-2b 设置页按阶数分配、P8-4c-2c 游戏页按阶数解析、P8-4c-2d 主题编辑器、P8-4c-2e 测试与验收。
 >
 > 分支：`refactor/vite-ts`
 >
@@ -59,10 +59,10 @@ P8-4c-2 会替换 P8-4c-1 的“单主题 radio + 固定 10×10 预览”交互�
   - `puzzle.v2.appearance` 升到 version 4；`puzzle.v2.settings` 保持 version 3。
   - 不做 v3 迁移；清理 `puzzle.v2.appearance` 后使用默认外观。
   - 更新 schema 校验、归一化、测试和存储文档。
-- **P8-4c-2b 设置页按阶数分配**
+- **P8-4c-2b 设置页按阶数分配**（已实现，待手动验收）
   - 主题卡改为按钮，点击打开“应用到”对话框。
   - 卡片预览改为支持的最大阶数；右上角显示覆盖阶数徽标。
-  - 新增“当前分配”9 格总览。
+  - 回退警告直接显示在主题卡网格上方；不提供“当前分配”9 格总览。
   - 对话框只列该主题支持的阶数；当前已应用的选中并锁定；`全选` 仅作批量勾选辅助。
   - 保存/重置/脏状态/焦点管理沿用设置页。
   - 回退主题警告和读取状态提示。
@@ -464,7 +464,7 @@ themeIdBySize[10] = 'B';
 
 ### 3.5 回退状态提示
 
-- 设置页：存在使用回退主题的阶数时，在“当前分配”上方显示警告，列出阶数；当前分配总览中用警告色显示“回退主题”。
+- 设置页：存在使用回退主题的阶数时，在主题卡网格上方显示警告并列出阶数；不再提供“当前分配”总览。
 - 游戏页：加载时如果存在回退阶数，显示非阻塞提示；不要只靠棋盘变蓝让用户猜。
 - 读取状态为 `corrupt` / `unavailable` / 版本不兼容时，顶部 banner 与回退提示可以同时存在；文案不要重复堆叠。
 
@@ -477,7 +477,7 @@ localStorage key: puzzle.v2.appearance
 envelope: { version: 4, data: AppearanceState }
 ```
 
-- 读取使用 `loadAppearanceResult()`，返回 `ok` / `missing` / `corrupt` / `unavailable` 和一份可用的 `AppearanceState`。
+- 读取使用 `loadAppearanceResult()`，返回 `ok` / `missing` / `corrupt` / `unavailable` 和一份可用的 `AppearanceState`；`corrupt` 时另带 `issue`，用于区分版本不兼容与普通数据损坏。
 - 写入使用 `saveAppearance()`，写入前统一归一化。
 - 不新增 localStorage key，不修改 IndexedDB store。
 - 设置继续使用 `puzzle.v2.settings`，version 3。
@@ -598,8 +598,7 @@ envelope: { version: 4, data: AppearanceState }
 游戏主题
 为每个阶数选择棋盘主题。点击主题卡选择要应用的阶数；内置主题不可编辑，自定义主题可以调整颜色、字体、边框、字号、间隙与圆角。
 
-当前分配
-[2×2 彩虹] [3×3 彩虹] ... [10×10 我的主题]
+[回退警告（仅异常时）]
 
 ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐
 │  10×10     │ │  10×10     │ │  10×10     │ │            │
@@ -612,20 +611,19 @@ envelope: { version: 4, data: AppearanceState }
 > 示意图里的 `10×10` 表示“该主题支持的最大阶数”；如果主题只支持到 9×9，预览就是 9×9。覆盖徽标是另一回事。
 
 - 内置主题在前，自定义主题按存储顺序在后，最后是加号卡。
-- 当前分配总览在上，主题卡网格在下；两者都由同一个 controller 从 `draft` 渲染。
-- 回退主题不出现在卡片列表里；当前分配总览中显示“回退主题”。
+- 回退警告直接位于主题卡网格上方；主题卡网格由 controller 从 `draft` 渲染。
+- 不再提供“当前分配”9 格总览；每个阶数的当前主题由卡片覆盖徽标和对话框勾选状态表达。
+- 回退主题不出现在卡片列表里；异常阶数由回退警告列出。
 
 说明文案：
 
 > 为每个阶数选择棋盘主题。点击主题卡选择要应用的阶数；内置主题不可编辑，自定义主题可以调整颜色、字体、边框、字号、间隙与圆角。
 
-### 5.2 当前分配总览
+### 5.2 当前分配展示（已移除）
 
-- 9 个格子，按 2–10 排列；每格显示阶数 + 当前主题名。
-- 主题名过长时省略号，`title` 完整；点击不交互（只读）。
-- 使用回退主题的格子用警告色显示“回退主题”。
-- 移动端 3 列，桌面自适应 3–9 列。
-- 总览直接反映 draft；对话框确认后立即更新。
+- 2026-10-25 调整：移除“当前分配”9 格总览，避免设置页信息重复和视觉杂乱。
+- 当前每个阶数使用哪个主题，通过卡片右上角覆盖徽标和“应用到”对话框的勾选/锁定状态查看。
+- 存在回退阶数时仍显示文字警告并列出完整阶数；不恢复总览。
 
 ### 5.3 主题卡
 
@@ -723,7 +721,7 @@ envelope: { version: 4, data: AppearanceState }
 - `isDirty` 使用 `isAppearanceEqual(saved, draft)`，比较 `themeIdBySize` 和全部主题字段。
 - 底部保存条出现/消失、重置、保存失败保留 draft，沿用现有设置页逻辑。
 - “重置”恢复 `saved`，不写 localStorage。
-- “保存”调用 `saveAppearance(draft)`；成功后用归一化结果更新 `saved` / `draft` 并重新渲染卡片、总览和回退警告。
+- “保存”调用 `saveAppearance(draft)`；成功后用归一化结果更新 `saved` / `draft` 并重新渲染卡片和回退警告。
 - 保存后如果仍有回退阶数，警告继续显示；不会因为保存成功而隐藏。
 - 设置页只负责“选择主题/分配阶数”；主题内容编辑在独立编辑器页。
 - 返回游戏页后重新加载 `puzzle.v2.appearance`，新分配才会生效；设置页内修改不即时影响游戏页。
@@ -731,10 +729,10 @@ envelope: { version: 4, data: AppearanceState }
 ### 5.7 读取状态与回退提示
 
 - `missing` / `ok`：静默；`missing` 使用默认彩虹外观。
-- `corrupt`：顶部 banner 提示“外观数据部分损坏，已尽量恢复”；当前分配总览和回退警告列出使用回退主题的阶数。
+- `corrupt`：读取结果的 `issue` 区分普通损坏和版本不兼容。普通损坏提示已尽量恢复；v3/未知版本提示清理 `puzzle.v2.appearance`。两种情况下，回退警告都会列出使用回退主题的阶数。
 - `unavailable`：顶部 banner 提示存储不可用；主题列表仍渲染，使用回退外观；保存失败在保存条显示。
 - 版本不兼容：提示清理 `puzzle.v2.appearance`；页面使用回退外观。
-- 只要 `draft` 中存在回退阶数，就在“当前分配”上方显示警告；用户为这些阶数选择真实主题后警告消失。
+- 只要 `draft` 中存在回退阶数，就在主题卡网格上方显示警告；用户为这些阶数选择真实主题后警告消失。
 
 ### 5.8 响应式与可访问性
 
@@ -742,7 +740,6 @@ envelope: { version: 4, data: AppearanceState }
 - 主题卡、编辑按钮、加号卡都可点；不出现横向滚动。
 - 主题卡是原生 `<button>` 覆盖层，支持 Tab、Enter、Space 打开对话框；不再使用 radio 语义。
 - 每个按钮的 `aria-label` 包含主题名、内置/自定义、覆盖范围；徽标视觉文本 `aria-hidden`。
-- “当前分配”使用列表/网格语义，读屏能读出“阶数 + 主题名”。
 - 对话框使用原生 checkbox + label；`全选` 是独立按钮，有可读标签。
 - 回退状态不只靠颜色，必须有文字“回退主题”。
 - 焦点环落在卡片表面或 hitarea 上；对话框关闭后焦点回到触发卡片。
@@ -943,14 +940,15 @@ function replaceBoard(size: PuzzleSize): void {
 | `src/games/puzzle/core/appearance/appearance.ts` | 默认/回退外观、按阶数解析、分配、覆盖、相等比较 |
 | `src/games/puzzle/data/schema.ts` | 版本常量、Theme/AppearanceState 校验 |
 | `src/games/puzzle/data/appearance-store.ts` | v4 读取、归一化、保存 |
-| `src/games/puzzle/ui/game-theme-picker.ts` | 主题卡、覆盖徽标、当前分配总览、打开对话框 |
+| `src/games/puzzle/ui/game-theme-picker.ts` | 主题卡、覆盖徽标、回退警告、打开对话框 |
 | `src/games/puzzle/ui/theme-assignment-dialog.ts` | “应用到”对话框 |
+| `src/games/puzzle/ui/theme-coverage.ts` | 覆盖范围摘要、完整阶数列表和尺寸文案 |
 | `src/games/puzzle/ui/theme-preview.ts` | 复用 BoardView 的主题预览 |
 | `src/games/puzzle/ui/settings-page.ts` | `puzzle-theme` controller、保存条、读取状态、回退警告 |
 | `src/games/puzzle/pages/game.ts` | 按阶数解析主题、回退提示 |
 | `src/games/puzzle/pages/theme-editor.ts` | 编辑器组装、参数解析、draft、保存 |
 | `src/games/puzzle/styles/board.css` | 内边框、字号内区域公式、逐块字体色 |
-| `src/games/puzzle/styles/settings.css` | 主题卡、徽标、当前分配总览、对话框内容、响应式 |
+| `src/games/puzzle/styles/settings.css` | 主题卡、徽标、回退警告、对话框内容、响应式 |
 | `src/games/puzzle/styles/overlays.css` / `dialog.css` | 设置页对话框基础样式 |
 | `puzzle-game/settings.html` | 游戏主题 section 文案和挂载点；加载 board.css / dialog 样式 |
 | `puzzle-game/theme-editor.html` | 编辑器真实页面 |
@@ -982,12 +980,15 @@ function replaceBoard(size: PuzzleSize): void {
 
 ### 10.2 P8-4c-2b 设置页按阶数分配
 
-- [ ] `game-theme-picker.ts` 改为按钮卡片、覆盖徽标、当前分配总览；预览取最大支持阶数。
-- [ ] 新增 `theme-assignment-dialog.ts`，只列支持阶数，当前已应用锁定，`全选` 辅助。
-- [ ] `settings-page.ts` 的 `puzzle-theme` controller 改为 `themeIdBySize` draft/保存/重置。
-- [ ] 设置页加载对话框样式；回退警告和读取状态。
-- [ ] `settings.css` 完成卡片、徽标、总览、对话框和响应式。
-- [ ] 更新 `SETTINGS_PAGE.md`、`PUZZLE_GAME_PAGE.md`。
+- [x] `game-theme-picker.ts` 改为按钮卡片、覆盖徽标、回退警告；预览取最大支持阶数。
+- [x] 新增 `theme-assignment-dialog.ts`，只列支持阶数，当前已应用锁定，`全选` 辅助。
+- [x] 新增 `theme-coverage.ts`，集中处理徽标摘要、完整阶数列表和尺寸文案。
+- [x] `settings-page.ts` 的 `puzzle-theme` controller 改为 `themeIdBySize` draft/保存/重置。
+- [x] 设置页加载对话框样式；回退警告和读取状态。
+- [x] `settings.css` 完成卡片、徽标、回退警告、对话框和响应式。
+- [x] 更新 `SETTINGS_PAGE.md`、`PUZZLE_GAME_PAGE.md`。
+
+实现备注（2026-10-25）：`game-theme-picker` 不再持有 radio；卡片使用独立透明按钮打开原生 `<dialog>`，确认结果交给 `puzzle-theme` controller 更新 draft。`AppearanceLoadResult` 新增可选 `issue`（不改变四态 `status`），设置页据此区分 v3/未知版本与普通损坏。`puzzle-game/settings.html` 加载 `overlays.css`。随后根据视觉反馈移除“当前分配”9 格总览，回退警告保留在卡片网格上方；同时增加卡片高度和预览区顶部留白，覆盖徽标改为扁平样式。`npm test`（409 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 均通过；手动验收待执行。
 
 ### 10.3 P8-4c-2c 游戏页
 
@@ -1081,7 +1082,7 @@ location.reload();
 - [ ] 每张卡预览其支持的最大阶数；只支持 8×8 的主题显示 8×8。
 - [ ] 覆盖徽标按第 5.4 节规则显示；`所有阶数` 只在覆盖全部 9 个阶数时出现。
 - [ ] 使用中的卡片有主题蓝边框/浅蓝背景；未使用卡片不显示覆盖徽标。
-- [ ] 当前分配总览 9 格正确显示主题名；回退阶数用警告色。
+- [ ] 不再显示“当前分配”总览；出现回退阶数时，卡片网格上方有文字警告并列出阶数。
 - [ ] 自定义主题显示铅笔按钮；点击编辑不打开“应用到”对话框。
 - [ ] 加号卡跳转编辑器；20 个上限禁用并提示。
 - [ ] 窄屏 3/2/1 列切换正常，无横向滚动。
@@ -1137,7 +1138,7 @@ location.reload();
 - [ ] Enter/Space 可打开主题卡对话框；Esc/取消关闭。
 - [ ] 方向键不需要模拟 radio 行为；卡片是按钮语义。
 - [ ] 覆盖徽标、回退状态都有文字说明，不只靠颜色。
-- [ ] 当前分配总览可被读屏读出阶数和主题名。
+- [ ] 回退警告可被读屏读出完整阶数；设置页不再有“当前分配”总览。
 - [ ] 预览和徽标不抢焦点。
 - [ ] 尊重 `prefers-reduced-motion`。
 
@@ -1195,8 +1196,9 @@ location.reload();
 - `loadAppearanceResult()`：
   - 缺失 → 默认彩虹；
   - v4 合法 → `ok`；
-  - v4 字段损坏 → `corrupt` + 可恢复数据；
-  - v3/未知版本 → 回退外观 + `corrupt`；
+  - v4 字段损坏 → `corrupt` + 可恢复数据 + `issue: 'invalid-data'`；
+  - JSON 损坏 → 回退外观 + `corrupt` + `issue: 'invalid-json'`；
+  - v3/未知版本 → 回退外观 + `corrupt` + `issue: 'legacy-version' | 'unknown-version'`；
   - 存储不可用 → 回退外观 + `unavailable`。
 - `saveAppearance()`：写入 version 4；归一化；往返一致。
 - `SETTINGS_SCHEMA_VERSION === 3`、`APPEARANCE_SCHEMA_VERSION === 4`。
@@ -1208,12 +1210,12 @@ location.reload();
 - 连续区间 → `2–9 阶`。
 - 两段 → `2–4、8–10 阶`。
 - 三段及以上 → `5 个阶数`。
-- 空 → 无徽标，aria “未应用”。
+- 空 → 无徽标，aria “未应用到任何阶数”。
 - `detail` 始终给出完整阶数列表，供 `title` / aria 使用。
 
 ### 12.5 手动 DOM / E2E
 
-- 主题卡按钮、编辑/加号链接、覆盖徽标、当前分配总览。
+- 主题卡按钮、编辑/加号链接、覆盖徽标、回退警告。
 - “应用到”对话框：只列支持阶数、当前锁定、全选、确定禁用、焦点回收。
 - 保存/重置/失败/读取状态/回退警告。
 - 游戏页按阶数切换、重玩、回退提示。
@@ -1246,9 +1248,9 @@ location.reload();
 | 2026-10-24 | 每个阶数始终有且只有一个主题；已应用阶数在对话框中锁定，取消只能通过给其他主题分配 |
 | 2026-10-24 | 覆盖徽标放卡片右上角，沿用现有卡片高度；“所有阶数”只在覆盖全部 9 个阶数时出现 |
 | 2026-10-24 | “应用到”对话框只列支持阶数；当前已应用锁定；`全选` 仅作辅助；不显示额外状态/替换文案 |
-| 2026-10-24 | “当前分配”9 格总览保留，显示每个阶数的主题；回退阶数用警告色 |
 | 2026-10-24 | 增加系统回退主题，不进入 `themes`、不可选择、不持久化；用于异常和新主题初始值 |
 | 2026-10-24 | 键缺失使用默认彩虹；损坏/不可用/版本不兼容使用回退主题 |
+| 2026-10-25 | 移除“当前分配”9 格总览；回退警告保留并直接位于主题卡网格上方 |
 | 2026-10-24 | 盲玩色默认改为 `#3498db`；仍是主题级单色，所有非空方块统一 |
 | 2026-10-24 | `fontColor` 改为逐块 `fontPalette`，长度与 `palette` 一致，每项 `auto` 或 `#rrggbb` |
 | 2026-10-24 | 增加方块内边框 `innerBorder`；整盘统一；颜色支持透明，宽度 0–0.1；内置/回退/新建默认透明/0 |

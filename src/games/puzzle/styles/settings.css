@@ -291,6 +291,17 @@ body.settings-page {
   outline-offset: 3px;
 }
 
+/* 游戏主题没有 radio，使用中的卡片由 controller 根据覆盖范围加类。 */
+.theme-card--game.theme-card--in-use .theme-card__surface,
+.theme-card--game.theme-card--in-use:hover .theme-card__surface {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  box-shadow:
+    var(--settings-raised-shadow),
+    0 0 0 1px var(--color-accent),
+    0 0 0 3px rgb(52 152 219 / 0.14);
+}
+
 .theme-preview {
   display: flex;
   gap: 4px;
@@ -412,19 +423,30 @@ body.settings-page {
   transform: scale(1);
 }
 
+.theme-fallback-warning {
+  margin: 1.25rem 0 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid #e5c07b;
+  border-radius: var(--settings-radius-sm);
+  background: #fff8e6;
+  color: #6b4b00;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
 /*
- * 游戏主题卡片：上方是 10×10 棋盘预览，下方是名称/内置徽标/编辑按钮。
+ * 游戏主题卡片：上方是支持的最大阶数棋盘预览，下方是名称/内置徽标/编辑按钮。
  * 主题卡和加号卡共用最小高度，换行后尺寸保持一致。
  */
 .theme-options.theme-options--game {
-  --game-theme-card-min-height: 19.5rem;
+  --game-theme-card-min-height: 20.25rem;
 
   grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
 }
 
 .theme-card--game,
 .theme-add-card {
-  min-height: var(--game-theme-card-min-height, 19.5rem);
+  min-height: var(--game-theme-card-min-height, 20.25rem);
 }
 
 .theme-card--game {
@@ -439,7 +461,8 @@ body.settings-page {
 .theme-card__preview {
   display: grid;
   place-items: center;
-  min-height: 15rem;
+  min-height: 15.5rem;
+  padding-top: 0.75rem;
   overflow: hidden;
   pointer-events: none;
 }
@@ -447,6 +470,26 @@ body.settings-page {
 /* BoardView 由 JS 创建，外层只负责限制预览尺寸。 */
 .theme-preview-board {
   width: min(100%, 14rem);
+}
+
+/* 覆盖徽标固定在右上角，只是状态摘要，不拦截整卡点击。 */
+.theme-card__coverage {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  z-index: 2;
+  max-width: calc(100% - 1.1rem);
+  padding: 0.22rem 0.45rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .theme-card--game .theme-card__footer {
@@ -466,13 +509,24 @@ body.settings-page {
   white-space: nowrap;
 }
 
-/* 透明覆盖层负责整卡点击选中；棋盘里的 div 不直接放进 label。 */
+/* 透明按钮覆盖整卡；棋盘里的 div 不直接放进 button。 */
 .theme-card__hitarea {
+  appearance: none;
   position: absolute;
   inset: 0;
   z-index: 1;
-  border-radius: inherit;
+  padding: 0;
+  border: 0;
+  border-radius: var(--settings-radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
   cursor: pointer;
+}
+
+.theme-card__hitarea:focus-visible {
+  outline: 2px solid #1f6f9f;
+  outline-offset: 3px;
 }
 
 .theme-card__edit {
@@ -558,6 +612,119 @@ body.settings-page {
 
 .theme-add-note {
   margin-top: 1rem;
+}
+
+/* “应用到”对话框：桌面 5 列，窄屏 3 列；当前已应用项选中并锁定。 */
+.theme-assignment-dialog {
+  width: min(92vw, 34rem);
+}
+
+.theme-assignment-dialog .puzzle-button--primary {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.theme-assignment-dialog .puzzle-button--primary:hover:not(:disabled) {
+  border-color: var(--color-accent-hover);
+  background: var(--color-accent-hover);
+}
+
+.theme-assignment-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.theme-assignment-option {
+  display: flex;
+  min-height: 2.65rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.35rem;
+  border: 1px solid var(--settings-border);
+  border-radius: 8px;
+  background: var(--settings-surface);
+  color: var(--settings-text);
+  box-shadow: var(--settings-raised-shadow-active);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.theme-assignment-option:hover {
+  border-color: var(--settings-border-strong);
+  background: var(--settings-surface-hover);
+}
+
+.theme-assignment-option:has(input:checked) {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.theme-assignment-option--locked {
+  color: var(--settings-muted);
+  cursor: not-allowed;
+}
+
+.theme-assignment-option--locked:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.theme-assignment-option input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+.theme-assignment-option input:focus-visible {
+  outline: 2px solid #1f6f9f;
+  outline-offset: 2px;
+}
+
+.theme-assignment-option input:disabled {
+  cursor: not-allowed;
+}
+
+.theme-assignment-select-all {
+  appearance: none;
+  min-height: 2.65rem;
+  padding: 0 0.5rem;
+  border: 1px dashed var(--settings-border-strong);
+  border-radius: 8px;
+  background: var(--settings-surface);
+  color: var(--settings-text);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.theme-assignment-select-all:hover:not(:disabled):not([aria-disabled='true']) {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.theme-assignment-select-all:focus-visible {
+  outline: 2px solid #1f6f9f;
+  outline-offset: 2px;
+}
+
+.theme-assignment-select-all:disabled,
+.theme-assignment-select-all[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.theme-assignment-select-all[hidden] {
+  display: none;
 }
 
 .language-options {
@@ -893,6 +1060,10 @@ body.settings-page {
 
   .theme-options {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .theme-assignment-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .language-card__surface {

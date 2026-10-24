@@ -121,6 +121,7 @@ describe('saveAppearance / loadAppearanceResult', () => {
     expect(loadAppearanceResult(storage)).toEqual({
       status: 'corrupt',
       appearance: createFallbackAppearance(),
+      issue: 'invalid-json',
     });
 
     writeJson(storage, STORAGE_KEYS.appearance, {
@@ -130,6 +131,7 @@ describe('saveAppearance / loadAppearanceResult', () => {
     expect(loadAppearanceResult(storage)).toEqual({
       status: 'corrupt',
       appearance: createFallbackAppearance(),
+      issue: 'legacy-version',
     });
 
     writeJson(storage, STORAGE_KEYS.appearance, {
@@ -139,6 +141,27 @@ describe('saveAppearance / loadAppearanceResult', () => {
     expect(loadAppearanceResult(storage)).toEqual({
       status: 'corrupt',
       appearance: createFallbackAppearance(),
+      issue: 'unknown-version',
+    });
+  });
+
+  it('区分非法 envelope 与可归一化的 invalid-data', () => {
+    const storage = createMemoryStorage();
+    writeJson(storage, STORAGE_KEYS.appearance, 'not-an-envelope');
+    expect(loadAppearanceResult(storage)).toEqual({
+      status: 'corrupt',
+      appearance: createFallbackAppearance(),
+      issue: 'invalid-envelope',
+    });
+
+    writeJson(storage, STORAGE_KEYS.appearance, {
+      version: APPEARANCE_SCHEMA_VERSION,
+      data: 'not-an-appearance',
+    });
+    expect(loadAppearanceResult(storage)).toEqual({
+      status: 'corrupt',
+      appearance: createFallbackAppearance(),
+      issue: 'invalid-data',
     });
   });
 
@@ -160,6 +183,7 @@ describe('saveAppearance / loadAppearanceResult', () => {
 
     const result = loadAppearanceResult(storage);
     expect(result.status).toBe('corrupt');
+    expect(result.issue).toBe('invalid-data');
     expect(result.appearance.themes.map((theme) => theme.id)).toEqual([
       'rainbow',
       'rainbow-soft',

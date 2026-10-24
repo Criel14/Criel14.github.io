@@ -204,10 +204,21 @@ export function normalizeAppearance(raw: unknown): AppearanceState {
   return { themeIdBySize, themes };
 }
 
+/**
+ * 外观读取问题的细分原因。
+ *
+ * `status` 仍保持四态，供页面统一判断是否需要提示；`issue` 只用于区分提示文案。
+ * 版本不兼容和字段损坏都会返回回退/可恢复外观，但用户需要采取的操作不同。
+ */
+export type AppearanceReadIssue =
+  'invalid-json' | 'invalid-envelope' | 'legacy-version' | 'unknown-version' | 'invalid-data';
+
 /** 外观读取结果；无论状态如何都返回一份可用的外观。 */
 export interface AppearanceLoadResult {
   readonly status: StorageReadStatus;
   readonly appearance: AppearanceState;
+  /** 仅在 status 为 corrupt 时提供，说明具体是版本不兼容还是数据损坏。 */
+  readonly issue?: AppearanceReadIssue;
 }
 
 /**
@@ -230,16 +241,40 @@ export function loadAppearanceResult(
       case 'unavailable':
         return { status: 'unavailable', appearance: createFallbackAppearance() };
       case 'corrupt':
-        return { status: 'corrupt', appearance: createFallbackAppearance() };
+        return {
+          status: 'corrupt',
+          appearance: createFallbackAppearance(),
+          issue: 'invalid-json',
+        };
     }
   }
 
-  if (!isStorageEnvelope(result.value) || result.value.version !== APPEARANCE_SCHEMA_VERSION) {
-    return { status: 'corrupt', appearance: createFallbackAppearance() };
+  if (!isStorageEnvelope(result.value)) {
+    return {
+      status: 'corrupt',
+      appearance: createFallbackAppearance(),
+      issue: 'invalid-envelope',
+    };
+  }
+
+  if (result.value.version !== APPEARANCE_SCHEMA_VERSION) {
+    return {
+      status: 'corrupt',
+      appearance: createFallbackAppearance(),
+      issue: result.value.version === 3 ? 'legacy-version' : 'unknown-version',
+    };
+  }
+
+  if (!isAppearanceState(result.value.data)) {
+    return {
+      status: 'corrupt',
+      appearance: normalizeAppearance(result.value.data),
+      issue: 'invalid-data',
+    };
   }
 
   return {
-    status: isAppearanceState(result.value.data) ? 'ok' : 'corrupt',
+    status: 'ok',
     appearance: normalizeAppearance(result.value.data),
   };
 }

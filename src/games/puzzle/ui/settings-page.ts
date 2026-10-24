@@ -14,11 +14,11 @@ import {
   cloneAppearance,
   isAppearanceEqual,
 } from '../core/appearance/appearance';
-import { PUZZLE_SIZES } from '../core/board';
 import {
   loadAppearanceResult,
   normalizeAppearance,
   saveAppearance,
+  type AppearanceLoadResult,
 } from '../data/appearance-store';
 import { createGameThemePicker } from './game-theme-picker';
 import {
@@ -187,12 +187,36 @@ function setupSections(elements: SettingsElements): void {
   activate(resolveSettingsSection(window.location.hash).id, false);
 }
 
-function renderLoadStatus(banner: HTMLElement, statuses: readonly PreferencesReadStatus[]): void {
+function renderLoadStatus(
+  banner: HTMLElement,
+  preferenceStatus: PreferencesReadStatus,
+  appearanceResult: AppearanceLoadResult,
+): void {
   const messages: string[] = [];
-  if (statuses.includes('corrupt')) {
-    messages.push('检测到设置或外观数据损坏，已使用可恢复的值；保存后会覆盖原数据。');
+
+  if (preferenceStatus === 'corrupt') {
+    messages.push('检测到网站偏好数据损坏，已使用可恢复的值；保存后会覆盖原数据。');
   }
-  if (statuses.includes('unavailable')) {
+
+  switch (appearanceResult.issue) {
+    case 'legacy-version':
+    case 'unknown-version':
+      messages.push(
+        '外观数据版本不兼容，已使用系统回退主题。请清理 puzzle.v2.appearance 后重新选择主题。',
+      );
+      break;
+    case 'invalid-json':
+    case 'invalid-envelope':
+    case 'invalid-data':
+      messages.push(
+        '检测到外观数据损坏，已尽量恢复；无法恢复的阶数使用系统回退主题。保存后会覆盖原数据。',
+      );
+      break;
+    case undefined:
+      break;
+  }
+
+  if (preferenceStatus === 'unavailable' || appearanceResult.status === 'unavailable') {
     messages.push('浏览器存储不可用，修改可能无法保存。');
   }
 
@@ -260,10 +284,10 @@ function createPreferencesController(
 }
 
 /**
- * 主题选择 controller。
+ * 主题分配 controller。
  *
- * P8-4c-2a 临时兼容：选择主题时应用到该主题支持的全部阶数，页面仍是单选卡片；
- * P8-4c-2b 会替换为按阶数分配的“应用到”对话框。保存时写入完整 AppearanceState。
+ * 维护完整 AppearanceState 的 saved / draft；“应用到”对话框只修改其中的
+ * themeIdBySize，保存时再一次性写入完整外观数据。
  */
 function createAppearanceController(
   initial: AppearanceState,
@@ -275,12 +299,13 @@ function createAppearanceController(
 
   const picker = createGameThemePicker({
     root: elements.gameThemeRoot,
-    onSelect(themeId) {
-      const next = assignThemeToSizes(draft, themeId, PUZZLE_SIZES);
+    onAssign(themeId, sizes) {
+      const next = assignThemeToSizes(draft, themeId, sizes);
       if (next === draft) {
         return;
       }
       draft = next;
+      picker.render(draft);
       onChange();
     },
   });
@@ -310,7 +335,7 @@ export function mountSettingsPage(): void {
 
   const loadResult = loadPreferences();
   const appearanceResult = loadAppearanceResult();
-  renderLoadStatus(elements.loadBanner, [loadResult.status, appearanceResult.status]);
+  renderLoadStatus(elements.loadBanner, loadResult.status, appearanceResult);
   applyPreferences(loadResult.preferences);
 
   const controllers: SettingsController[] = [];
