@@ -13,6 +13,12 @@
   --color-surface: #fff;
   --color-surface-hover: #f5f5f5;
 
+  /* 全站主题色：设置页选中态、保存按钮和游戏页弹框选中项共用。 */
+  --color-accent: #3498db;
+  --color-accent-hover: #2f8fce;
+  --color-accent-soft: #e8f4fb;
+  --color-on-accent: #fff;
+
   /* 状态色与遮罩色：dialog / notice 等通用 UI 共用。 */
   --color-info: #0969da;
   --color-success: #1a7f37;

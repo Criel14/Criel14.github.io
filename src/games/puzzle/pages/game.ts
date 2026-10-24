@@ -80,6 +80,7 @@ interface GameElements {
   readonly retryExitButton: HTMLButtonElement;
   readonly statsActions: HTMLElement;
   readonly refreshButton: HTMLButtonElement;
+  readonly settingsLink: HTMLAnchorElement;
   readonly boardMount: HTMLElement;
 }
 
@@ -121,6 +122,7 @@ function getElements(): GameElements {
     retryExitButton: requireElement<HTMLButtonElement>('[data-action="exit-retry"]'),
     statsActions: requireElement<HTMLElement>('.stats-actions'),
     refreshButton: requireElement<HTMLButtonElement>('[data-action="refresh"]'),
+    settingsLink: requireElement<HTMLAnchorElement>('[data-action="settings"]'),
     boardMount: requireElement<HTMLElement>('#puzzle-board'),
   };
 }
@@ -358,14 +360,42 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
     return retryLoading || isSaving;
   }
 
-  /** 观察阶段和完成后的等待阶段都允许切换；running/重玩/保存/加载中锁定。 */
-  function canSwitchGroup(): boolean {
+  /** 观察阶段和完成后的等待阶段允许；running/重玩/保存/加载中锁定。 */
+  function canUseIdleActions(): boolean {
     return (
       !isBusy() &&
       !retryMode &&
       session !== null &&
       (session.phase === 'observing' || session.phase === 'solved')
     );
+  }
+
+  function canSwitchGroup(): boolean {
+    return canUseIdleActions();
+  }
+
+  /** 设置页是独立页面，进入会卸载当前局；只在不会误丢成绩的阶段允许。 */
+  function canOpenSettings(): boolean {
+    return canUseIdleActions() && pendingSettlements.length === 0;
+  }
+
+  function getSettingsDisabledReason(): string {
+    if (isSaving) {
+      return '正在保存，暂时无法打开设置';
+    }
+    if (pendingSettlements.length > 0) {
+      return '成绩尚未保存，暂时无法打开设置';
+    }
+    if (retryMode) {
+      return '重玩中无法打开设置';
+    }
+    if (retryLoading) {
+      return '正在加载重玩，暂时无法打开设置';
+    }
+    if (session === null) {
+      return '页面尚未就绪，暂时无法打开设置';
+    }
+    return '进行中无法打开设置';
   }
 
   function updateRetryUi(): void {
@@ -387,6 +417,11 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
     elements.groupButton.disabled = !groupEnabled;
     elements.refreshButton.disabled = busy;
     elements.retryExitButton.disabled = isSaving;
+
+    const settingsEnabled = canOpenSettings();
+    elements.settingsLink.setAttribute('aria-disabled', String(!settingsEnabled));
+    elements.settingsLink.classList.toggle('is-disabled', !settingsEnabled);
+    elements.settingsLink.title = settingsEnabled ? '设置' : getSettingsDisabledReason();
 
     for (const option of elements.sizeOptions) {
       option.disabled = busy || retryLocked;
@@ -1157,6 +1192,18 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
 
   lifecycle.listen(elements.refreshButton, 'click', () => {
     startNextGame();
+  });
+  lifecycle.listen(elements.settingsLink, 'click', (event) => {
+    if (!(event instanceof MouseEvent)) {
+      return;
+    }
+    // 新标签页不会卸载当前局，保留 Ctrl/Cmd/Shift/中键等原生行为。
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return;
+    }
+    if (!canOpenSettings()) {
+      event.preventDefault();
+    }
   });
   lifecycle.listen(elements.retryExitButton, 'click', () => {
     exitRetry();

@@ -21,8 +21,8 @@ body.game-page {
   --button-line: #dedede;
   --popover-bg: #fafafa;
   --option-hover: #eeeeee;
-  --selected-bg: #2b2b2b;
-  --selected-fg: #ffffff;
+  --selected-bg: var(--color-accent);
+  --selected-fg: var(--color-on-accent);
 
   height: 100dvh;
   padding: var(--page-pad-y) var(--page-pad-x);
@@ -194,11 +194,25 @@ body.game-page {
 }
 
 .icon-button:disabled,
+.icon-button[aria-disabled='true'],
 .group-button:disabled,
 .board-refresh:disabled,
 .popover-option:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+/* 禁用链接仍保留 href 以支持新标签页，只抑制左键和 Enter 的视觉反馈。 */
+.icon-button[aria-disabled='true']:hover {
+  background: var(--button-face);
+}
+
+.icon-button[aria-disabled='true']:active {
+  transform: none;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.95),
+    0 2px 4px rgb(0 0 0 / 0.08),
+    0 1px 1px rgb(0 0 0 / 0.04);
 }
 
 .board-refresh {

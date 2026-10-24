@@ -1,16 +1,17 @@
 # 数字华容道数据存储设计
 
-> 状态：P6 已完成（数据层与旧数据清理均已实现）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层已完成（2026-10-24）
+> 状态：P6 已完成（数据层与旧数据清理均已实现）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层已完成（2026-10-24）；P8-4b 独立设置页与 `site.v1.preferences` 已实现（2026-10-24，待手动验收）
 >
 > 分支：`refactor/vite-ts`
 >
-> 范围：localStorage / IndexedDB 分层、数据库 schema、repository API、录像紧凑编码、错误处理、容量估算
+> 范围：localStorage / IndexedDB 分层、全站偏好、数据库 schema、repository API、录像紧凑编码、错误处理、容量估算
 >
-> 配套文档：`docs/PUZZLE_ARCHITECTURE.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_SCORE_PAGE.md`、`docs/PUZZLE_TASKS.md`
+> 配套文档：`docs/PUZZLE_ARCHITECTURE.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_SCORE_PAGE.md`、`docs/PUZZLE_TASKS.md`、`docs/SETTINGS_PAGE.md`
 
 ## 0. 决策摘要
 
 - **设置和外观继续用 localStorage**：数据小、同步读写、页面启动即可用。
+- **全站偏好独立存储**：外观模式/语言存 localStorage `site.v1.preferences`（version 1），与拼图设置/外观分开；详见 `docs/SETTINGS_PAGE.md`。
 - **成绩列表和录像改用 IndexedDB**：数据大、需要按桶查询、需要原子事务。
 - **不使用 `puzzle.v2.meta`**：localStorage 的 envelope 自带 `version`，IndexedDB 用 `DB_VERSION`。
 - **分组按事件划分**：事件 = 阶数 + 游戏模式，共 18 个；每个事件固定 5 个分组，共 90 个。`GroupId` 为事件内槽位 1–5，只允许改名。详见 `docs/PUZZLE_SCORE_PAGE.md`。
@@ -29,6 +30,7 @@
 | --- | --- | --- | --- |
 | 游戏设置 | localStorage | `puzzle.v2.settings` | 同步 |
 | 外观主题 | localStorage | `puzzle.v2.appearance` | 同步 |
+| 全站偏好 | localStorage | `site.v1.preferences` | 同步 |
 | 成绩摘要 | IndexedDB | DB `puzzle.v2` → store `scores` | 异步 |
 | 录像 | IndexedDB | DB `puzzle.v2` → store `replays` | 异步 |
 | 旧版数据 | localStorage | `config` / `scores` / `currentScore` / `currentScoreList` | 只清理，不读取 |
@@ -59,13 +61,14 @@ v2 没有正式上线，不提供从这些键迁移到 IndexedDB 的逻辑。若
 | --- | --- |
 | `puzzle.v2.settings` | `{ version: 3, data: GameSettings }` |
 | `puzzle.v2.appearance` | `{ version: 3, data: AppearanceState }` |
+| `site.v1.preferences` | `{ version: 1, data: SitePreferences }` |
 
-- 所有键统一 `puzzle.v2.` 前缀；存储代际不变，envelope 版本随 schema 升级。
-- 缺失键返回默认设置 / 默认外观。
-- 旧 envelope 版本（2）在清缓存后不再存在；如未清理，会按损坏数据处理并回退默认值。
+- 拼图数据的键统一 `puzzle.v2.` 前缀；全站偏好使用 `site.v1.` 前缀，二者独立演进。
+- 缺失键分别返回默认设置 / 默认外观 / 默认全站偏好。
+- 拼图旧 envelope 版本（2）在清缓存后不再存在；如未清理，会按损坏数据处理并回退默认值。
 - JSON 解析失败、schema 非法时回退默认值，并记录一次警告，不让页面崩溃。
 - 写入失败（配额不足、存储不可用）抛出 `DataStoreError`，由页面显示非阻塞提示。
-- localStorage 是同步 API，设置/外观读取不需要 loading 状态。
+- localStorage 是同步 API，设置/外观/全站偏好读取不需要 loading 状态。
 
 ### 2.2 设置
 
@@ -95,9 +98,28 @@ v2 没有正式上线，不提供从这些键迁移到 IndexedDB 的逻辑。若
 - 内置主题不可修改、不可删除；自定义主题可以编辑颜色、盲玩色和 metrics。
 - 主题非法时过滤；`activeThemeId` 失效时回退第一个内置主题。
 - `Theme.blindTileColor` 是盲玩隐藏数字时的方块背景色，必须是 `#rrggbb`；缺失或非法的主题会被过滤。
-- 外观保存不重开当前局；运行中禁止打开外观编辑由 UI 执行。
+- P8-4b 设置页不读写外观；P8-4c 的外观编辑器先写 draft，用户点击“保存”后才写 `puzzle.v2.appearance`。
+- 设置页是独立页面；从 `observing` / `solved` 进入，运行中/重玩中/保存中禁用入口，避免卸载当前局。
 
-### 2.4 localStorage 适配器
+### 2.4 全站偏好
+
+| 项 | 值 |
+| --- | --- |
+| key | `site.v1.preferences` |
+| envelope | `{ version: 1, data: SitePreferences }` |
+| 默认值 | `{ themeMode: 'light', language: 'zh-CN' }` |
+| 代码 | `src/shared/preferences/` |
+| 设计 | `docs/SETTINGS_PAGE.md` |
+
+- `themeMode` 接受 `system` / `light` / `dark`，本轮 UI 只开放 `light`。
+- `language` 接受 `zh-CN` / `en`，本轮可保存但界面暂不翻译。
+- 缺失键不自动写入；用户在设置页点击“保存”才创建 key。
+- 读取状态为 `ok` / `missing` / `corrupt` / `unavailable`，页面按状态提示。
+- 字段级损坏时保留可恢复字段并返回 `corrupt`；保存时再一次性归一化并覆盖原数据。
+- 该 store 使用自己的轻量存储适配器，不依赖拼图 `data/local-storage.ts`；后续可合并到 `src/shared/storage/`。
+- 设置页路由当前是 `/puzzle-game/settings.html`，但 key 不放进 `puzzle.v2.*`，以后迁移全站设置页不需要迁移数据。
+
+### 2.5 localStorage 适配器
 
 `data/local-storage.ts` 提供：
 
@@ -122,6 +144,7 @@ writeJson(storage: StorageAdapter, key: string, value: unknown): void;
   - 存储访问失败为 `unavailable`，不再向上抛异常。
 - `writeJson` 捕获序列化错误和 `QuotaExceededError` 等异常，转换为 `DataStoreError`。
 - 页面和 core 不直接调用 `localStorage`；只有 data 层使用适配器。
+- 全站偏好不复用这个拼图适配器；见 2.4。
 
 ## 3. IndexedDB
 
@@ -405,6 +428,7 @@ saveSettings(settings: GameSettings, storage?: StorageAdapter): void;
 
 - `ensureSettingsResult` 只在完全缺失时写入默认设置（含 90 个分组），保证首次打开页面后分组数据存在；损坏数据不自动覆盖。
 - 设置默认值和归一化规则见 2.2。
+- 全站偏好的读取/保存与拼图设置/外观分开，接口和草稿流程见 `docs/SETTINGS_PAGE.md` 第 6 节。
 
 `data/appearance-store.ts`：
 
@@ -568,7 +592,7 @@ Playwright 阶段补充真实浏览器 IndexedDB 冒烟：
 - 删除成绩后录像不存在。
 - 清空当前分组后该桶为空，分组本身和其他组保留；清空当前事件后其他事件保留。
 - 分组改名后刷新仍生效，成绩和录像不受影响。
-- 设置和外观刷新后仍在（localStorage）。
+- 设置和外观刷新后仍在（localStorage）；全站偏好刷新后仍在。
 - 隐私模式/存储不可用的提示（可手动验收）。
 
 ## 9. 目录与依赖边界
@@ -587,6 +611,8 @@ src/games/puzzle/data/
 ├─ replay-store.ts     # IndexedDB：只读加载录像
 └─ legacy.ts           # 旧 localStorage 键清理
 ```
+
+全站偏好不在该目录，位于 `src/shared/preferences/`，不依赖拼图 data 层；设置页路由见 `docs/SETTINGS_PAGE.md`。
 
 依赖规则：
 

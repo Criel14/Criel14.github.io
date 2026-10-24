@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="设置网站外观、语言和游戏主题。" />
+    <title>设置</title>
+    <link rel="stylesheet" href="../src/shared/styles/base.css" />
+    <link rel="stylesheet" href="../src/games/puzzle/styles/settings.css" />
+  </head>
+  <body class="settings-page">
+    <!-- icon-sprite -->
+    <header class="settings-header">
+      <a
+        class="settings-back"
+        href="/puzzle-game/puzzle.html"
+        aria-label="返回游玩页面"
+        title="返回游玩页面"
+      >
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <use href="#icon-exit-retry"></use>
+        </svg>
+      </a>
+      <h1 class="settings-title">设置</h1>
+    </header>
+
+    <main class="settings-layout">
+      <nav class="settings-nav" data-settings-nav aria-label="设置分类"></nav>
+
+      <div class="settings-content">
+        <p class="settings-banner" data-load-banner role="status" hidden></p>
+
+        <section
+          class="settings-section"
+          data-settings-section="appearance"
+          aria-labelledby="settings-appearance-title"
+          hidden
+        >
+          <h2 class="settings-section__title" id="settings-appearance-title" tabindex="-1">
+            网站外观
+          </h2>
+          <p class="settings-section__description">
+            选择网站的显示主题。深色主题将在后续版本提供。
+          </p>
+
+          <div class="theme-options" role="radiogroup" aria-labelledby="settings-appearance-title">
+            <label class="theme-card theme-card--disabled" title="功能开发中">
+              <input
+                class="theme-card__input"
+                type="radio"
+                name="themeMode"
+                value="system"
+                data-setting="themeMode"
+                disabled
+              />
+              <span class="theme-card__surface">
+                <span class="theme-preview theme-preview--system" aria-hidden="true">
+                  <span class="theme-preview__half theme-preview__half--light"></span>
+                  <span class="theme-preview__half theme-preview__half--dark"></span>
+                </span>
+                <span class="theme-card__footer">
+                  <span class="theme-card__name">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <use href="#icon-monitor"></use>
+                    </svg>
+                    跟随系统
+                  </span>
+                  <span class="settings-badge">开发中</span>
+                </span>
+                <span class="settings-check" aria-hidden="true">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <use href="#icon-check"></use>
+                  </svg>
+                </span>
+              </span>
+            </label>
+
+            <label class="theme-card">
+              <input
+                class="theme-card__input"
+                type="radio"
+                name="themeMode"
+                value="light"
+                data-setting="themeMode"
+                checked
+              />
+              <span class="theme-card__surface">
+                <span class="theme-preview theme-preview--light" aria-hidden="true">
+                  <span class="theme-preview__half theme-preview__half--light"></span>
+                </span>
+                <span class="theme-card__footer">
+                  <span class="theme-card__name">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <use href="#icon-sun"></use>
+                    </svg>
+                    浅色
+                  </span>
+                </span>
+                <span class="settings-check" aria-hidden="true">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <use href="#icon-check"></use>
+                  </svg>
+                </span>
+              </span>
+            </label>
+
+            <label class="theme-card theme-card--disabled" title="功能开发中">
+              <input
+                class="theme-card__input"
+                type="radio"
+                name="themeMode"
+                value="dark"
+                data-setting="themeMode"
+                disabled
+              />
+              <span class="theme-card__surface">
+                <span class="theme-preview theme-preview--dark" aria-hidden="true">
+                  <span class="theme-preview__half theme-preview__half--dark"></span>
+                </span>
+                <span class="theme-card__footer">
+                  <span class="theme-card__name">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <use href="#icon-moon"></use>
+                    </svg>
+                    深色
+                  </span>
+                  <span class="settings-badge">开发中</span>
+                </span>
+                <span class="settings-check" aria-hidden="true">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <use href="#icon-check"></use>
+                  </svg>
+                </span>
+              </span>
+            </label>
+          </div>
+
+          <p class="settings-note" data-theme-note hidden>
+            当前版本暂不支持该主题；选择“浅色”后可以保存。
+          </p>
+        </section>
+
+        <section
+          class="settings-section"
+          data-settings-section="language"
+          aria-labelledby="settings-language-title"
+          hidden
+        >
+          <h2 class="settings-section__title" id="settings-language-title" tabindex="-1">语言</h2>
+          <p class="settings-section__description">
+            选择界面语言。英文界面翻译将在后续版本提供，当前会保存你的语言偏好。
+          </p>
+
+          <div class="language-options" role="radiogroup" aria-labelledby="settings-language-title">
+            <label class="language-card">
+              <input
+                class="language-card__input"
+                type="radio"
+                name="language"
+                value="zh-CN"
+                data-setting="language"
+                checked
+              />
+              <span class="language-card__surface">
+                <span class="language-card__code" aria-hidden="true">中</span>
+                <span class="language-card__text">
+                  <strong>中文</strong>
+                  <small>界面保持中文</small>
+                </span>
+                <span class="language-card__meta">
+                  <span class="settings-check" aria-hidden="true">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <use href="#icon-check"></use>
+                    </svg>
+                  </span>
+                </span>
+              </span>
+            </label>
+
+            <label class="language-card">
+              <input
+                class="language-card__input"
+                type="radio"
+                name="language"
+                value="en"
+                data-setting="language"
+              />
+              <span class="language-card__surface">
+                <span class="language-card__code" aria-hidden="true">EN</span>
+                <span class="language-card__text">
+                  <strong>English</strong>
+                  <small>界面暂时仍为中文</small>
+                </span>
+                <span class="language-card__meta">
+                  <span class="settings-badge">翻译开发中</span>
+                  <span class="settings-check" aria-hidden="true">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <use href="#icon-check"></use>
+                    </svg>
+                  </span>
+                </span>
+              </span>
+            </label>
+          </div>
+        </section>
+
+        <section
+          class="settings-section"
+          data-settings-section="game-theme"
+          aria-labelledby="settings-game-theme-title"
+          hidden
+        >
+          <h2 class="settings-section__title" id="settings-game-theme-title" tabindex="-1">
+            游戏主题
+          </h2>
+          <p class="settings-section__description">
+            自定义棋盘颜色、字号、间隙与圆角。主题编辑功能正在开发中。
+          </p>
+
+          <div class="settings-empty">
+            <p class="settings-empty__title">主题编辑功能开发中</p>
+            <p class="settings-empty__text">
+              后续将支持降阶、按行和固定色三种着色模式，并可分别调整字号、间隙和圆角。
+            </p>
+            <ul class="settings-mode-list" aria-label="计划支持的着色模式">
+              <li>降阶</li>
+              <li>按行</li>
+              <li>固定色</li>
+            </ul>
+            <button class="settings-button" type="button" disabled title="功能开发中">
+              自定义主题
+            </button>
+          </div>
+        </section>
+
+        <section
+          class="settings-section"
+          data-settings-section="about"
+          aria-labelledby="settings-about-title"
+          hidden
+        >
+          <h2 class="settings-section__title" id="settings-about-title" tabindex="-1">关于</h2>
+          <p class="settings-section__description">
+            Criel's Game Space 是一个纯静态的个人游戏站，不依赖后端服务。
+          </p>
+
+          <dl class="about-list">
+            <div class="about-row">
+              <dt>项目</dt>
+              <dd>Criel's Game Space</dd>
+            </div>
+            <div class="about-row">
+              <dt>仓库</dt>
+              <dd>
+                <a
+                  class="about-link"
+                  href="https://github.com/Criel14/Criel14.github.io"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  github.com/Criel14/Criel14.github.io
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <use href="#icon-external-link"></use>
+                  </svg>
+                </a>
+              </dd>
+            </div>
+            <div class="about-row">
+              <dt>GitHub</dt>
+              <dd>
+                <a
+                  class="about-link"
+                  href="https://github.com/Criel14"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  github.com/Criel14
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <use href="#icon-external-link"></use>
+                  </svg>
+                </a>
+              </dd>
+            </div>
+            <div class="about-row">
+              <dt>邮箱</dt>
+              <dd>
+                <a class="about-link" href="mailto:chencriel@qq.com">
+                  chencriel@qq.com
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <use href="#icon-mail"></use>
+                  </svg>
+                </a>
+              </dd>
+            </div>
+            <div class="about-row">
+              <dt>存储</dt>
+              <dd>设置和成绩保存在当前浏览器，不会上传到服务器。</dd>
+            </div>
+          </dl>
+        </section>
+      </div>
+    </main>
+
+    <div class="settings-savebar" data-savebar hidden>
+      <div class="settings-savebar__info">
+        <p class="settings-savebar__text">你有未保存的修改。</p>
+        <p class="settings-savebar__error" data-save-error role="alert" hidden></p>
+      </div>
+      <div class="settings-savebar__actions">
+        <button class="settings-button" type="button" data-action="reset">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <use href="#icon-rotate-ccw"></use>
+          </svg>
+          重置
+        </button>
+        <button class="settings-button settings-button--primary" type="button" data-action="save">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <use href="#icon-save"></use>
+          </svg>
+          <span data-save-label>保存</span>
+        </button>
+      </div>
+    </div>
+
+    <p class="visually-hidden" data-live-region aria-live="polite"></p>
+
+    <script type="module" src="/src/games/puzzle/pages/settings.ts"></script>
+  </body>
+</html>

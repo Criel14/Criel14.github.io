@@ -54,6 +54,7 @@ export default defineConfig({
       input: {
         home: entry('./index.html'),
         puzzle: entry('./puzzle-game/puzzle.html'),
+        puzzleSettings: entry('./puzzle-game/settings.html'),
         puzzleScores: entry('./puzzle-game/score-list.html'),
         puzzleReplay: entry('./puzzle-game/replay.html'),
         snake: entry('./snake-game/snake.html'),

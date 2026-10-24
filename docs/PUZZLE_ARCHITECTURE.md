@@ -1,26 +1,27 @@
 # 数字华容道重构架构
 
-> 状态：P0–P7 已实现；P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b～P8-6 待开始（P7-3 交互与视觉随 P8 手动验收）；回放、存储和成绩页的详细设计见独立文档
+> 状态：P0–P7 已实现；P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b 独立设置页与网站偏好已实现（2026-10-24，详见 `docs/SETTINGS_PAGE.md`，待手动验收），P8-4c～P8-6 待开始（P7-3 交互与视觉随 P8 手动验收）；回放、存储、设置页和成绩页的详细设计见独立文档
 >
 > 分支：`refactor/vite-ts`
 >
 > 范围：拼图模块（`puzzle-game`）；贪吃蛇不在本文范围
 >
-> 配套文档：`docs/PUZZLE_GAME_PAGE.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`、`docs/PUZZLE_SCORE_PAGE.md`、`docs/PUZZLE_TASKS.md`、`docs/REFACTOR_PLAN.md`、`docs/PUZZLE_GAME.md`
+> 配套文档：`docs/PUZZLE_GAME_PAGE.md`、`docs/SETTINGS_PAGE.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`、`docs/PUZZLE_SCORE_PAGE.md`、`docs/PUZZLE_TASKS.md`、`docs/REFACTOR_PLAN.md`、`docs/PUZZLE_GAME.md`
 >
 > 注意：`docs/PUZZLE_GAME.md` 描述的是旧版行为和历史数据格式，仅作功能参考；回放细节以 `docs/PUZZLE_REPLAY.md` 为准，存储细节以 `docs/PUZZLE_STORAGE.md` 为准，本文保留架构级约束。
 
 ## 0. 决策摘要
 
 - **旧数据不迁移、不兼容**。旧键只提供显式清理入口，新实现不读取旧成绩、旧配置和旧录像。
-- **存储分层**：设置、外观继续用 localStorage；成绩列表和录像使用 IndexedDB（`puzzle.v2`），利用索引查询和原子事务。详见 `docs/PUZZLE_STORAGE.md`。
+- **存储分层**：设置、外观和全站偏好继续用 localStorage；成绩列表和录像使用 IndexedDB（`puzzle.v2`），利用索引查询和原子事务。全站偏好使用 `site.v1.preferences`，详见 `docs/SETTINGS_PAGE.md` 和 `docs/PUZZLE_STORAGE.md`。
 - **录像紧凑编码**：core / UI 使用 `ReplayRecord`，IndexedDB 中由 data 层编码为 `directions + timeDeltas`，读取时解码。
 - **分组按事件划分**。事件 = 阶数 + 游戏模式，共 18 个；每个事件固定 5 个分组，`GroupId` 为 1–5，共 90 个。只允许修改名称，不新增、不删除；成绩桶由 `size + gameMode + groupId` 组成。分组管理见 `docs/PUZZLE_SCORE_PAGE.md`。
 - **录像先全量保存**。每条成绩保留对应录像；容量评估和后续清理策略见 `docs/PUZZLE_STORAGE.md`。
 - **纯逻辑优先**。`core` 不碰 DOM / localStorage / IndexedDB；`data` 负责持久化与校验；`ui` 只做 DOM；`pages` 负责组装。
 - **成绩只存事实**。`tps`、`number`、`ao5`、`ao12`、时间格式化全部读时派生。
 - **页面间不通过 localStorage 传状态**。回放、重玩使用 URL 参数 + score id。
-- **外观统一到 `Theme`**：每个主题包含一种着色模式（降阶 / 按行 / 固定色）、盲玩隐藏数字颜色和自带的字号、间隙、圆角；内置先保留两套降阶预设。
+- **外观统一到 `Theme`**：每个主题包含一种着色模式（降阶 / 按行 / 固定色）、盲玩隐藏数字颜色和自带的字号、间隙、圆角；内置先保留两套降阶预设。外观编辑器在 P8-4c 接入独立设置页。
+- **设置页独立**：P8-4b 使用 `/puzzle-game/settings.html`，采用分类导航 + 草稿/保存条；不再使用游戏页模态框。详见 `docs/SETTINGS_PAGE.md`。
 - **计时使用单调时钟 + 显式 session 状态机**；回放使用时间轴 + `requestAnimationFrame`，详见 `docs/PUZZLE_REPLAY.md`。
 - **不引入 UI 框架、状态库、插件系统**。项目规模不大，边界清晰比抽象层数更重要。
 
@@ -255,6 +256,7 @@ export interface AppearanceState {
 | --- | --- | --- |
 | 游戏设置 | localStorage | `puzzle.v2.settings`，`{ version: 3, data: GameSettings }` |
 | 外观主题 | localStorage | `puzzle.v2.appearance`，`{ version: 3, data: AppearanceState }` |
+| 全站偏好 | localStorage | `site.v1.preferences`，`{ version: 1, data: SitePreferences }` |
 | 成绩摘要 | IndexedDB | DB `puzzle.v2` → store `scores`，主键 `id` |
 | 录像 | IndexedDB | DB `puzzle.v2` → store `replays`，主键 `scoreId` |
 
@@ -268,7 +270,8 @@ IndexedDB 索引：
 
 ### 5.2 读写规则
 
-- 设置、外观：同步读写；缺失或损坏时回退默认值；写入失败显示非阻塞提示。
+- 拼图设置、外观：同步读写；缺失或损坏时回退默认值；写入失败显示非阻塞提示。
+- 全站偏好：由设置页独立读写，不参与游戏页 settings/appearance 的启动加载；缺失、损坏或不可用的处理见 `docs/SETTINGS_PAGE.md`。
 - 成绩、录像：异步 repository；新增、删除、按桶/按事件清空都在**同一个 IndexedDB 事务**中完成，不再需要写入顺序和回滚逻辑。
 - 统计页只调用 `listScoresByBucket(filter)`，不加载录像；回放页只加载一条成绩和一条录像。
 - 所有读取都经过 schema 校验；非法成绩跳过，非法/缺失录像返回 `null`，不让整页崩溃。
@@ -302,13 +305,13 @@ hasLegacyData(): boolean;
 clearLegacyData(): void;
 ```
 
-- 不自动删除；在设置页“维护”区域或开发时手动调用。
+- 不自动删除；未来的设置页“维护”分类或开发时手动调用。
 - GitHub Pages 与 Netlify 是不同 origin，需要分别在对应域名下清理。
 - v2 尚未上线，不存在从旧 v2 localStorage 键迁移到 IndexedDB 的逻辑。
 
 ### 5.5 存储选型
 
-- 设置、外观继续使用同步 `localStorage`：数据小、启动即用。
+- 设置、外观和全站偏好继续使用同步 `localStorage`：数据小、启动即用；全站偏好由设置页独立读写。
 - 成绩、录像使用 IndexedDB：配额更大、支持索引查询和跨 store 原子事务。
 - IndexedDB 通过 `idb` 轻量封装；单元测试使用 `fake-indexeddb`。
 - 页面只依赖 repository 接口，不直接操作 localStorage / IndexedDB。
@@ -475,7 +478,7 @@ getSessionResult(state: SessionState): SessionResult | null;
 - `tps` 使用当前 `elapsedMs` 计算。
 - 页面用 `performance.now()` 作为 `createdAtMs` / `atMs` / `nowMs`；`createdAtEpochMs` 只在创建时取一次 `Date.now()`。
 - 不做暂停。页面切到后台时 rAF 停止，但墙钟继续；回到前台后 `getSessionView` 自动追上。
-- 运行中不允许打开设置面板或改外观；左栏参数切换允许，但会放弃当前局并重新开局。该策略由 UI 执行，core 不处理。
+- 设置页是独立页面；`observing` / `solved` 可进入，运行中/重玩中/保存中禁用，避免卸载当前局。P8-4c 的主题编辑在设置页内进行，不再有“打开设置面板”的模态流程。左栏参数切换允许，但会放弃当前局并重新开局。该策略由 UI 执行，core 不处理。
 
 ### 7.5 移动
 
@@ -746,19 +749,21 @@ function getTileLayer(tile: number, size: PuzzleSize): number {
 
 ### 10.4 设置交互
 
-- 外观编辑实时预览，显式保存；保存外观不重开一局。
-- 运行中禁止打开设置；只有 `observing` / `solved` 状态可编辑。
-- 设置页编辑当前自定义主题的着色模式、色板、空白色、字体色和 metrics。
-- 内置主题只读；用户修改内置主题时，先复制成自定义主题，再编辑副本。
+- 设置页是独立页面 `/puzzle-game/settings.html`，详见 `docs/SETTINGS_PAGE.md`。
+- P8-4b 只做设置页骨架、外观/语言偏好和保存条；P8-4c 才接入游戏主题编辑器。
+- 外观编辑在 P8-4c 中先进入本地 draft，显式保存后才写 `puzzle.v2.appearance`；不能在每次选色时直接落库。
+- 设置页从 `observing` / `solved` 进入；运行中/重玩中/保存中禁用，避免当前局被卸载。
+- 游戏主题编辑只编辑自定义主题；内置主题只读，修改时先复制成自定义主题，再编辑副本。
 - 自定义主题第一版展示 3 个 UI 槽位；数据模型允许列表扩展。
-- 分组按事件划分：每个事件固定 5 个（`GroupId` 1–5），设置页只允许修改当前事件的名称；分组管理入口和成绩页行为见 `docs/PUZZLE_SCORE_PAGE.md`。
-- 自定义光标、极简 UI 属于 `GameSettings`，不属于 `Theme`。
-- 预设加载/自定义方案加载只修改内存状态；保存后才写 `puzzle.v2.appearance`。
+- 分组管理集中在成绩页；设置页不重复实现，后续如需要只放跳转链接。
+- 自定义光标、极简 UI 属于 `GameSettings`，不属于 `Theme`；P8-5 再决定是否接入设置页“游戏”分类。
+- 预设加载/自定义方案加载只修改草稿；保存后才写 `puzzle.v2.appearance`。
 
 ### 10.5 页面主题 token
 
 - 拼图外观主题只控制方块；页面背景、文字、边框、按钮、弹窗和提示使用 `src/shared/styles/base.css` 的语义 token。
-- 当前 token：`--color-bg`、`--color-text`、`--color-muted`、`--color-border`、`--color-border-muted`、`--color-surface`、`--color-surface-hover`。
+- 当前 token：`--color-bg`、`--color-text`、`--color-muted`、`--color-border`、`--color-border-muted`、`--color-surface`、`--color-surface-hover`、`--color-accent`、`--color-accent-hover`、`--color-accent-soft`、`--color-on-accent`。
+- 主题色 `--color-accent: #3498DB` 用于设置页选中项、保存按钮和游戏页弹框选中项；详细取舍见 `docs/SETTINGS_PAGE.md` 第 7 节。
 - 深色/浅色主题只需在 `html[data-theme='dark']` 覆盖这些 token，并同步 `color-scheme`；本轮只建立 token 层，不实现切换入口。
 - 棋盘 CSS 不写死页面颜色；空白块透明时自然透出页面背景。
 
@@ -811,20 +816,31 @@ src/games/puzzle/
 │  ├─ format.ts
 │  ├─ board-view.ts
 │  ├─ board-input.ts
+│  ├─ settings-page.ts
 │  ├─ dialog.ts
 │  ├─ notice.ts
 │  └─ lifecycle.ts
 ├─ pages/
 │  ├─ game.ts
+│  ├─ settings.ts
 │  ├─ stats.ts
 │  └─ replay.ts
 └─ styles/
    ├─ board.css
    ├─ overlays.css
    ├─ game.css
+   ├─ settings.css
    ├─ stats.css
    └─ replay.css
+
+src/shared/preferences/
+├─ types.ts        # SitePreferences、默认值、key/version
+├─ store.ts        # 读取、归一化、保存、存储错误
+├─ draft.ts        # 脏状态比较、重置
+└─ apply.ts        # 应用到 document（深色模式/i18n 预留）
 ```
+
+设置页由 `pages/settings.ts` 组装，`ui/settings-page.ts` 负责导航、表单和保存条；`src/shared/preferences/` 不依赖拼图 core/data。
 
 ### 11.1 依赖规则
 
@@ -837,6 +853,7 @@ types ← core ← ui   ← pages
 - `data` 不得 import `ui`、`pages`，不得访问 `document` / `window`；localStorage / IndexedDB 只能通过 data 层的适配器访问。
 - `ui` 不得 import `data`；需要数据时由 `pages` 传入。
 - `pages` 是唯一允许同时 import `core` / `data` / `ui` 的层。
+- `pages/settings.ts` 可以 import `src/shared/preferences/`；`ui/settings-page.ts` 不直接访问 localStorage，由页面注入 controller。
 - `pages` 负责 await 异步 repository，并处理 loading / 存储错误。
 - 禁止循环依赖。
 
@@ -846,6 +863,7 @@ types ← core ← ui   ← pages
 - 其他 core 模块直接按文件 import，不做大而全的 barrel。
 - `data/*-store.ts` 只导出 repository 函数；页面不直接操作 localStorage / IndexedDB。
 - 设置、外观 repository 为同步 API，读取返回带 `status` 的结果；成绩、录像 repository 为异步 API；`probeScoreStorage()` 用于页面启动时探测 IndexedDB。
+- 全站偏好由 `src/shared/preferences/store.ts` 提供同步 API，不经过拼图 data 层；设置页负责把结果转换为 controller。
 - `data/db.ts`、`data/local-storage.ts`、`data/replay-codec.ts` 属于 data 层内部实现，页面不直接 import。
 - `ui/board-view.ts` 不关心成绩、session、统计，只接收 `Board` + `Theme`；`Theme` 已包含 metrics。`update` 只重绘变化的格子，`setTheme` 只更新 CSS 变量和颜色。
 - `ui/board-input.ts` 只上报格子下标和原始事件，不 import `core` 的 session/moves，不判断 `moveMode`；页面决定点击、滑动或忽略。
@@ -855,6 +873,7 @@ types ← core ← ui   ← pages
 | 页面     | URL                                                       | 说明                               |
 | -------- | --------------------------------------------------------- | ---------------------------------- |
 | 游戏页   | `/puzzle-game/puzzle.html`                                | 设置从 `puzzle.v2.settings` 读取   |
+| 设置页   | `/puzzle-game/settings.html`                              | 全站偏好 + 游戏主题；详见 `docs/SETTINGS_PAGE.md` |
 | 重玩     | `/puzzle-game/puzzle.html?retry=<scoreId>`                | 使用该成绩的配置与打乱，不保存结果 |
 | 成绩页   | `/puzzle-game/score-list.html?size=4&mode=normal&group=1` | 事件 + 分组筛选；group 使用事件内槽位 1–5 |
 | 成绩详情 | 同上，追加 `&score=<id>`                                  | 原生 `<dialog>`，可刷新恢复        |
@@ -864,13 +883,14 @@ types ← core ← ui   ← pages
 - 不使用 `currentScore` / `currentScoreList` 作为页面间通道。
 - 非法参数回退：`size` 回退 settings 中的阶数，`mode` 回退 `normal`，`group` 回退 1–5 中的有效槽位（优先 settings 当前槽位）。
 - 筛选变化用 `history.pushState`；详情打开/关闭同步 `score` 参数。
-- 旧 URL 路径保留，不新增重定向。
+- 旧 URL 路径保留，不新增重定向；新增设置页路径 `/puzzle-game/settings.html`。
+- 设置页分类使用 hash（`#appearance` / `#language` / `#game-theme` / `#about`），切换用 `history.replaceState`，不污染后退历史。
 
 ## 13. 测试策略
 
 - **core**：Vitest 单元测试；时间、随机源、棋盘全部通过参数注入；不依赖 DOM。
-- **data**：localStorage 适配器用内存 `Storage` 测试；IndexedDB repository 用 `fake-indexeddb` 测试；覆盖缺键、损坏 JSON、非法记录、配额/不可用错误、索引查询、原子事务。
-- **ui**：纯格式化函数和 lifecycle 用 Vitest node 单测；dialog / notice / board-view 等 DOM 交互不引入 DOM 模拟环境，以手动验收和后续 Playwright 为主。
+- **data**：localStorage 适配器用内存 `Storage` 测试；IndexedDB repository 用 `fake-indexeddb` 测试；覆盖缺键、损坏 JSON、非法记录、配额/不可用错误、索引查询、原子事务。全站偏好 store 使用内存适配器测试，不依赖浏览器。
+- **ui**：纯格式化函数和 lifecycle 用 Vitest node 单测；dialog / notice / board-view / 设置页等 DOM 交互不引入 DOM 模拟环境，以手动验收和后续 Playwright 为主。
 - **测试命名**：中文描述，和现有 `board.test.ts` / `moves.test.ts` 保持一致。
 - **每次提交前**：
   ```bash
@@ -889,13 +909,18 @@ types ← core ← ui   ← pages
 - appearance：2–10 层映射、三种着色模式取色、两套内置主题不可变、主题级 metrics clamp、自定义主题复制/删除、主题切换不重建棋盘。
 - ui：lifecycle 的 signal / 监听器 / 定时器 / rAF 清理；dialog / notice 的 Esc、焦点回收、非阻塞提示在 P8 手动验收。
 - data：localStorage 设置/外观读写、IndexedDB 原子事务、`by-bucket` / `by-event` 索引、按桶/事件/全部清空、录像编码往返、90 个事件级分组与改名、旧键不读取、清理旧键。
+- preferences：缺键/损坏/不可用状态、字段归一化、保存往返、脏状态比较和重置。
+- settings：hash 分类、草稿/重置/保存、未保存提示条、语言偏好、运行中设置入口禁用，随 P8-4b 手动验收和 P8-6 E2E 覆盖。
 
 ## 14. 决策记录
 
 | 决策       | 选择                                     | 理由                                                    |
 | ---------- | ---------------------------------------- | ------------------------------------------------------- |
 | 旧数据     | 不迁移、不兼容                           | 站点已无用户；减少历史特例和迁移代码                    |
-| 存储分层   | localStorage（设置/外观）+ IndexedDB（成绩/录像） | 小数据同步读写；大数据支持索引、配额和原子事务 |
+| 存储分层   | localStorage（设置/外观/全站偏好）+ IndexedDB（成绩/录像） | 小数据同步读写；大数据支持索引、配额和原子事务 |
+| 全站偏好   | `site.v1.preferences`，version 1         | 外观/语言与拼图私有数据分开；迁移全站设置页不迁移数据    |
+| 设置页     | 独立页面 + 草稿/保存条                   | 分类可扩展；避免模态框拥挤；重置/丢弃语义清晰            |
+| 主题色     | `#3498DB` + 白字                         | 统一设置页和游戏页选中态；接受小字号对比度取舍          |
 | 成绩模型   | 只存事实，派生值读时算                   | 消除 time/tps/ao/number 不一致                          |
 | 平均       | 算术平均；ao 才用去尾平均                | 数学语义清晰，旧数据已丢弃                              |
 | 分组       | 事件级固定 5 组，`GroupId` 1–5，仅允许改名 | 分组属于 `size + gameMode` 事件；避免全局分组与模式错位；90 组存储可忽略 |
@@ -913,7 +938,8 @@ types ← core ← ui   ← pages
 | 内置预设   | 先保留两套降阶                           | 复刻旧视觉；按行/固定色的默认预设后续再定               |
 | 颜色选择器 | 原生 `<input type="color">`              | 无额外依赖，旧数据已丢弃                                |
 | 图表       | ECharts 懒加载                           | 统计页才加载；core 与渲染解耦                           |
-| 运行中设置 | 禁止                                     | 避免改外观/设置影响当前局计时与公平性                   |
+| 运行中设置 | 禁止                                     | 设置页是独立页面，进入会离开当前局；避免误丢成绩         |
+| 设置页路由 | 先放 `/puzzle-game/settings.html`        | 不占用全站根路径；偏好 key 已按全站设计，后续可迁移      |
 | 存储选型   | localStorage + IndexedDB + repository    | 设置小且需同步；成绩/录像大且需要索引和原子事务         |
 | IDB 封装   | `idb` + `fake-indexeddb`                 | 轻量、类型完整；避免手写事务/请求封装；测试可覆盖事务和索引 |
 
@@ -922,6 +948,7 @@ types ← core ← ui   ← pages
 以下不阻塞当前实现：
 
 - 分组数量扩展（超过每事件 5 组）需要 IndexedDB / localStorage schema 迁移；当前固定 5 组/事件。
+- 设置页迁移到全站 `/settings.html`、深色主题、多语言和游戏主题编辑器（P8-4c），详见 `docs/SETTINGS_PAGE.md`。
 - 分组名称 i18n：默认名按浏览器语言切换 `分组N` / `GroupN`，已有名称不自动翻译；见 `docs/PUZZLE_SCORE_PAGE.md`。
 - 录像保留策略（只保留最近 N 月、只保留最佳成绩录像、只删录像保留成绩）；当前先全量保存。
 - 更多内置预设（按行/固定色）与预设管理；当前只保留两套降阶内置主题。

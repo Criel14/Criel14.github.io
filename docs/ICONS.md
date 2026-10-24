@@ -1,6 +1,6 @@
 # 图标规范
 
-> 状态：2026-10-24 起使用本地 SVG sprite 统一管理图标。游戏页图标已全部迁移到 sprite；占位页的 `←`、弹窗/提示的 `×`、首页卡片的 `→` 仍为文字字符，暂不处理。
+> 状态：2026-10-24 起使用本地 SVG sprite 统一管理图标。游戏页图标已全部迁移到 sprite；设置页图标已随 P8-4b 加入；占位页的 `←`、弹窗/提示的 `×`、首页卡片的 `→` 仍为文字字符，暂不处理。
 
 ## 目标
 
@@ -23,6 +23,11 @@
   - `refresh` ← Lucide `rotate-cw`
   - `exit-retry` ← Lucide `undo-2`
   - `chevron-down` ← Lucide `chevron-down`
+  - `arrow-left` ← Lucide `arrow-left`
+  - `paintbrush` / `globe` / `palette` / `info` ← 同名 Lucide 图标
+  - `rotate-ccw` / `save` / `check` / `external-link` / `mail` ← 同名 Lucide 图标
+  - `monitor` / `sun` / `moon` ← 同名 Lucide 图标
+- `palette` 的四个圆点使用 `fill="currentColor"`；它是 sprite 中唯一带填充的图标，其余图标保持只描边。
 - Lucide 使用 ISC License；部分图标派生自 Feather，另有 MIT 许可。
 - 新增图标时在下方“图标清单”登记来源和许可。
 
@@ -139,11 +144,32 @@ HTML 中这样使用：
 | `size`           | 左栏阶数按钮     | 基于 Lucide 修改    | 已迁移（2026-10-24）        |
 | `home`           | 回到主页         | Lucide `house`      | 已迁移（2026-10-24）        |
 | `refresh`        | 刷新棋盘         | Lucide `rotate-cw`  | 已迁移（2026-10-24）        |
-| `exit-retry`     | 重玩状态栏退出   | Lucide `undo-2`     | 已迁移（2026-10-24）        |
+| `exit-retry`     | 重玩状态栏退出 / 设置页返回 | Lucide `undo-2`     | 已迁移；设置页复用（2026-10-24） |
 | `chevron-down`   | 分组弹框展开     | Lucide `chevron-down` | 已迁移（2026-10-24）      |
 | `←`              | 占位页返回首页   | 文字字符            | 暂不处理                    |
 | `×`              | 弹窗/提示关闭    | 文字字符            | 暂不处理                    |
 | `→`              | 首页游戏卡片箭头 | 文字字符            | 暂不处理                    |
+
+### P8-4b 设置页图标
+
+以下图标已随 P8-4b 加入 sprite，沿用 Lucide 几何和 1.8 线宽规范：
+
+| 名称            | 用途             | 来源                  | 状态                  |
+| --------------- | ---------------- | --------------------- | --------------------- |
+| `paintbrush`    | 外观分类         | Lucide `paintbrush`   | 已加入（2026-10-24）  |
+| `globe`         | 语言分类         | Lucide `globe`        | 已加入（2026-10-24）  |
+| `palette`       | 游戏主题分类     | Lucide `palette`      | 已加入（2026-10-24）  |
+| `info`          | 关于分类         | Lucide `info`         | 已加入（2026-10-24）  |
+| `rotate-ccw`    | 重置未保存修改   | Lucide `rotate-ccw`   | 已加入（2026-10-24）  |
+| `save`          | 保存设置         | Lucide `save`         | 已加入（2026-10-24）  |
+| `monitor`       | 跟随系统主题     | Lucide `monitor`      | 已加入（2026-10-24）  |
+| `sun`           | 浅色主题         | Lucide `sun`          | 已加入（2026-10-24）  |
+| `moon`          | 深色主题         | Lucide `moon`         | 已加入（2026-10-24）  |
+| `check`         | 选中态标记       | Lucide `check`        | 已加入（2026-10-24）  |
+| `external-link` | 关于页外链       | Lucide `external-link` | 已加入（2026-10-24） |
+| `mail`          | 关于页邮箱       | Lucide `mail`         | 已加入（2026-10-24）  |
+
+外观、语言、游戏主题三个导航图标于 2026-10-24 按用户提供的 Lucide SVG 替换；`palette` 的圆点保留 `fill="currentColor"`。设置页返回按钮复用游戏页重玩状态栏的 `exit-retry` 图标；`arrow-left` 仍保留在 sprite 中，当前设置页不再使用。
 
 ## 构建机制
 
@@ -158,7 +184,7 @@ HTML 中这样使用：
 
 ## 后续
 
-- 游戏页图标已全部迁移到 sprite；后续只处理占位页 `←`、弹窗/提示 `×`、首页 `→` 是否也改为 SVG。
+- 游戏页图标已全部迁移到 sprite；设置页图标已随 P8-4b 加入并登记，后续只处理占位页 `←`、弹窗/提示 `×`、首页 `→` 是否也改为 SVG。
 - 评估线宽是否从 `1.8` 统一为 Lucide 默认的 `2`。
 - 成绩页、回放页、贪吃蛇页新增图标时直接复用本方案。
 - 需要动态生成图标时，再在 `src/shared/icons/` 增加 `createIcon(name)` 工具，避免在业务代码里拼 SVG 字符串。
