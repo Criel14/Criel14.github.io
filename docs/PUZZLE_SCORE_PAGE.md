@@ -17,7 +17,7 @@ P8 完成后，游戏页已经能打乱、计时、保存成绩与录像、重�
 - 分组从“全局 10 组”改为“事件级固定 5 组”。事件指 `阶数 + 游戏模式`，共 18 个；总计最多 90 个分组。
 - 成绩页按“事件 → 分组”二级筛选，不再把阶数、模式和分组拆成互不相关的三个控件。
 - 分组可以改名，但不能新增、删除或排序；改名不影响已保存成绩。
-- 分组管理集中在成绩页，游戏页只负责切换；设置页 P8-4b 负责网站偏好，游戏主题列表在 P8-4c-1，独立主题编辑器在 P8-4c-2，详见 `docs/PUZZLE_THEME.md`。
+- 分组管理集中在成绩页，游戏页只负责切换；设置页 P8-4b 负责网站偏好，游戏主题在 P8-4c-2（按阶数分配 + 回退主题 + 独立编辑器），详见 `docs/PUZZLE_THEME.md`。
 - 成绩页展示统计、列表、高亮、详情和图表；删除/清空后局部刷新，不整页 reload。
 
 非目标：
@@ -67,7 +67,7 @@ P8 完成后，游戏页已经能打乱、计时、保存成绩与录像、重�
 
 ### 1.2 数据与兼容
 
-- localStorage 键名继续使用 `puzzle.v2.settings` / `puzzle.v2.appearance`；envelope `version` 升到 3。
+- localStorage 键名继续使用 `puzzle.v2.settings` / `puzzle.v2.appearance`；settings envelope 为 version 3，appearance envelope 为 version 4（P8-4c-2 起；外观 v3 不做迁移）。
 - IndexedDB 数据库名继续使用 `puzzle.v2`；`DB_VERSION` 升到 2。
 - v2 尚未上线，不做旧分组数据迁移；开发环境清空缓存即可。
 - `ScoreRecord.groupId` 仍为 `1–5` 的数字；成绩的 `size` / `gameMode` 提供事件上下文。

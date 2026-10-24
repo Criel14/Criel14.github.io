@@ -17,7 +17,7 @@ function isRenderableTile(tile: number, size: number): boolean {
   return isPuzzleSize(size) && Number.isInteger(tile) && tile > 0 && tile < size * size;
 }
 
-/** 按主题模式把方块映射到 palette 的 0-based 索引；空白/非法返回 null。 */
+/** 按主题模式把方块映射到 palette / fontPalette 的 0-based 索引；空白/非法返回 null。 */
 function getPaletteIndex(tile: number, size: number, color: ColorMode): number | null {
   if (!isRenderableTile(tile, size)) {
     return null;
@@ -44,6 +44,15 @@ function getPaletteColor(tile: number, size: number, color: ColorMode): string |
   return color.palette[index] ?? FALLBACK_COLOR;
 }
 
+/** 取方块对应的字体色配置；索引越界时回退 auto。 */
+function getFontPaletteColor(tile: number, size: number, color: ColorMode): string {
+  const index = getPaletteIndex(tile, size, color);
+  if (index === null) {
+    return AUTO_FONT_COLOR;
+  }
+  return color.fontPalette[index] ?? AUTO_FONT_COLOR;
+}
+
 /** 主题里的空白色非法时退回透明，避免把棋盘染成白色。 */
 function getSafeBlankColor(color: ColorMode): string {
   return isValidBlankColor(color.blankColor) ? color.blankColor : TRANSPARENT;
@@ -54,9 +63,14 @@ export function isValidHexColor(value: string): boolean {
   return /^#[0-9a-fA-F]{6}$/.test(value);
 }
 
-/** 空白色允许透明或 #rrggbb。 */
+/** 空白色和内边框颜色都允许透明或 #rrggbb。 */
 export function isValidBlankColor(value: string): boolean {
   return value === TRANSPARENT || isValidHexColor(value);
+}
+
+/** 字体色允许 auto 或 #rrggbb。 */
+export function isValidFontColor(value: string): boolean {
+  return value === AUTO_FONT_COLOR || isValidHexColor(value);
 }
 
 function parseHexColor(value: string): [number, number, number] | null {
@@ -92,6 +106,7 @@ export function getReadableFontColor(background: string): string {
   return luminance > 0.179 ? '#000000' : FALLBACK_COLOR;
 }
 
+/** 解析单个字体色；auto 或非法值都按背景亮度计算。 */
 function resolveFontColor(background: string, fontColor: string): string {
   if (fontColor !== AUTO_FONT_COLOR && isValidHexColor(fontColor)) {
     return fontColor;
@@ -113,7 +128,7 @@ export function getTileFontColor(tile: number, size: number, theme: Theme): stri
     return TRANSPARENT;
   }
   const background = getPaletteColor(tile, size, theme.color) ?? FALLBACK_COLOR;
-  return resolveFontColor(background, theme.color.fontColor);
+  return resolveFontColor(background, getFontPaletteColor(tile, size, theme.color));
 }
 
 /** 统一返回方块视觉；board-view 只需消费这一个函数。 */
@@ -125,26 +140,43 @@ export function getTileVisual(tile: number, size: number, theme: Theme): TileVis
   const background = getPaletteColor(tile, size, theme.color) ?? FALLBACK_COLOR;
   return {
     background,
-    color: resolveFontColor(background, theme.color.fontColor),
+    color: resolveFontColor(background, getFontPaletteColor(tile, size, theme.color)),
   };
 }
 
 function cloneColorMode(color: ColorMode): ColorMode {
   switch (color.mode) {
     case 'layer':
-      return { ...color, palette: [...color.palette] };
+      return {
+        mode: 'layer',
+        palette: [...color.palette],
+        fontPalette: [...color.fontPalette],
+        blankColor: color.blankColor,
+      };
     case 'row':
-      return { ...color, palette: [...color.palette] };
+      return {
+        mode: 'row',
+        palette: [...color.palette],
+        fontPalette: [...color.fontPalette],
+        blankColor: color.blankColor,
+      };
     case 'fixed':
-      return { ...color, palette: [...color.palette] };
+      return {
+        mode: 'fixed',
+        palette: [...color.palette],
+        fontPalette: [...color.fontPalette],
+        blankColor: color.blankColor,
+      };
   }
 }
 
-/** 深拷贝主题，避免调用方共享 palette 或 metrics 引用。 */
+/** 深拷贝主题，避免调用方共享 palette、fontPalette、supportedSizes 或 metrics 引用。 */
 export function cloneTheme(theme: Theme): Theme {
   return {
     ...theme,
+    supportedSizes: [...theme.supportedSizes],
     color: cloneColorMode(theme.color),
+    innerBorder: { ...theme.innerBorder },
     metrics: { ...theme.metrics },
   };
 }

@@ -9,6 +9,10 @@
   --gap-size: calc(100cqw / var(--board-size) * var(--tile-gap-ratio));
   --cell-size: calc((100cqw - (var(--board-size) - 1) * var(--gap-size)) / var(--board-size));
 
+  /* 内边框不改变方块外尺寸；padding 和字号都按边框内区域计算。 */
+  --tile-inner-border-width: calc(var(--cell-size) * var(--tile-inner-border-width-ratio, 0));
+  --tile-inner-size: calc(var(--cell-size) - 2 * var(--tile-inner-border-width));
+
   display: grid;
   grid-template-columns: repeat(var(--board-size), 1fr);
   gap: var(--gap-size);
@@ -25,7 +29,9 @@
   border-radius: calc(var(--cell-size) * var(--tile-radius-ratio));
   background-color: var(--tile-bg, transparent);
   color: var(--tile-fg, transparent);
-  font-size: calc(var(--cell-size) * var(--tile-font-ratio));
+  padding: var(--tile-inner-border-width);
+  box-shadow: inset 0 0 0 var(--tile-inner-border-width) var(--tile-inner-border-color, transparent);
+  font-size: calc(var(--tile-inner-size) * var(--tile-font-ratio));
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1;

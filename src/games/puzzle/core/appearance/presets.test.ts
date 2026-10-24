@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import { PUZZLE_SIZES } from '../board';
 import {
   BUILTIN_THEMES,
   DEFAULT_BLIND_TILE_COLOR,
+  DEFAULT_INNER_BORDER,
   DEFAULT_METRICS,
   DEFAULT_THEME_ID,
+  FALLBACK_THEME,
+  FALLBACK_THEME_ID,
 } from './presets';
 
 const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
@@ -71,21 +75,24 @@ describe('BUILTIN_THEMES', () => {
     expect(theme.color.palette).toHaveLength(18);
   });
 
-  it('所有颜色都是合法 #rrggbb，空白和字体色符合约定', () => {
+  it('支持全部阶数，颜色、字体色、空白色和内边框符合约定', () => {
     for (const theme of BUILTIN_THEMES) {
       for (const color of theme.color.palette) {
         expect(color).toMatch(HEX_COLOR_PATTERN);
       }
+      expect(theme.supportedSizes).toEqual(PUZZLE_SIZES);
       expect(theme.color.blankColor).toBe('transparent');
-      expect(theme.color.fontColor).toBe('#ffffff');
+      expect(theme.color.fontPalette).toHaveLength(18);
+      expect(theme.color.fontPalette.every((color) => color === '#ffffff')).toBe(true);
+      expect(theme.innerBorder).toEqual({ color: 'transparent', widthRatio: 0 });
     }
   });
 
-  it('两套内置主题的盲玩色都沿用旧版蓝色', () => {
+  it('两套内置主题的盲玩色都使用新的主题蓝', () => {
     for (const theme of BUILTIN_THEMES) {
-      expect(theme.blindTileColor).toBe('#66ccff');
+      expect(theme.blindTileColor).toBe('#3498db');
     }
-    expect(DEFAULT_BLIND_TILE_COLOR).toBe('#66ccff');
+    expect(DEFAULT_BLIND_TILE_COLOR).toBe('#3498db');
   });
 
   it('保留旧预设的尺寸比例', () => {
@@ -109,12 +116,55 @@ describe('BUILTIN_THEMES', () => {
   it('常量和内部数组都被冻结', () => {
     expect(Object.isFrozen(BUILTIN_THEMES)).toBe(true);
     expect(Object.isFrozen(DEFAULT_METRICS)).toBe(true);
+    expect(Object.isFrozen(DEFAULT_INNER_BORDER)).toBe(true);
 
     for (const theme of BUILTIN_THEMES) {
       expect(Object.isFrozen(theme)).toBe(true);
+      expect(Object.isFrozen(theme.supportedSizes)).toBe(true);
       expect(Object.isFrozen(theme.color)).toBe(true);
       expect(Object.isFrozen(theme.color.palette)).toBe(true);
+      expect(Object.isFrozen(theme.color.fontPalette)).toBe(true);
+      expect(Object.isFrozen(theme.innerBorder)).toBe(true);
       expect(Object.isFrozen(theme.metrics)).toBe(true);
     }
+  });
+});
+
+describe('FALLBACK_THEME', () => {
+  it('不进入内置主题列表，但自身标记为 builtin', () => {
+    expect(BUILTIN_THEMES.some((theme) => theme.id === FALLBACK_THEME_ID)).toBe(false);
+    expect(FALLBACK_THEME.id).toBe('fallback');
+    expect(FALLBACK_THEME.name).toBe('回退主题');
+    expect(FALLBACK_THEME.builtin).toBe(true);
+  });
+
+  it('支持全部阶数，使用中性蓝和 auto 字体色', () => {
+    expect(FALLBACK_THEME.supportedSizes).toEqual(PUZZLE_SIZES);
+    expect(FALLBACK_THEME.color.mode).toBe('layer');
+    expect(FALLBACK_THEME.color.palette).toHaveLength(18);
+    expect(FALLBACK_THEME.color.palette.every((color) => color === '#3498db')).toBe(true);
+    expect(FALLBACK_THEME.color.fontPalette).toHaveLength(18);
+    expect(FALLBACK_THEME.color.fontPalette.every((color) => color === 'auto')).toBe(true);
+    expect(FALLBACK_THEME.color.blankColor).toBe('transparent');
+    expect(FALLBACK_THEME.innerBorder).toEqual({ color: 'transparent', widthRatio: 0 });
+    expect(FALLBACK_THEME.blindTileColor).toBe('#3498db');
+  });
+
+  it('使用更疏的间距和无圆角', () => {
+    expect(FALLBACK_THEME.metrics).toEqual({
+      fontSizeRatio: 0.5,
+      gapRatio: 0.06,
+      radiusRatio: 0,
+    });
+  });
+
+  it('内部结构和数组都被冻结', () => {
+    expect(Object.isFrozen(FALLBACK_THEME)).toBe(true);
+    expect(Object.isFrozen(FALLBACK_THEME.supportedSizes)).toBe(true);
+    expect(Object.isFrozen(FALLBACK_THEME.color)).toBe(true);
+    expect(Object.isFrozen(FALLBACK_THEME.color.palette)).toBe(true);
+    expect(Object.isFrozen(FALLBACK_THEME.color.fontPalette)).toBe(true);
+    expect(Object.isFrozen(FALLBACK_THEME.innerBorder)).toBe(true);
+    expect(Object.isFrozen(FALLBACK_THEME.metrics)).toBe(true);
   });
 });

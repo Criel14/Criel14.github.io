@@ -1,5 +1,5 @@
 import type { AppearanceState, Theme } from '../types';
-import { CUSTOM_THEME_SLOT_COUNT } from '../core/appearance/appearance';
+import { CUSTOM_THEME_SLOT_COUNT, getPreviewSize } from '../core/appearance/appearance';
 import { createIcon } from '../../../shared/icons/create-icon';
 import { createThemePreview, type ThemePreview } from './theme-preview';
 
@@ -34,7 +34,7 @@ function createCheck(): HTMLSpanElement {
 function createThemeCard(
   theme: Theme,
   index: number,
-  activeThemeId: string,
+  displayedThemeId: string,
   previews: ThemePreview[],
 ): HTMLElement {
   const card = document.createElement('div');
@@ -46,10 +46,10 @@ function createThemeCard(
   const input = document.createElement('input');
   input.className = 'theme-card__input';
   input.type = 'radio';
-  input.name = 'activeThemeId';
+  input.name = 'themeIdBySize';
   input.value = theme.id;
   input.id = inputId;
-  input.checked = theme.id === activeThemeId;
+  input.checked = theme.id === displayedThemeId;
   input.setAttribute('aria-label', theme.builtin ? `${theme.name}（内置主题）` : theme.name);
 
   const surface = document.createElement('div');
@@ -58,7 +58,7 @@ function createThemeCard(
   const previewPanel = document.createElement('div');
   previewPanel.className = 'theme-card__preview';
   previewPanel.setAttribute('aria-hidden', 'true');
-  const preview = createThemePreview({ theme, size: 10 });
+  const preview = createThemePreview({ theme, size: getPreviewSize(theme) });
   previews.push(preview);
   previewPanel.append(preview.element);
 
@@ -148,8 +148,9 @@ export function createGameThemePicker(options: GameThemePickerOptions): GameThem
     const grid = document.createElement('div');
     grid.className = 'theme-options theme-options--game';
 
+    // P8-4c-2a 临时兼容：完整版按阶数分配 UI 在 P8-4c-2b 替换。
     for (const [index, theme] of appearance.themes.entries()) {
-      grid.append(createThemeCard(theme, index, appearance.activeThemeId, previews));
+      grid.append(createThemeCard(theme, index, appearance.themeIdBySize[4], previews));
     }
 
     const customThemeCount = appearance.themes.filter((theme) => !theme.builtin).length;
@@ -159,7 +160,7 @@ export function createGameThemePicker(options: GameThemePickerOptions): GameThem
       if (!(event.target instanceof HTMLInputElement)) {
         return;
       }
-      if (event.target.name !== 'activeThemeId') {
+      if (event.target.name !== 'themeIdBySize') {
         return;
       }
       onSelect(event.target.value);

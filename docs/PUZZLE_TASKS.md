@@ -4,7 +4,7 @@
 >
 > 当前分支：`refactor/vite-ts`
 >
-> 状态：P0–P7 已完成；P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b 独立设置页与网站偏好已实现（2026-10-24，见 `docs/SETTINGS_PAGE.md`，待手动验收），P8-4c 拆成 P8-4c-1 主题列表（已实现，待手动验收）和 P8-4c-2 独立编辑器（待开始），P8-5～P8-6 待开始（P7-3 的交互与视觉随 P8 接入手动验收）；P5/P6 详细设计见 `docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`，成绩页与分组管理见 `docs/PUZZLE_SCORE_PAGE.md`，游戏主题见 `docs/PUZZLE_THEME.md`
+> 状态：P0–P7 已完成；P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b 独立设置页与网站偏好已实现（2026-10-24，见 `docs/SETTINGS_PAGE.md`，待手动验收），P8-4c-1 主题列表已实现（待手动验收），P8-4c-2 设计确认（2026-10-24），P8-4c-2a 主题模型升级与存储已实现（2026-10-24），P8-4c-2b～e 待开始，P8-5～P8-6 待开始（P7-3 的交互与视觉随 P8 接入手动验收）；P5/P6 详细设计见 `docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`，成绩页与分组管理见 `docs/PUZZLE_SCORE_PAGE.md`，游戏主题见 `docs/PUZZLE_THEME.md`
 >
 > 标记：`[ ]` 未开始 / `[~]` 进行中 / `[x]` 已完成 / `[!]` 阻塞
 >
@@ -27,7 +27,7 @@
 | P10  | 回放页                    | P5、P6、P7 | `[ ]` |
 | P11  | 文档、清理与验收          | P8–P10     | `[ ]` |
 
-**当前进度：P0–P7 已完成，P8-0 已确认，P8-1 / P8-2 / P8-3 / P8-4a-0 / P8-4a / P8-4b 已完成；分组模型已切换为事件级 90 组，分组弹框已接通，设置页骨架与网站偏好已实现，P8-4c-1 设置页主题列表已实现（待手动验收），下一步 P8-4c-2 独立主题编辑器。** P8 起进入页面组装，按顺序推进，不提前写页面；游戏页详细设计和布局实验见 `docs/PUZZLE_GAME_PAGE.md`，设置页设计见 `docs/SETTINGS_PAGE.md`，游戏主题与编辑器见 `docs/PUZZLE_THEME.md`，成绩页与分组管理见 `docs/PUZZLE_SCORE_PAGE.md`，游戏页后续以 `docs/PUZZLE_GAME_PAGE.md` 的“5.5 实现基线”为准。
+**当前进度：P0–P7 已完成，P8-0 已确认，P8-1 / P8-2 / P8-3 / P8-4a-0 / P8-4a / P8-4b 已完成；分组模型已切换为事件级 90 组，分组弹框已接通，设置页骨架与网站偏好已实现，P8-4c-1 设置页主题列表已实现（待手动验收）；P8-4c-2a 主题模型升级与存储已实现并通过自动检查（2026-10-24），下一步实现 P8-4c-2b 设置页按阶数分配。** P8 起进入页面组装，按顺序推进，不提前写页面；游戏页详细设计和布局实验见 `docs/PUZZLE_GAME_PAGE.md`，设置页设计见 `docs/SETTINGS_PAGE.md`，游戏主题与编辑器见 `docs/PUZZLE_THEME.md`，成绩页与分组管理见 `docs/PUZZLE_SCORE_PAGE.md`，游戏页后续以 `docs/PUZZLE_GAME_PAGE.md` 的“5.5 实现基线”为准。
 
 每个阶段结束都运行：
 
@@ -105,6 +105,8 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 ---
 
 ## P2 appearance 纯逻辑
+
+> 备注（2026-10-24）：P2 的主题类型、`activeThemeId`、`fontColor` 和盲玩色默认值描述是历史实现记录；P8-4c-2 已把模型升级为 `supportedSizes` + `themeIdBySize` + 逐块 `fontPalette` + `innerBorder` + 回退主题，当前契约以 `docs/PUZZLE_THEME.md` 和 `docs/PUZZLE_ARCHITECTURE.md` 为准。
 
 ### P2-0 主题类型重构
 
@@ -352,6 +354,8 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ## P6 data 层（localStorage + IndexedDB）与旧数据清理
 
+> 备注（2026-10-24）：P6 中 `SCHEMA_VERSION = 3`、`fontColor`、`activeThemeId` 的描述是历史实现记录；P8-4c-2 已拆分为 settings v3 / appearance v4，并改用 `themeIdBySize`、`fontPalette`、`innerBorder`。当前契约以 `docs/PUZZLE_THEME.md` 和 `docs/PUZZLE_STORAGE.md` 为准。
+
 ### P6-1 localStorage 适配器与 IndexedDB 初始化
 
 - [x] 文件：`src/games/puzzle/core/groups.ts`、`groups.test.ts`、`src/games/puzzle/data/local-storage.ts`、`local-storage.test.ts`、`db.ts`、`db.test.ts`、`errors.ts`、`errors.test.ts`
@@ -486,6 +490,8 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ### P7-2a 主题盲玩颜色
 
+> 备注（2026-10-24）：本条是 P7-2a 历史记录；P8-4c-2 已把默认盲玩色改为 `#3498db`，并继续作为主题字段保留。当前值以 `docs/PUZZLE_THEME.md` 为准。
+
 - [x] 文件：`src/games/puzzle/types.ts`、`core/appearance/presets.ts`、`metrics.ts`、`data/schema.ts`、`appearance-store.ts` 及对应测试
 - 内容：
   - `Theme` 新增 `blindTileColor`，必须是 `#rrggbb`，默认 `#66ccff`。
@@ -533,7 +539,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 > 详细设计、布局实验与 P8-0～P8-6 任务见 `docs/PUZZLE_GAME_PAGE.md`；设置页设计见 `docs/SETTINGS_PAGE.md`；游戏主题与编辑器见 `docs/PUZZLE_THEME.md`。
 >
-> 当前：P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b 设置页与网站偏好已实现（2026-10-24，待手动验收），P8-4c-1 设置页主题列表已实现（2026-10-24，待手动验收）。下一步 P8-4c-2 独立主题编辑器。后续游戏页实现以 `docs/PUZZLE_GAME_PAGE.md` 的“5.5 实现基线”为准，设置页以 `docs/SETTINGS_PAGE.md` 为准，`prototype/layout-lab.html` 保留到最终视觉验收。
+> 当前：P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b 设置页与网站偏好已实现（2026-10-24，待手动验收），P8-4c-1 设置页主题列表已实现（2026-10-24，待手动验收），P8-4c-2 设计确认（2026-10-24），P8-4c-2a 主题模型升级与存储已实现（2026-10-24，自动检查通过），P8-4c-2b 设置页按阶数分配待开始。后续游戏页实现以 `docs/PUZZLE_GAME_PAGE.md` 的“5.5 实现基线”为准，设置页以 `docs/SETTINGS_PAGE.md` 为准，游戏主题以 `docs/PUZZLE_THEME.md` 为准，`prototype/layout-lab.html` 保留到最终视觉验收。
 >
 > 分组管理和成绩页的交互见 `docs/PUZZLE_SCORE_PAGE.md`；P8-4a 只负责游戏页的分组切换，不负责重命名。
 >
@@ -549,7 +555,11 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 | P8-4a | 游戏页分组弹框                    | `[x]` |
 | P8-4b | 设置页与网站偏好                  | `[x]` |
 | P8-4c-1 | 设置页主题列表与选择              | `[x]` |
-| P8-4c-2 | 独立主题编辑器                    | `[ ]` |
+| P8-4c-2a | 主题模型升级与存储（外观 v4）    | `[x]` |
+| P8-4c-2b | 设置页按阶数分配与对话框          | `[ ]` |
+| P8-4c-2c | 游戏页按阶数解析与回退提示        | `[ ]` |
+| P8-4c-2d | 主题编辑器                        | `[ ]` |
+| P8-4c-2e | 测试、文档与手动验收              | `[ ]` |
 | P8-5 | 光标、极简 UI 与可访问性          | `[ ]` |
 | P8-6 | 游戏页 E2E                        | `[ ]` |
 

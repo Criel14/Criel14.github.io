@@ -3,6 +3,9 @@ import type { Board, PuzzleSize } from '../types';
 export const MIN_SIZE = 2;
 export const MAX_SIZE = 10;
 
+/** 全部阶数，按升序排列；主题支持范围、按阶数分配和设置页共用同一顺序。 */
+export const PUZZLE_SIZES: readonly PuzzleSize[] = Object.freeze([2, 3, 4, 5, 6, 7, 8, 9, 10]);
+
 /** 判断一个数字是否是合法阶数。 */
 export function isPuzzleSize(value: number): value is PuzzleSize {
   return Number.isInteger(value) && value >= MIN_SIZE && value <= MAX_SIZE;

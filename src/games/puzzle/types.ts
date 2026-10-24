@@ -165,16 +165,21 @@ export interface SessionResult {
 /** 着色模式对象共有的字段。 */
 interface ColorModeFields {
   /**
-   * 调色板长度由 mode 决定：
+   * 方块背景色。长度由 mode 决定：
    * - layer：18，索引 0–17 对应层 1–18；
    * - row：10，索引 0–9 对应数字块原本所属的第 1–10 行；
    * - fixed：99，索引 0–98 对应数字 1–99。
    */
   readonly palette: readonly string[];
-  /** 空白格背景色；默认 transparent。 */
+
+  /**
+   * 方块字体色。与 palette 等长，索引一一对应。
+   * 每一项为 'auto' 或 '#rrggbb'；'auto' 根据该块背景自动选黑/白。
+   */
+  readonly fontPalette: readonly string[];
+
+  /** 空白格背景色；整盘统一。默认 transparent。 */
   readonly blankColor: string;
-  /** 'auto' 按背景亮度自动选黑/白；否则为 #rrggbb。 */
-  readonly fontColor: string;
 }
 
 /** 降阶：现有 L 形分层，颜色绑定数字块。 */
@@ -197,7 +202,7 @@ export type ColorMode = LayerColorMode | RowColorMode | FixedColorMode;
 
 /** 某个主题自带的尺寸比例；以实际格子边长为基准计算，不保存固定像素值。 */
 export interface BoardMetrics {
-  /** 字号 = 格子边长 × fontSizeRatio，范围 0–1。 */
+  /** 字号 = 边框内边长 × fontSizeRatio，范围 0–1。 */
   readonly fontSizeRatio: number;
   /** 间隙 = 格子边长 × gapRatio，范围 0–0.1。 */
   readonly gapRatio: number;
@@ -205,24 +210,37 @@ export interface BoardMetrics {
   readonly radiusRatio: number;
 }
 
-/** 统一外观入口：颜色模式、盲玩颜色和尺寸比例都属于主题。 */
+/** 方块内边框；整盘统一，不改变方块外尺寸。 */
+export interface ThemeInnerBorder {
+  /** 'transparent' 或 '#rrggbb'。 */
+  readonly color: string;
+  /** 单边宽度 = 格子边长 × widthRatio；0–0.1，0 表示无边框。 */
+  readonly widthRatio: number;
+}
+
+/** 统一外观入口：颜色、边框、盲玩色和尺寸比例都属于主题。 */
 export interface Theme {
   readonly id: string;
   readonly name: string;
   readonly builtin: boolean;
+  /** 主题设计上支持的阶数；非空、升序、去重，默认全部 2–10。 */
+  readonly supportedSizes: readonly PuzzleSize[];
   readonly color: ColorMode;
+  /** 方块内边框；整盘统一。 */
+  readonly innerBorder: ThemeInnerBorder;
   /**
    * 盲玩隐藏数字时，所有非空方块的背景色。
-   * 必须为 #rrggbb；默认沿用旧版 #66ccff，用户可在自定义主题里调整。
+   * 必须为 #rrggbb；默认 #3498db，用户可在自定义主题里调整。
    * 空白块仍使用 color.blankColor，不参与这个颜色。
    */
   readonly blindTileColor: string;
   readonly metrics: BoardMetrics;
 }
 
-/** 外观状态；activeThemeId 必须能解析到 themes 中的主题，否则回退内置主题。 */
+/** 外观状态：每个阶数一个主题 ID + 主题列表。 */
 export interface AppearanceState {
-  readonly activeThemeId: string;
+  /** 9 个键必须齐全；异常时允许指向 FALLBACK_THEME_ID。 */
+  readonly themeIdBySize: Readonly<Record<PuzzleSize, string>>;
   readonly themes: readonly Theme[];
 }
 

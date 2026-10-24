@@ -9,7 +9,12 @@ import {
 } from '../../../shared/preferences/store';
 import type { SitePreferences } from '../../../shared/preferences/types';
 import type { AppearanceState } from '../types';
-import { cloneAppearance, isAppearanceEqual, setActiveTheme } from '../core/appearance/appearance';
+import {
+  assignThemeToSizes,
+  cloneAppearance,
+  isAppearanceEqual,
+} from '../core/appearance/appearance';
+import { PUZZLE_SIZES } from '../core/board';
 import {
   loadAppearanceResult,
   normalizeAppearance,
@@ -185,7 +190,7 @@ function setupSections(elements: SettingsElements): void {
 function renderLoadStatus(banner: HTMLElement, statuses: readonly PreferencesReadStatus[]): void {
   const messages: string[] = [];
   if (statuses.includes('corrupt')) {
-    messages.push('检测到设置数据损坏，已使用其中可恢复的值；保存后会覆盖原数据。');
+    messages.push('检测到设置或外观数据损坏，已使用可恢复的值；保存后会覆盖原数据。');
   }
   if (statuses.includes('unavailable')) {
     messages.push('浏览器存储不可用，修改可能无法保存。');
@@ -257,8 +262,8 @@ function createPreferencesController(
 /**
  * 主题选择 controller。
  *
- * 只负责 `activeThemeId` 的 draft/保存/重置；主题内容编辑在独立的
- * theme-editor.html 中进行。保存时写入完整 AppearanceState。
+ * P8-4c-2a 临时兼容：选择主题时应用到该主题支持的全部阶数，页面仍是单选卡片；
+ * P8-4c-2b 会替换为按阶数分配的“应用到”对话框。保存时写入完整 AppearanceState。
  */
 function createAppearanceController(
   initial: AppearanceState,
@@ -271,7 +276,7 @@ function createAppearanceController(
   const picker = createGameThemePicker({
     root: elements.gameThemeRoot,
     onSelect(themeId) {
-      const next = setActiveTheme(draft, themeId);
+      const next = assignThemeToSizes(draft, themeId, PUZZLE_SIZES);
       if (next === draft) {
         return;
       }

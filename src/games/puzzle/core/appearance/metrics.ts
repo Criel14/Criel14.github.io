@@ -1,5 +1,5 @@
-import type { BoardMetrics, Theme } from '../../types';
-import { DEFAULT_BLIND_TILE_COLOR, DEFAULT_METRICS } from './presets';
+import type { BoardMetrics, Theme, ThemeInnerBorder } from '../../types';
+import { DEFAULT_BLIND_TILE_COLOR, DEFAULT_INNER_BORDER, DEFAULT_METRICS } from './presets';
 import { isValidBlankColor, isValidHexColor } from './theme';
 
 /** 把数值夹取到 [min, max]；非有限值由 normalizeMetrics 负责回退。 */
@@ -28,11 +28,30 @@ export function normalizeMetrics(raw: unknown): BoardMetrics {
 }
 
 /**
+ * 归一化方块内边框。
+ *
+ * 颜色非法时回退透明；宽度非有限数时回退 0，有限但越界时夹取到 0–0.1。
+ * 宽度是“格子边长的比例”，不是像素值。
+ */
+export function normalizeInnerBorder(raw: unknown): ThemeInnerBorder {
+  const record = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {};
+  const color =
+    typeof record.color === 'string' && isValidBlankColor(record.color)
+      ? record.color
+      : DEFAULT_INNER_BORDER.color;
+  const widthRatio = readRatio(record.widthRatio, 0, 0.1, DEFAULT_INNER_BORDER.widthRatio);
+
+  return { color, widthRatio };
+}
+
+/**
  * 生成棋盘全局 CSS 变量。
- * palette 颜色由 getTileVisual 逐个 tile 应用，这里只负责空白色、盲玩色和固定的比例。
+ * palette 颜色和逐块字体色由 getTileVisual 逐个 tile 应用，这里只负责空白色、
+ * 盲玩色、内边框和固定的比例。
  */
 export function toCssVariables(theme: Theme): Readonly<Record<string, string>> {
   const metrics = normalizeMetrics(theme.metrics);
+  const innerBorder = normalizeInnerBorder(theme.innerBorder);
   const blankColor = isValidBlankColor(theme.color.blankColor)
     ? theme.color.blankColor
     : 'transparent';
@@ -43,6 +62,8 @@ export function toCssVariables(theme: Theme): Readonly<Record<string, string>> {
   return Object.freeze({
     '--blank-color': blankColor,
     '--blind-tile-bg': blindTileColor,
+    '--tile-inner-border-color': innerBorder.color,
+    '--tile-inner-border-width-ratio': String(innerBorder.widthRatio),
     '--tile-font-ratio': String(metrics.fontSizeRatio),
     '--tile-gap-ratio': String(metrics.gapRatio),
     '--tile-radius-ratio': String(metrics.radiusRatio),

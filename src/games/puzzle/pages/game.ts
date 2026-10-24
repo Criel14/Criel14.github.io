@@ -18,7 +18,7 @@ import type {
   SessionConfig,
   SessionState,
 } from '../types';
-import { getActiveTheme } from '../core/appearance/appearance';
+import { getThemeForSize } from '../core/appearance/appearance';
 import { isPuzzleSize } from '../core/board';
 import { getGroupName as resolveGroupName, isGroupId } from '../core/groups';
 import { generateScramble } from '../core/scramble';
@@ -210,7 +210,7 @@ function reportLoadStatus(
     title: isSettings ? '设置数据已损坏' : '外观数据已损坏',
     message: isSettings
       ? '已回退到可恢复的设置，部分选项可能恢复为默认值。'
-      : '已回退到默认主题，部分自定义主题可能不可用。',
+      : '已使用系统回退主题，部分自定义主题可能不可用。',
     duration: 8_000,
   });
 }
@@ -306,7 +306,6 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
   const elements = getElements();
   renderSettings(settings, elements);
 
-  const theme = getActiveTheme(appearanceResult.appearance);
   let session: SessionState | null = null;
   let boardView: BoardView | null = null;
   let boardSize: PuzzleSize | null = null;
@@ -538,7 +537,7 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
     boardView = createBoardView({
       root: elements.boardMount,
       size,
-      theme,
+      theme: getThemeForSize(appearanceResult.appearance, size),
       numbersVisible: true,
     });
     boardSize = size;

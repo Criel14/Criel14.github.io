@@ -6,17 +6,27 @@ import type {
   GameSettings,
   MoveMode,
   MoveRecord,
+  PuzzleSize,
   ReplayRecord,
   ScoreRecord,
   Theme,
+  ThemeInnerBorder,
 } from '../types';
-import { isValidBlankColor, isValidHexColor } from '../core/appearance/theme';
-import { isPuzzleSize, isValidBoard } from '../core/board';
+import { CUSTOM_THEME_SLOT_COUNT } from '../core/appearance/appearance';
+import { BUILTIN_THEMES, FALLBACK_THEME_ID } from '../core/appearance/presets';
+import { isValidBlankColor, isValidFontColor, isValidHexColor } from '../core/appearance/theme';
+import { isPuzzleSize, isValidBoard, PUZZLE_SIZES } from '../core/board';
 import { EVENT_GAME_MODES, EVENT_SIZES, GROUP_COUNT, GROUP_IDS, isGroupId } from '../core/groups';
 import { isDirection } from '../core/moves';
 import { MAX_REPLAY_MOVES } from './replay-codec';
 
-export const SCHEMA_VERSION = 3;
+/** 设置 envelope 版本；外观使用独立的 APPEARANCE_SCHEMA_VERSION。 */
+export const SETTINGS_SCHEMA_VERSION = 3;
+
+/** 外观 envelope 版本；v3 数据不做迁移。 */
+export const APPEARANCE_SCHEMA_VERSION = 4;
+
+const BUILTIN_THEME_IDS = new Set(BUILTIN_THEMES.map((theme) => theme.id));
 
 export const STORAGE_KEYS = {
   settings: 'puzzle.v2.settings',
@@ -70,6 +80,38 @@ function isBoardMetrics(value: unknown): value is BoardMetrics {
   );
 }
 
+function isSupportedSizes(value: unknown): value is readonly PuzzleSize[] {
+  if (!Array.isArray(value) || value.length === 0) {
+    return false;
+  }
+
+  let previous = 0;
+  for (const size of value) {
+    if (typeof size !== 'number' || !isPuzzleSize(size) || size <= previous) {
+      return false;
+    }
+    previous = size;
+  }
+  return true;
+}
+
+function isFontPalette(value: unknown, length: number): value is readonly string[] {
+  return (
+    Array.isArray(value) &&
+    value.length === length &&
+    value.every((color): color is string => typeof color === 'string' && isValidFontColor(color))
+  );
+}
+
+function isThemeInnerBorder(value: unknown): value is ThemeInnerBorder {
+  return (
+    isRecord(value) &&
+    typeof value.color === 'string' &&
+    isValidBlankColor(value.color) &&
+    isRatio(value.widthRatio, 0, 0.1)
+  );
+}
+
 function isColorMode(value: unknown): value is ColorMode {
   if (!isRecord(value)) {
     return false;
@@ -93,12 +135,11 @@ function isColorMode(value: unknown): value is ColorMode {
   return (
     typeof value.blankColor === 'string' &&
     isValidBlankColor(value.blankColor) &&
-    typeof value.fontColor === 'string' &&
-    (value.fontColor === 'auto' || isValidHexColor(value.fontColor))
+    isFontPalette(value.fontPalette, palette.length)
   );
 }
 
-/** 主题结构、色板和 metrics 范围的严格校验；store 层可以在加载时做修复。 */
+/** 主题结构、色板、逐块字体色、内边框和 metrics 范围的严格校验；store 层可以在加载时修复。 */
 export function isTheme(value: unknown): value is Theme {
   if (!isRecord(value)) {
     return false;
@@ -108,25 +149,86 @@ export function isTheme(value: unknown): value is Theme {
     typeof value.id === 'string' &&
     value.id.length > 0 &&
     typeof value.name === 'string' &&
-    value.name.length > 0 &&
+    value.name.trim().length > 0 &&
     typeof value.builtin === 'boolean' &&
+    isSupportedSizes(value.supportedSizes) &&
     isColorMode(value.color) &&
+    isThemeInnerBorder(value.innerBorder) &&
     typeof value.blindTileColor === 'string' &&
     isValidHexColor(value.blindTileColor) &&
     isBoardMetrics(value.metrics)
   );
 }
 
-/** 校验外观状态：至少有一个主题，且 activeThemeId 能解析到已有主题。 */
+/**
+ * 校验外观状态：
+ * - 9 个阶数键齐全；
+ * - 每个值要么指向支持该阶数的主题，要么是 fallback；
+ * - 两套内置主题存在，自定义主题不超过 20 个；
+ * - fallback 主题不进入 themes。
+ */
 export function isAppearanceState(value: unknown): value is AppearanceState {
-  if (!isRecord(value) || typeof value.activeThemeId !== 'string') {
+  if (!isRecord(value) || !isRecord(value.themeIdBySize)) {
     return false;
   }
-  if (!Array.isArray(value.themes) || !value.themes.every(isTheme)) {
+  if (!Array.isArray(value.themes)) {
     return false;
   }
 
-  return value.themes.some((theme) => theme.id === value.activeThemeId);
+  const ids = new Set<string>();
+  let customCount = 0;
+
+  for (const theme of value.themes) {
+    if (!isTheme(theme) || ids.has(theme.id) || theme.id === FALLBACK_THEME_ID) {
+      return false;
+    }
+    ids.add(theme.id);
+
+    if (BUILTIN_THEME_IDS.has(theme.id)) {
+      if (!theme.builtin) {
+        return false;
+      }
+      continue;
+    }
+
+    if (theme.builtin) {
+      return false;
+    }
+    customCount += 1;
+  }
+
+  if (customCount > CUSTOM_THEME_SLOT_COUNT) {
+    return false;
+  }
+  if (!BUILTIN_THEMES.every((builtin) => ids.has(builtin.id))) {
+    return false;
+  }
+
+  const keys = Object.keys(value.themeIdBySize);
+  if (keys.length !== PUZZLE_SIZES.length) {
+    return false;
+  }
+
+  for (const size of PUZZLE_SIZES) {
+    if (!Object.prototype.hasOwnProperty.call(value.themeIdBySize, size)) {
+      return false;
+    }
+
+    const themeId = value.themeIdBySize[String(size)];
+    if (typeof themeId !== 'string' || themeId.length === 0) {
+      return false;
+    }
+    if (themeId === FALLBACK_THEME_ID) {
+      continue;
+    }
+
+    const theme = value.themes.find((item) => item.id === themeId);
+    if (theme === undefined || !theme.supportedSizes.includes(size)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /** 校验设置；固定 90 组，按阶数升序、普通在前、槽位 1–5 排列。 */

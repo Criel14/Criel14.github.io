@@ -1,6 +1,6 @@
 # 数字华容道数据存储设计
 
-> 状态：P6 已完成（数据层与旧数据清理均已实现）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层已完成（2026-10-24）；P8-4b 独立设置页与 `site.v1.preferences` 已实现（2026-10-24，待手动验收）；P8-4c-1 主题存储与选择已实现（2026-10-24，待手动验收）；P8-4c-2 编辑器待开始
+> 状态：P6 已完成（数据层与旧数据清理均已实现）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层已完成（2026-10-24）；P8-4b 独立设置页与 `site.v1.preferences` 已实现（2026-10-24，待手动验收）；P8-4c-1 主题存储与选择已实现（2026-10-24，待手动验收）；P8-4c-2 设计确认（2026-10-24），P8-4c-2a 外观 v4 领域模型与存储已实现（2026-10-24，不做 v3 迁移，自动检查通过），P8-4c-2b～e 待开始
 >
 > 分支：`refactor/vite-ts`
 >
@@ -11,7 +11,8 @@
 ## 0. 决策摘要
 
 - **设置和外观继续用 localStorage**：数据小、同步读写、页面启动即可用。
-- **游戏主题仍存 `puzzle.v2.appearance`**：内置主题 canonical、自定义主题最多 20 个；存储体积约 20–25KB 上限，不需要 IndexedDB。详见 `docs/PUZZLE_THEME.md`。
+- **游戏主题仍存 `puzzle.v2.appearance`**：内置主题 canonical、自定义主题最多 20 个；v4 数据包含 `themeIdBySize`、`supportedSizes`、`fontPalette`、`innerBorder`，自定义主题全按最重估算约 40KB，不需要 IndexedDB。详见 `docs/PUZZLE_THEME.md`。
+- **外观版本独立**：`puzzle.v2.settings` 保持 version 3，`puzzle.v2.appearance` 升到 version 4；不做 v3 → v4 迁移，升级时清一次 `puzzle.v2.appearance`，自定义主题会丢失。
 - **全站偏好独立存储**：外观模式/语言存 localStorage `site.v1.preferences`（version 1），与拼图设置/外观分开；详见 `docs/SETTINGS_PAGE.md`。
 - **成绩列表和录像改用 IndexedDB**：数据大、需要按桶查询、需要原子事务。
 - **不使用 `puzzle.v2.meta`**：localStorage 的 envelope 自带 `version`，IndexedDB 用 `DB_VERSION`。
@@ -61,12 +62,14 @@ v2 没有正式上线，不提供从这些键迁移到 IndexedDB 的逻辑。若
 | 键 | 内容 |
 | --- | --- |
 | `puzzle.v2.settings` | `{ version: 3, data: GameSettings }` |
-| `puzzle.v2.appearance` | `{ version: 3, data: AppearanceState }` |
+| `puzzle.v2.appearance` | `{ version: 4, data: AppearanceState }` |
 | `site.v1.preferences` | `{ version: 1, data: SitePreferences }` |
 
-- 拼图数据的键统一 `puzzle.v2.` 前缀；全站偏好使用 `site.v1.` 前缀，二者独立演进。
+- 拼图数据的键统一 `puzzle.v2.` 前缀；全站偏好使用 `site.v1.` 前缀，二者独立演进。键名中的 `v2` 是存储代际，不随 appearance envelope 版本变化。
 - 缺失键分别返回默认设置 / 默认外观 / 默认全站偏好。
-- 拼图旧 envelope 版本（2）在清缓存后不再存在；如未清理，会按损坏数据处理并回退默认值。
+- `puzzle.v2.settings` 与 `puzzle.v2.appearance` 使用独立的版本常量（3 / 4），外观升级不会连带重置设置或分组。
+- 旧外观 envelope（version 3）不做迁移；未清理时按版本不兼容处理，使用系统回退主题并提示清理 `puzzle.v2.appearance`。
+- 拼图更早的 envelope 版本（2）在清缓存后不再存在；如未清理，会按损坏数据处理。
 - JSON 解析失败、schema 非法时回退默认值，并记录一次警告，不让页面崩溃。
 - 写入失败（配额不足、存储不可用）抛出 `DataStoreError`，由页面显示非阻塞提示。
 - localStorage 是同步 API，设置/外观/全站偏好读取不需要 loading 状态。
@@ -95,15 +98,19 @@ v2 没有正式上线，不提供从这些键迁移到 IndexedDB 的逻辑。若
 
 ### 2.3 外观
 
-- 存储 `AppearanceState`：`activeThemeId` + `themes`。
-- 内置主题不可修改、不可删除；自定义主题可以编辑颜色、盲玩色和 metrics，上限 20 个（`CUSTOM_THEME_SLOT_COUNT = 20`）。
-- 主题非法时过滤；`activeThemeId` 失效时回退第一个内置主题。
-- `Theme.blindTileColor` 是盲玩隐藏数字时的方块背景色，必须是 `#rrggbb`；缺失或非法的主题会被过滤。
-- 主题存储体积很小：`fixed` 模式 99 色约 1KB/主题，20 个全按最重计算约 20–25KB，远低于 localStorage 配额。
-- P8-4b 设置页不读写外观；P8-4c-1 设置页主题选择先写 draft，点击设置页“保存”后才写 `puzzle.v2.appearance`。
-- P8-4c-2 主题编辑器是独立页面，自己维护 draft，点击编辑器“保存”后才写 `puzzle.v2.appearance`；返回/刷新丢弃 draft。
+- 存储 `AppearanceState`：`themeIdBySize` + `themes`；每个阶数独立记录主题 ID，不存在单一 `activeThemeId`。
+- 内置主题不可修改、不可删除；自定义主题可以编辑逐块背景色/字体色、空白色、盲玩色、内边框和 metrics，上限 20 个（`CUSTOM_THEME_SLOT_COUNT = 20`）。
+- `Theme.supportedSizes` 表示主题设计上支持的阶数，默认全部 2–10；`themeIdBySize` 表示当前分配，两者不能混用。
+- 主题非法时过滤；`themeIdBySize` 指向缺失主题、主题不支持该阶数或值为回退 ID 时，该阶数使用 `FALLBACK_THEME`。
+- `Theme.color.palette` 与 `Theme.color.fontPalette` 长度均由 mode 决定（18/10/99）；`fontPalette` 每项为 `auto` 或 `#rrggbb`。
+- `Theme.innerBorder` 是方块内边框，整盘统一；颜色允许 `transparent`，宽度 0–0.1。它不改变方块外尺寸，字号按“格子边长 − 2 × 内边框宽度”计算。
+- `Theme.blindTileColor` 是盲玩隐藏数字时的方块背景色，必须是 `#rrggbb`；默认 `#3498db`，空白块仍使用 `blankColor`。
+- 外观 v4 不做 v3 迁移：升级时清一次 `puzzle.v2.appearance`；不清时使用回退主题并提示。自定义主题会丢失，设置/分组/成绩不受影响。
+- 主题存储体积：`fixed` 模式 99 个背景色 + 99 个字体色约 2KB/主题，20 个全按最重计算约 40KB，远低于 localStorage 配额。
+- P8-4c-2 设置页主题分配先写 draft，点击设置页“保存”后才写 `puzzle.v2.appearance`。
+- 主题编辑器是独立页面，自己维护 draft，点击编辑器“保存”后才写 `puzzle.v2.appearance`；返回/刷新丢弃 draft。
 - 设置页是独立页面；从 `observing` / `solved` 进入，运行中/重玩中/保存中禁用入口，避免卸载当前局。
-- 主题选择与主题内容编辑都写完整 `AppearanceState`；多标签页最后写入覆盖，不做合并。详见 `docs/PUZZLE_THEME.md`。
+- 主题分配与主题内容编辑都写完整 `AppearanceState`；多标签页最后写入覆盖，不做合并。详见 `docs/PUZZLE_THEME.md`。
 
 ### 2.4 全站偏好
 
@@ -446,6 +453,9 @@ saveAppearance(appearance: AppearanceState, storage?: StorageAdapter): void;
 
 - 同步 API。
 - 读取结果保留 `ok` / `missing` / `corrupt` / `unavailable` 状态，并始终附带一份可用的回退数据；页面据此决定是否显示提示。
+- `missing` 使用默认彩虹外观；`corrupt` 尽量保留可恢复的自定义主题和有效分配，无法解析的阶数使用 `FALLBACK_THEME`；`unavailable` / 版本不兼容使用回退外观（所有阶数指向 `FALLBACK_THEME`）。
+- 外观 version 4；设置 version 3；不读取 version 3 外观，也不做迁移。
+- 保存前调用 `normalizeAppearance`，写入完整 `themeIdBySize` 和 `themes`。
 - 默认使用 `createLocalStorage()`；测试可传入 `createMemoryStorage()`。
 - 页面不直接操作键名。
 
@@ -453,7 +463,7 @@ saveAppearance(appearance: AppearanceState, storage?: StorageAdapter): void;
 
 ### 6.1 游戏页
 
-1. 同步读取 settings / appearance，使用结果型 API 区分缺失、损坏和不可用；缺失静默回退，损坏/不可用显示非阻塞提示。
+1. 同步读取 settings / appearance，使用结果型 API 区分缺失、损坏和不可用；缺失静默回退，损坏/不可用显示非阻塞提示。棋盘按当前阶数调用 `getThemeForSize(appearance, size)`；重玩按成绩阶数解析，主题异常时使用回退主题。
 2. 普通启动时调用 `probeScoreStorage()` 探测 IndexedDB；失败显示非阻塞提示，设置和棋盘仍可使用。重玩启动用 `getScoreById` 完成读取，不再额外探测。
 3. `?retry=<id>`：异步 `getScoreById(id)`；加载期间显示棋盘占位和 loading。
    - 重玩使用成绩的 `size` / `gameMode` / `groupId` / `scramble`，`moveMode` 使用当前设置。
@@ -486,17 +496,17 @@ saveAppearance(appearance: AppearanceState, storage?: StorageAdapter): void;
 2. `await getScoreById(id)` 和 `await loadReplay(id)`。
 3. 成绩缺失 → 空状态；成绩存在但录像缺失/损坏 → “录像不可用”状态。
 4. `buildReplayTimeline(score, replay)`，空时间轴或 issues 非空时显示提示，但仍允许播放可用部分。
-5. 使用当前外观主题渲染回放棋盘。
+5. 按成绩的阶数调用 `getThemeForSize(appearance, score.size)`，使用当前主题分配渲染回放棋盘；不保存/还原当时的主题快照。
 
 ### 6.4 设置页与主题编辑器
 
 1. 设置页启动时同步读取 `site.v1.preferences` 和 `puzzle.v2.appearance`；两者分别显示读取状态。
-2. 设置页主题列表使用 `loadAppearanceResult()` 的归一化结果；选择主题只更新页面 draft 的 `activeThemeId`。
-3. 点击设置页“保存”：先保存全站偏好，再 `saveAppearance(draft)`；写入完整 `AppearanceState`，包括当前 `themes` 和新的 `activeThemeId`。
-4. 主题编辑器读取 `puzzle.v2.appearance`，按 `?theme=<id>` 找到目标主题；新建时生成自定义主题草稿。
-5. 编辑器内所有修改只更新页面 draft；点击“保存”时合并目标主题、保留 `activeThemeId` 和其他主题，再调用 `saveAppearance()`。
+2. 设置页主题列表使用 `loadAppearanceResult()` 的归一化结果；“应用到”对话框只更新页面 draft 的 `themeIdBySize`，不修改主题的 `supportedSizes`。
+3. 点击设置页“保存”：先保存全站偏好，再 `saveAppearance(draft)`；写入完整 `AppearanceState`，包括当前 `themes` 和 `themeIdBySize`。
+4. 主题编辑器读取 `puzzle.v2.appearance`，按 `?theme=<id>` 找到目标主题；新建时复制回退主题生成自定义主题草稿。
+5. 编辑器内所有修改只更新页面 draft；点击“保存”时合并目标主题、保留 `themeIdBySize` 和其他主题，再调用 `saveAppearance()`。
 6. 编辑器“取消”/返回/刷新直接丢弃 draft；保存成功返回 `settings.html#game-theme`。
-7. 两处都只在显式保存时写 localStorage；读取 `corrupt` / `unavailable` 时页面提示，不自动覆盖。
+7. 两处都只在显式保存时写 localStorage；读取 `corrupt` / `unavailable` / 版本不兼容时页面提示，不自动覆盖。
 
 ## 7. 错误处理
 
@@ -535,7 +545,8 @@ class DataStoreError extends Error {
 - 不因为一条损坏记录让整页崩溃。
 - `listScoresByBucket` 过滤非法成绩并记录警告；返回可用的成绩。
 - `getScoreById` / `loadReplay` 缺失或非法时返回 `null`。
-- localStorage 设置/外观损坏时返回 `corrupt` 状态并回退可恢复值，页面显示非阻塞提示。
+- localStorage 设置/外观损坏时返回 `corrupt` 状态并回退可恢复值；外观无法解析的阶数使用系统回退主题，页面显示非阻塞提示。
+- 外观 v3 或未知版本不迁移，使用回退外观并提示清理 `puzzle.v2.appearance`。
 - **不做 localStorage 降级存储**：IndexedDB 不可用时，成绩功能明确不可用，避免出现两套数据源和迁移问题。
 - 可以提示用户使用导出/清理功能；导出功能属于后续扩展。
 
@@ -564,6 +575,7 @@ npm install -D fake-indexeddb
 - 写入异常转换为 `DataStoreError`。
 - 缺失键返回默认值。
 - 设置/外观的默认值、非法字段回退。
+- 外观 v3 不迁移；v4 的 `themeIdBySize`、`supportedSizes`、`fontPalette`、`innerBorder` 归一化；不支持/缺失主题落回退主题。
 
 ### 8.3 `replay-codec.test.ts`
 
@@ -607,6 +619,8 @@ Playwright 阶段补充真实浏览器 IndexedDB 冒烟：
 - 清空当前分组后该桶为空，分组本身和其他组保留；清空当前事件后其他事件保留。
 - 分组改名后刷新仍生效，成绩和录像不受影响。
 - 设置和外观刷新后仍在（localStorage）；全站偏好刷新后仍在。
+- 切换阶数后使用该阶数分配的主题；重玩使用成绩阶数的主题；回退阶数显示回退主题。
+- 清理 `puzzle.v2.appearance` 后回到默认彩虹外观；v3 数据触发回退提示。
 - 隐私模式/存储不可用的提示（可手动验收）。
 
 ## 9. 目录与依赖边界

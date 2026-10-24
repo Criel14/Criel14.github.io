@@ -3,7 +3,7 @@ import type { GameSettings } from '../types';
 import { GROUP_COUNT } from '../core/groups';
 import { DataStoreError } from './errors';
 import { createMemoryStorage, readJsonResult, writeJson } from './local-storage';
-import { SCHEMA_VERSION, STORAGE_KEYS } from './schema';
+import { SETTINGS_SCHEMA_VERSION, STORAGE_KEYS } from './schema';
 import {
   createDefaultSettings,
   ensureSettingsResult,
@@ -71,7 +71,7 @@ describe('saveSettings / loadSettingsResult', () => {
     expect(readJsonResult(storage, STORAGE_KEYS.settings)).toEqual({
       status: 'ok',
       value: {
-        version: SCHEMA_VERSION,
+        version: SETTINGS_SCHEMA_VERSION,
         data: settings,
       },
     });
@@ -91,7 +91,7 @@ describe('saveSettings / loadSettingsResult', () => {
     });
 
     writeJson(storage, STORAGE_KEYS.settings, {
-      version: SCHEMA_VERSION + 1,
+      version: SETTINGS_SCHEMA_VERSION + 1,
       data: { size: 9 },
     });
     expect(loadSettingsResult(storage)).toEqual({
@@ -103,7 +103,7 @@ describe('saveSettings / loadSettingsResult', () => {
   it('保留合法字段，按事件修复缺失/非法分组', () => {
     const storage = createMemoryStorage();
     writeJson(storage, STORAGE_KEYS.settings, {
-      version: SCHEMA_VERSION,
+      version: SETTINGS_SCHEMA_VERSION,
       data: {
         size: 99,
         gameMode: 'other',
@@ -153,7 +153,7 @@ describe('saveSettings / loadSettingsResult', () => {
   it('不迁移旧版全局 10 组数据', () => {
     const storage = createMemoryStorage();
     writeJson(storage, STORAGE_KEYS.settings, {
-      version: SCHEMA_VERSION,
+      version: SETTINGS_SCHEMA_VERSION,
       data: {
         ...createDefaultSettings(),
         groups: Array.from({ length: 10 }, (_, index) => ({
@@ -198,7 +198,7 @@ describe('ensureSettingsResult', () => {
     expect(readJsonResult(storage, STORAGE_KEYS.settings)).toEqual({
       status: 'ok',
       value: {
-        version: SCHEMA_VERSION,
+        version: SETTINGS_SCHEMA_VERSION,
         data: createDefaultSettings(),
       },
     });

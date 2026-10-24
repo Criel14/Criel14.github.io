@@ -404,4 +404,4 @@ P5 先保留完整帧，原因是：
 - 不在 core 中读写 localStorage / IndexedDB。
 - 不在 P5 中实现 checkpoint / 按需物化盘面。
 - 不引入二进制/压缩编码；当前紧凑 JSON 足够。
-- 不做“按当时主题回放”；回放使用当前外观，后续如需可在成绩中增加 `themeId`。
+- 不做“按当时主题回放”；回放按成绩的阶数使用当前主题分配（`getThemeForSize`），后续如需可在成绩中增加 `themeId`。

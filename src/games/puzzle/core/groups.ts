@@ -1,4 +1,5 @@
 import type { GameMode, Group, GroupId, PuzzleSize } from '../types';
+import { PUZZLE_SIZES } from './board';
 
 /** 事件内固定分组槽位范围；分组数量固定，不新增、不删除。 */
 export const MIN_GROUP_ID = 1;
@@ -7,8 +8,8 @@ export const MAX_GROUP_ID = 5;
 /** 固定槽位列表，避免各处用 `(index + 1) as GroupId` 强转。 */
 export const GROUP_IDS: readonly GroupId[] = [1, 2, 3, 4, 5];
 
-/** 事件 = 阶数 + 游戏模式；阶数按升序枚举。 */
-export const EVENT_SIZES: readonly PuzzleSize[] = [2, 3, 4, 5, 6, 7, 8, 9, 10];
+/** 事件 = 阶数 + 游戏模式；阶数按升序枚举，复用全局阶数常量。 */
+export const EVENT_SIZES: readonly PuzzleSize[] = PUZZLE_SIZES;
 
 /** 同一阶数下，普通模式排在盲玩模式前。 */
 export const EVENT_GAME_MODES: readonly GameMode[] = ['normal', 'blind'];

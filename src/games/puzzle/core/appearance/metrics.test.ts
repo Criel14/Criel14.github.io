@@ -1,19 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import type { Theme } from '../../types';
+import { PUZZLE_SIZES } from '../board';
 import { DEFAULT_METRICS } from './presets';
-import { clampRatio, normalizeMetrics, toCssVariables } from './metrics';
+import { clampRatio, normalizeInnerBorder, normalizeMetrics, toCssVariables } from './metrics';
 
 const theme: Theme = {
   id: 'test',
   name: '测试',
   builtin: false,
+  supportedSizes: PUZZLE_SIZES,
   color: {
     mode: 'layer',
     palette: ['#ffffff'],
+    fontPalette: ['auto'],
     blankColor: 'transparent',
-    fontColor: '#ffffff',
   },
-  blindTileColor: '#66ccff',
+  innerBorder: { color: 'transparent', widthRatio: 0 },
+  blindTileColor: '#3498db',
   metrics: {
     fontSizeRatio: 0.5,
     gapRatio: 0.03,
@@ -65,20 +68,60 @@ describe('normalizeMetrics', () => {
   });
 });
 
+describe('normalizeInnerBorder', () => {
+  it('保留合法颜色和宽度', () => {
+    expect(normalizeInnerBorder({ color: '#ffffff', widthRatio: 0.02 })).toEqual({
+      color: '#ffffff',
+      widthRatio: 0.02,
+    });
+    expect(normalizeInnerBorder({ color: 'transparent', widthRatio: 0 })).toEqual({
+      color: 'transparent',
+      widthRatio: 0,
+    });
+  });
+
+  it('颜色非法回退透明，宽度非有限数回退 0', () => {
+    expect(normalizeInnerBorder({ color: 'red', widthRatio: 0.02 })).toEqual({
+      color: 'transparent',
+      widthRatio: 0.02,
+    });
+    expect(normalizeInnerBorder({ color: '#ffffff', widthRatio: Number.NaN })).toEqual({
+      color: '#ffffff',
+      widthRatio: 0,
+    });
+    expect(normalizeInnerBorder(undefined)).toEqual({ color: 'transparent', widthRatio: 0 });
+    expect(normalizeInnerBorder(null)).toEqual({ color: 'transparent', widthRatio: 0 });
+  });
+
+  it('宽度越界夹取到 0–0.1', () => {
+    expect(normalizeInnerBorder({ color: '#ffffff', widthRatio: 0.5 })).toEqual({
+      color: '#ffffff',
+      widthRatio: 0.1,
+    });
+    expect(normalizeInnerBorder({ color: '#ffffff', widthRatio: -1 })).toEqual({
+      color: '#ffffff',
+      widthRatio: 0,
+    });
+  });
+});
+
 describe('toCssVariables', () => {
-  it('生成空白色、盲玩色和三个比例变量', () => {
+  it('生成空白色、盲玩色、内边框和三个比例变量', () => {
     expect(toCssVariables(theme)).toEqual({
       '--blank-color': 'transparent',
-      '--blind-tile-bg': '#66ccff',
+      '--blind-tile-bg': '#3498db',
+      '--tile-inner-border-color': 'transparent',
+      '--tile-inner-border-width-ratio': '0',
       '--tile-font-ratio': '0.5',
       '--tile-gap-ratio': '0.03',
       '--tile-radius-ratio': '0.04',
     });
   });
 
-  it('使用主题自己的 metrics，非法值先归一化', () => {
+  it('使用主题自己的内边框和 metrics，非法值先归一化', () => {
     const invalidTheme: Theme = {
       ...theme,
+      innerBorder: { color: 'red', widthRatio: 0.5 },
       metrics: {
         fontSizeRatio: 2,
         gapRatio: -1,
@@ -88,7 +131,9 @@ describe('toCssVariables', () => {
 
     expect(toCssVariables(invalidTheme)).toEqual({
       '--blank-color': 'transparent',
-      '--blind-tile-bg': '#66ccff',
+      '--blind-tile-bg': '#3498db',
+      '--tile-inner-border-color': 'transparent',
+      '--tile-inner-border-width-ratio': '0.1',
       '--tile-font-ratio': '1',
       '--tile-gap-ratio': '0',
       '--tile-radius-ratio': String(DEFAULT_METRICS.radiusRatio),
@@ -107,11 +152,11 @@ describe('toCssVariables', () => {
     expect(toCssVariables(invalidBlank)['--blank-color']).toBe('transparent');
   });
 
-  it('非法盲玩色回退旧版蓝色', () => {
+  it('非法盲玩色回退主题蓝', () => {
     const invalidBlind: Theme = {
       ...theme,
       blindTileColor: 'red',
     };
-    expect(toCssVariables(invalidBlind)['--blind-tile-bg']).toBe('#66ccff');
+    expect(toCssVariables(invalidBlind)['--blind-tile-bg']).toBe('#3498db');
   });
 });

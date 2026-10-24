@@ -8,7 +8,7 @@ import {
   type StorageAdapter,
   type StorageReadStatus,
 } from './local-storage';
-import { isGameSettings, isStorageEnvelope, SCHEMA_VERSION, STORAGE_KEYS } from './schema';
+import { isGameSettings, isStorageEnvelope, SETTINGS_SCHEMA_VERSION, STORAGE_KEYS } from './schema';
 
 const DEFAULT_SIZE = 4;
 const DEFAULT_GAME_MODE: GameMode = 'normal';
@@ -128,7 +128,7 @@ export function loadSettingsResult(
     return { status: result.status, settings: createDefaultSettings() };
   }
 
-  if (!isStorageEnvelope(result.value) || result.value.version !== SCHEMA_VERSION) {
+  if (!isStorageEnvelope(result.value) || result.value.version !== SETTINGS_SCHEMA_VERSION) {
     return { status: 'corrupt', settings: createDefaultSettings() };
   }
 
@@ -163,7 +163,7 @@ export function saveSettings(
   storage: StorageAdapter = createLocalStorage(),
 ): void {
   writeJson(storage, STORAGE_KEYS.settings, {
-    version: SCHEMA_VERSION,
+    version: SETTINGS_SCHEMA_VERSION,
     data: normalizeSettings(settings),
   });
 }
