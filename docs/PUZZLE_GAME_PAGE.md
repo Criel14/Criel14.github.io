@@ -1,12 +1,12 @@
 # 数字华容道游戏页设计与 P8 任务
 
-> 状态：P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b 独立设置页与网站偏好已实现（2026-10-24，详见 `docs/SETTINGS_PAGE.md`，待手动验收），P8-4c 游戏主题编辑器、P8-5～P8-6 待开始
+> 状态：P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b 独立设置页与网站偏好已实现（2026-10-24，详见 `docs/SETTINGS_PAGE.md`，待手动验收），P8-4c 拆成 P8-4c-1 主题列表（已实现，待手动验收）和 P8-4c-2 独立编辑器（待开始），P8-5～P8-6 待开始
 >
 > 分支：`refactor/vite-ts`
 >
-> 配套文档：`docs/PUZZLE_ARCHITECTURE.md`、`docs/PUZZLE_TASKS.md`、`docs/PUZZLE_STORAGE.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_SCORE_PAGE.md`、`docs/SETTINGS_PAGE.md`
+> 配套文档：`docs/PUZZLE_ARCHITECTURE.md`、`docs/PUZZLE_TASKS.md`、`docs/PUZZLE_STORAGE.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_SCORE_PAGE.md`、`docs/SETTINGS_PAGE.md`、`docs/PUZZLE_THEME.md`
 >
-> 说明：本文件承载游戏页（P8）的界面设计、布局实验记录和 P8 任务索引；P8-4b/P8-4c 的详细设计以 `docs/SETTINGS_PAGE.md` 为准，`docs/PUZZLE_TASKS.md` 只保留 P8 概览和链接，避免两处维护。
+> 说明：本文件承载游戏页（P8）的界面设计、布局实验记录和 P8 任务索引；设置页外壳与全站偏好以 `docs/SETTINGS_PAGE.md` 为准，游戏主题模型、主题列表和编辑器以 `docs/PUZZLE_THEME.md` 为准，`docs/PUZZLE_TASKS.md` 只保留 P8 概览和链接，避免两处维护。
 
 ## 0. 背景与目标
 
@@ -310,7 +310,7 @@ npm run dev
 | 配色         | 页面 `#ebebeb`，按钮 `#f8f8f8`，整体中性灰       | 已确认 |
 | 主题色       | 选中项使用 `#3498DB` + 白字；全局 token         | 已确认 |
 | 设置页       | 独立 `/puzzle-game/settings.html`；未保存提示条；详见 `docs/SETTINGS_PAGE.md` | 已确认 |
-| 游戏主题     | P8-4b 只做占位；完整编辑器移到 P8-4c             | 已确认 |
+| 游戏主题     | P8-4c-1 设置页主题列表；P8-4c-2 独立编辑器页      | 已确认 |
 | 首页入口     | 左栏按钮组底部，使用主页图标链接 `/`           | 已确认 |
 | 移动端       | 本轮先不做，P8-5 处理                          | 推迟   |
 | 深色壳       | 本轮不做                                       | 推迟   |
@@ -553,18 +553,34 @@ P8-1 以当前实验室为视觉基线。正式实现时先复用结构和样式
 - 依赖：P6、P7、P8-2、P8-3。
 - 实现备注（2026-10-24）：设置页导航由注册表生成；偏好字段级损坏时保留可恢复字段并提示；游戏页设置链接用 `aria-disabled` 表达禁用，新标签页打开不拦截。自动检查已通过，手动验收待执行。
 
-### P8-4c 游戏主题编辑器
+### P8-4c-1 设置页主题列表与选择
 
-- [ ] 详见 `docs/SETTINGS_PAGE.md` 第 1.2 节与第 8.3 节。
+- [x] 详见 `docs/PUZZLE_THEME.md` 与 `docs/SETTINGS_PAGE.md` 第 1.2 节。
 - 内容：
-  - 接入 `puzzle.v2.appearance` 的 draft 控制器，保存时才写入。
+  - 设置页 `#game-theme` 从占位换成动态主题列表。
+  - 两套内置主题 + 自定义主题 + 加号卡；自定义主题上限从 3 放宽到 20。
+  - 每张卡渲染 10×10 已复原棋盘预览，显示数字、主题颜色、空白色和 metrics。
+  - 内置主题显示“内置”徽标；自定义主题显示铅笔编辑按钮。
+  - 主题选择进入设置页 draft，保存时才写 `puzzle.v2.appearance`。
+  - 新增 `theme-editor.html` 占位页、`theme-preview`、`game-theme-picker`、`isAppearanceEqual`、`plus`/`pencil` 图标和 `createIcon` 工具。
+- 验收：两套内置主题和自定义主题卡片正确渲染；选中/保存/重置/刷新行为正确；20 个上限生效；加号/编辑入口可进入占位页；键盘和窄屏可用。
+- 依赖：P2、P8-4b。
+- 详细验收见 `docs/PUZZLE_THEME.md` 第 9.2 节。
+- 实现备注（2026-10-24）：主题卡由 `game-theme-picker` 动态渲染，10×10 预览复用 `board-view`；设置页新增 `puzzle-theme` controller；自定义主题上限 20；`theme-editor.html` 为占位页；自动检查已通过，手动验收待执行。
+
+### P8-4c-2 主题编辑器
+
+- [ ] 详见 `docs/PUZZLE_THEME.md` 第 5 节。
+- 内容：
+  - 独立 `/puzzle-game/theme-editor.html`；新建无参数，编辑使用 `?theme=<themeId>`。
   - 两套内置降阶主题；自定义主题支持降阶/按行/固定色。
   - 色板编辑：18/10/99 色；空白色、字体色、盲玩隐藏数字颜色。
   - 每个主题独立编辑字号/间隙/圆角；内置主题只读，修改时复制为自定义主题。
-  - 原生 `<input type="color">`；页面内预览；显式保存。
-  - 不直接调用 `saveAppearance` 在每次修改时落库。
-- 验收：可修改三种模式、颜色和比例并预览；自定义主题保存后刷新仍生效；内置主题不被修改；未保存修改走设置页统一提示条。
-- 依赖：P2、P6-4、P8-4b。
+  - 原生 `<input type="color">`；页面内实时预览；编辑器自己的保存/取消。
+  - 保存时保留 `activeThemeId` 和其他主题，只更新目标主题；不直接调用 `saveAppearance` 在每次修改时落库。
+- 验收：可修改三种模式、颜色和比例并预览；自定义主题保存后刷新仍生效；内置主题不被修改；取消/返回不写存储。
+- 依赖：P2、P6-4、P8-4b、P8-4c-1。
+- 详细验收见 `docs/PUZZLE_THEME.md` 第 9.3 节。
 
 ### P8-5 光标、极简 UI 与可访问性
 
@@ -590,7 +606,7 @@ P8-1 以当前实验室为视觉基线。正式实现时先复用结构和样式
   - 切换内置/自定义主题，刷新后主题与 metrics 保留。
   - 刷新后设置、全站偏好、成绩和录像保留。
 - 验收：Playwright 通过；用户手动验收。
-- 依赖：P8-3、P8-4a、P8-4b、P8-4c。
+- 依赖：P8-3、P8-4a、P8-4b、P8-4c-1、P8-4c-2。
 
 ## 8. 验收与验证
 
@@ -730,7 +746,7 @@ npm run build
 - 修改后出现底部提示条；重置恢复上次保存值；保存后刷新仍保留；返回/刷新丢弃草稿。
 - 浅色可选；跟随系统/深色禁用并显示“功能开发中”。
 - English 可保存但界面仍为中文，并有说明。
-- 游戏主题只显示占位，不读写外观数据。
+- P8-4b 阶段游戏主题只显示占位，不读写外观数据；P8-4c-1 已替换为主题列表和 `puzzle.v2.appearance` 读写。
 - 运行中/重玩中/保存中设置入口禁用。
 - 游戏页弹框选中项为主题蓝。
 - `site.v1.preferences` 写入正确，未修改拼图 settings/appearance。
@@ -742,7 +758,7 @@ npm run build
 
 - 线宽是否统一为 `2`，以及 `←` / `×` / `→` 是否纳入 sprite。
 - 左右栏字号、按钮尺寸和栏间距是否还需要继续微调。
-- 设置页分类扩展（深色主题、多语言、维护/导入导出）与 P8-4c 游戏主题编辑器细节，见 `docs/SETTINGS_PAGE.md`。
+- 设置页分类扩展（深色主题、多语言、维护/导入导出）见 `docs/SETTINGS_PAGE.md`；游戏主题列表与编辑器细节见 `docs/PUZZLE_THEME.md`。
 - 分组管理的具体位置和对话框布局（当前设计在成绩页，见 `docs/PUZZLE_SCORE_PAGE.md`）。
 - 极简 UI 的具体隐藏范围和恢复入口位置（P8-5）。
 - 桌面端最小宽度和更窄窗口的降级方式。

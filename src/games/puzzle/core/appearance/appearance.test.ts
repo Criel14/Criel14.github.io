@@ -6,6 +6,7 @@ import {
   createDefaultAppearance,
   CUSTOM_THEME_SLOT_COUNT,
   getActiveTheme,
+  isAppearanceEqual,
   removeCustomTheme,
   setActiveTheme,
   upsertCustomTheme,
@@ -56,7 +57,7 @@ describe('createDefaultAppearance', () => {
   it('不生成空 Theme 占位', () => {
     const appearance = createDefaultAppearance();
     expect(appearance.themes.every((theme) => theme.name.length > 0)).toBe(true);
-    expect(CUSTOM_THEME_SLOT_COUNT).toBe(3);
+    expect(CUSTOM_THEME_SLOT_COUNT).toBe(20);
     expect(appearance.themes).toHaveLength(2);
   });
 });
@@ -169,5 +170,108 @@ describe('removeCustomTheme', () => {
     const appearance = createDefaultAppearance();
     expect(removeCustomTheme(appearance, 'rainbow')).toBe(appearance);
     expect(removeCustomTheme(appearance, 'missing')).toBe(appearance);
+  });
+});
+
+describe('isAppearanceEqual', () => {
+  it('相同内容返回 true，即使对象引用不同', () => {
+    const left = createDefaultAppearance();
+    const right = createDefaultAppearance();
+
+    expect(left).not.toBe(right);
+    expect(isAppearanceEqual(left, right)).toBe(true);
+  });
+
+  it('activeThemeId 或主题数量不同返回 false', () => {
+    const appearance = createDefaultAppearance();
+    expect(isAppearanceEqual(appearance, { ...appearance, activeThemeId: 'missing' })).toBe(false);
+    expect(isAppearanceEqual(appearance, { ...appearance, themes: [] })).toBe(false);
+  });
+
+  it('主题顺序、名称、内置标记或盲玩色不同返回 false', () => {
+    const custom = createCustomTheme();
+    const appearance = upsertCustomTheme(createDefaultAppearance(), custom);
+    const [builtin, soft, extra] = appearance.themes;
+
+    expect(
+      isAppearanceEqual(appearance, {
+        ...appearance,
+        themes: [soft!, builtin!, extra!],
+      }),
+    ).toBe(false);
+    expect(
+      isAppearanceEqual(appearance, {
+        ...appearance,
+        themes: [builtin!, soft!, { ...extra!, name: '改名' }],
+      }),
+    ).toBe(false);
+    expect(
+      isAppearanceEqual(appearance, {
+        ...appearance,
+        themes: [builtin!, soft!, { ...extra!, builtin: true }],
+      }),
+    ).toBe(false);
+    expect(
+      isAppearanceEqual(appearance, {
+        ...appearance,
+        themes: [builtin!, soft!, { ...extra!, blindTileColor: '#000000' }],
+      }),
+    ).toBe(false);
+  });
+
+  it('着色模式、palette 或字体色不同返回 false', () => {
+    const custom = createCustomTheme();
+    const appearance = upsertCustomTheme(createDefaultAppearance(), custom);
+    const [builtin, soft, extra] = appearance.themes;
+    const changedPalette = createCustomTheme({
+      color: {
+        mode: 'row',
+        palette: custom.color.palette.map((color, index) => (index === 0 ? '#000000' : color)),
+        blankColor: custom.color.blankColor,
+        fontColor: custom.color.fontColor,
+      },
+    });
+    const changedFont = createCustomTheme({
+      color: { ...custom.color, fontColor: '#000000' },
+    });
+
+    expect(
+      isAppearanceEqual(appearance, {
+        ...appearance,
+        themes: [builtin!, soft!, changedPalette],
+      }),
+    ).toBe(false);
+    expect(
+      isAppearanceEqual(appearance, {
+        ...appearance,
+        themes: [builtin!, soft!, changedFont],
+      }),
+    ).toBe(false);
+    expect(
+      isAppearanceEqual(appearance, {
+        ...appearance,
+        themes: [
+          { ...builtin!, color: { ...builtin!.color, blankColor: '#ffffff' } },
+          soft!,
+          extra!,
+        ],
+      }),
+    ).toBe(false);
+  });
+
+  it('metrics 任一字段不同返回 false', () => {
+    const custom = createCustomTheme();
+    const appearance = upsertCustomTheme(createDefaultAppearance(), custom);
+    const [builtin, soft] = appearance.themes;
+    const changedMetrics = createCustomTheme({
+      metrics: { ...custom.metrics, gapRatio: 0.08 },
+    });
+
+    expect(
+      isAppearanceEqual(appearance, {
+        ...appearance,
+        themes: [builtin!, soft!, changedMetrics],
+      }),
+    ).toBe(false);
   });
 });

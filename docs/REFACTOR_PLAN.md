@@ -1,6 +1,6 @@
 # 重构计划
 
-> 状态：阶段 3 进行中（拼图 P0–P7 已完成；P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b 独立设置页与网站偏好已实现（2026-10-24，见 `docs/SETTINGS_PAGE.md`，待手动验收），P8-4c 游戏主题编辑器、P8-5 光标/极简 UI/可访问性、P8-6 E2E 待开始；P7-3 交互与视觉随 P8 手动验收，详细设计见 `docs/PUZZLE_GAME_PAGE.md`、`docs/SETTINGS_PAGE.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`、`docs/PUZZLE_SCORE_PAGE.md`）
+> 状态：阶段 3 进行中（拼图 P0–P7 已完成；P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b 独立设置页与网站偏好已实现（2026-10-24，见 `docs/SETTINGS_PAGE.md`，待手动验收），P8-4c 拆成 P8-4c-1 设置页主题列表（已实现，待手动验收）和 P8-4c-2 独立编辑器（待开始），P8-5 光标/极简 UI/可访问性、P8-6 E2E 待开始；P7-3 交互与视觉随 P8 手动验收，详细设计见 `docs/PUZZLE_GAME_PAGE.md`、`docs/SETTINGS_PAGE.md`、`docs/PUZZLE_THEME.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`、`docs/PUZZLE_SCORE_PAGE.md`）
 >
 > 分支：`refactor/vite-ts`
 >
@@ -54,7 +54,7 @@
 ```text
 .
 ├─ index.html
-├─ puzzle-game/                  # 拼图 HTML 入口保留原路径（puzzle / settings / score-list / replay）
+├─ puzzle-game/                  # 拼图 HTML 入口保留原路径（puzzle / settings / theme-editor / score-list / replay）
 ├─ <game-id>/                    # 后续游戏入口放仓库顶层，例如 /minesweeper/index.html
 ├─ src/
 │  ├─ shared/                    # 通用 ui、styles、icons、preferences、time、i18n
@@ -62,8 +62,8 @@
 │     ├─ puzzle/
 │     │  ├─ core/                # board、moves、scramble、session、stats、replay、appearance
 │     │  ├─ data/                # localStorage、IndexedDB、schema、录像编码、stores、legacy
-│     │  ├─ ui/                  # board-view、设置页、成绩表、图表、格式化
-│     │  ├─ pages/               # 四个页面入口（游戏、设置、成绩、回放）
+│     │  ├─ ui/                  # board-view、主题预览、设置页、成绩表、图表、格式化
+│     │  ├─ pages/               # 页面入口（游戏、设置、主题编辑器、成绩、回放）
 │     │  └─ styles/
 │     └─ <game-id>/              # 后续游戏：core / data / ui / pages / styles
 ├─ public/                       # 运行时图片、图标等静态资源
@@ -99,6 +99,7 @@
 - 旧键只提供显式清理入口（`src/games/puzzle/data/legacy.ts`），不自动删除；GitHub Pages 与 Netlify 需分别清理。
 - **存储分层**：拼图设置、外观存 localStorage；成绩列表和录像存 IndexedDB（DB `puzzle.v2`，stores `scores` / `replays`，索引 `by-bucket` / `by-event`）。
 - **全站偏好**：主题模式/语言存 localStorage `site.v1.preferences`（version 1），与拼图设置/外观分开；P8-4b 设置页读取和保存，详见 `docs/SETTINGS_PAGE.md`。
+- **游戏主题**：存 localStorage `puzzle.v2.appearance`（version 3）；内置主题 canonical，自定义主题上限 20 个；P8-4c-1 设置页选择主题，P8-4c-2 独立 `theme-editor.html` 编辑主题内容，详见 `docs/PUZZLE_THEME.md`。
 - **录像先全量保存**：每条成绩保留对应录像；容量评估见 `docs/PUZZLE_STORAGE.md` 4.5，后续再按需增加保留策略。
 - **录像紧凑编码**：IndexedDB 中存 `directions` + `timeDeltas`，读取时解码为 `ReplayRecord`；不存储逐帧棋盘。持久化时间保留 3 位小数。
 - 成绩只存事实；`tps`、`number`、`ao5`、`ao12`、格式化时间等派生值读时计算。详见 `docs/PUZZLE_ARCHITECTURE.md` 与 `docs/PUZZLE_STORAGE.md`。
@@ -118,7 +119,7 @@
 - 每个功能实现前先讨论：旧行为是什么、是否保留或优化、如何验收。
 - 必须覆盖：
   - 拼图：三种操作模式、盲玩、计时/观察时间、ao5/ao12 规则、三种着色模式（降阶/按行/固定色）、主题级字号/间隙/圆角、盲玩隐藏数字颜色、预设与自定义主题、自定义光标、录像回放、录像重玩、事件级分组、按分组/事件清空成绩与删除成绩、全量保存录像。
-  - 设置页：独立页面分类导航、外观主题入口（本轮仅浅色）、中英文语言偏好、未保存提示条、关于页；游戏主题编辑器在 P8-4c。
+  - 设置页：独立页面分类导航、外观主题入口（本轮仅浅色）、中英文语言偏好、未保存提示条、关于页；游戏主题列表在 P8-4c-1，独立主题编辑器在 P8-4c-2。
   - 后续游戏：按 `docs/GAMES.md` 接入，至少覆盖构建、核心逻辑测试和首页入口。
 - 数据：拼图旧成绩、旧配置、旧自定义方案不迁移；提供显式清理入口。成绩/录像使用 IndexedDB，设置/外观/全站偏好使用 localStorage；长录像不占满 localStorage。后续游戏的数据策略在接入时决定。
 - 质量：构建通过、核心测试通过、移动端和键盘可用、无控制台错误。
@@ -139,7 +140,8 @@
 - 设置页：是否迁移到全站 `/settings.html`、首页入口、分类扩展（游戏主题/维护/导入导出）与深色模式落地顺序，详见 `docs/SETTINGS_PAGE.md`。
 - 自定义光标：保留 PNG / 改为 SVG data URI。
 - 后续游戏选型与首个新游戏的接入时间。
-- P8-4c 游戏主题编辑器：外观自定义主题是否支持命名、删除、排序（当前 3 个槽位；主题已支持三种着色模式和独立 metrics）。
+- P8-4c 游戏主题：P8-4c-1 设置页主题列表、P8-4c-2 独立编辑器；自定义主题上限已放宽到 20，是否支持命名规则、删除、排序仍待定。详见 `docs/PUZZLE_THEME.md`。
+- **TODO（P8-4c）**：设置页和主题编辑器存在未保存修改时，离开前是否弹确认框；当前直接丢弃草稿。
 - 分组数量扩展（超过每事件 5 组）需要 schema/UI 调整；当前固定 5 组/事件。
 - 录像保留策略：当前全量保存；后续是否增加“只删除录像、保留成绩”“只保留最近 N 个月”或“只保留最佳成绩录像”。
 - 成绩 / 录像 / 设置导入导出 JSON（v2 schema 稳定后再做）。
@@ -152,7 +154,8 @@
 - 现有功能说明：`README.md`、`docs/PUZZLE_GAME.md`
 - 游戏清单与接入约定：`docs/GAMES.md`
 - 游戏页设计与 P8 任务：`docs/PUZZLE_GAME_PAGE.md`
-- 设置页与 P8-4b/P8-4c：`docs/SETTINGS_PAGE.md`
+- 设置页与 P8-4b/P8-4c-1：`docs/SETTINGS_PAGE.md`
+- 游戏主题与 P8-4c：`docs/PUZZLE_THEME.md`
 - 成绩页与分组管理：`docs/PUZZLE_SCORE_PAGE.md`
 - 拼图架构契约：`docs/PUZZLE_ARCHITECTURE.md`
 - 回放设计：`docs/PUZZLE_REPLAY.md`

@@ -1,3 +1,4 @@
+import { createIcon } from '../../../shared/icons/create-icon';
 import { applyPreferences } from '../../../shared/preferences/apply';
 import { isPreferencesDirty, resetPreferencesDraft } from '../../../shared/preferences/draft';
 import {
@@ -7,6 +8,14 @@ import {
   type PreferencesReadStatus,
 } from '../../../shared/preferences/store';
 import type { SitePreferences } from '../../../shared/preferences/types';
+import type { AppearanceState } from '../types';
+import { cloneAppearance, isAppearanceEqual, setActiveTheme } from '../core/appearance/appearance';
+import {
+  loadAppearanceResult,
+  normalizeAppearance,
+  saveAppearance,
+} from '../data/appearance-store';
+import { createGameThemePicker } from './game-theme-picker';
 import {
   SETTINGS_GROUP_LABELS,
   SETTINGS_SECTIONS,
@@ -29,9 +38,8 @@ interface SettingsElements {
   readonly themeInputs: readonly HTMLInputElement[];
   readonly languageInputs: readonly HTMLInputElement[];
   readonly themeNote: HTMLElement;
+  readonly gameThemeRoot: HTMLElement;
 }
-
-const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 
 const SETTINGS_GROUPS: readonly SettingsSectionGroup[] = ['display', 'game', 'more'];
 
@@ -57,21 +65,8 @@ function getElements(): SettingsElements {
     themeInputs: [...document.querySelectorAll<HTMLInputElement>('[data-setting="themeMode"]')],
     languageInputs: [...document.querySelectorAll<HTMLInputElement>('[data-setting="language"]')],
     themeNote: requireElement<HTMLElement>('[data-theme-note]'),
+    gameThemeRoot: requireElement<HTMLElement>('[data-game-theme-picker]'),
   };
-}
-
-function createIcon(name: string): SVGSVGElement {
-  const svg = document.createElementNS(SVG_NAMESPACE, 'svg');
-  svg.setAttribute('class', 'icon');
-  svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('aria-hidden', 'true');
-  svg.setAttribute('focusable', 'false');
-
-  const use = document.createElementNS(SVG_NAMESPACE, 'use');
-  use.setAttribute('href', `#icon-${name}`);
-  svg.append(use);
-
-  return svg;
 }
 
 /** 从注册表生成导航，新增分类只改 settings-sections.ts 和对应 section。 */
@@ -187,17 +182,17 @@ function setupSections(elements: SettingsElements): void {
   activate(resolveSettingsSection(window.location.hash).id, false);
 }
 
-function renderLoadStatus(banner: HTMLElement, status: PreferencesReadStatus): void {
-  if (status === 'ok' || status === 'missing') {
-    banner.hidden = true;
-    return;
+function renderLoadStatus(banner: HTMLElement, statuses: readonly PreferencesReadStatus[]): void {
+  const messages: string[] = [];
+  if (statuses.includes('corrupt')) {
+    messages.push('检测到设置数据损坏，已使用其中可恢复的值；保存后会覆盖原数据。');
+  }
+  if (statuses.includes('unavailable')) {
+    messages.push('浏览器存储不可用，修改可能无法保存。');
   }
 
-  banner.hidden = false;
-  banner.textContent =
-    status === 'corrupt'
-      ? '检测到设置数据损坏，已使用其中可恢复的值；保存后会覆盖原数据。'
-      : '浏览器存储不可用，修改可能无法保存。';
+  banner.hidden = messages.length === 0;
+  banner.textContent = messages.join('\n');
 }
 
 /**
@@ -259,13 +254,58 @@ function createPreferencesController(
   };
 }
 
-/** 设置页入口：组装导航、偏好 controller 和保存条。 */
+/**
+ * 主题选择 controller。
+ *
+ * 只负责 `activeThemeId` 的 draft/保存/重置；主题内容编辑在独立的
+ * theme-editor.html 中进行。保存时写入完整 AppearanceState。
+ */
+function createAppearanceController(
+  initial: AppearanceState,
+  elements: SettingsElements,
+  onChange: () => void,
+): SettingsController {
+  let saved = cloneAppearance(initial);
+  let draft = cloneAppearance(initial);
+
+  const picker = createGameThemePicker({
+    root: elements.gameThemeRoot,
+    onSelect(themeId) {
+      const next = setActiveTheme(draft, themeId);
+      if (next === draft) {
+        return;
+      }
+      draft = next;
+      onChange();
+    },
+  });
+  picker.render(saved);
+
+  return {
+    id: 'puzzle-theme',
+    isDirty: () => !isAppearanceEqual(saved, draft),
+    reset() {
+      draft = cloneAppearance(saved);
+      picker.render(draft);
+    },
+    save() {
+      const normalized = normalizeAppearance(draft);
+      saveAppearance(normalized);
+      saved = cloneAppearance(normalized);
+      draft = cloneAppearance(normalized);
+      picker.render(saved);
+    },
+  };
+}
+
+/** 设置页入口：组装导航、偏好/主题 controller 和保存条。 */
 export function mountSettingsPage(): void {
   const elements = getElements();
   renderNavigation(elements.nav);
 
   const loadResult = loadPreferences();
-  renderLoadStatus(elements.loadBanner, loadResult.status);
+  const appearanceResult = loadAppearanceResult();
+  renderLoadStatus(elements.loadBanner, [loadResult.status, appearanceResult.status]);
   applyPreferences(loadResult.preferences);
 
   const controllers: SettingsController[] = [];
@@ -330,15 +370,24 @@ export function mountSettingsPage(): void {
     }
   }
 
+  const handleFormChange = (): void => {
+    clearError();
+    refreshSavebar();
+  };
+
   const preferencesController = createPreferencesController(
     loadResult.preferences,
     elements,
-    () => {
-      clearError();
-      refreshSavebar();
-    },
+    handleFormChange,
   );
   controllers.push(preferencesController);
+
+  const appearanceController = createAppearanceController(
+    appearanceResult.appearance,
+    elements,
+    handleFormChange,
+  );
+  controllers.push(appearanceController);
 
   elements.resetButton.addEventListener('click', () => {
     if (saving) {

@@ -1,6 +1,6 @@
 # 图标规范
 
-> 状态：2026-10-24 起使用本地 SVG sprite 统一管理图标。游戏页图标已全部迁移到 sprite；设置页图标已随 P8-4b 加入；占位页的 `←`、弹窗/提示的 `×`、首页卡片的 `→` 仍为文字字符，暂不处理。
+> 状态：2026-10-24 起使用本地 SVG sprite 统一管理图标。游戏页图标已全部迁移到 sprite；设置页图标已随 P8-4b 加入；P8-4c-1 新增 `plus` / `pencil` 和动态 `createIcon` 工具；占位页的 `←`、弹窗/提示的 `×`、首页卡片的 `→` 仍为文字字符，暂不处理。
 
 ## 目标
 
@@ -27,6 +27,7 @@
   - `paintbrush` / `globe` / `palette` / `info` ← 同名 Lucide 图标
   - `rotate-ccw` / `save` / `check` / `external-link` / `mail` ← 同名 Lucide 图标
   - `monitor` / `sun` / `moon` ← 同名 Lucide 图标
+  - `plus` / `pencil` ← 同名 Lucide 图标（P8-4c-1 主题列表）
 - `palette` 的四个圆点使用 `fill="currentColor"`；它是 sprite 中唯一带填充的图标，其余图标保持只描边。
 - Lucide 使用 ISC License；部分图标派生自 Feather，另有 MIT 许可。
 - 新增图标时在下方“图标清单”登记来源和许可。
@@ -98,6 +99,20 @@ HTML 中这样使用：
   - `.icon--chevron`：16×16px，下拉箭头；
   - `.board-refresh .icon`：34×34px，棋盘下方刷新。
 - 页面需要在 `<body>` 开头保留 `<!-- icon-sprite -->` 占位符；Vite 插件会把它替换成 sprite 内容。
+
+## 动态图标
+
+需要由 JS 动态生成图标时，统一使用 `src/shared/icons/create-icon.ts`：
+
+```ts
+import { createIcon } from '../../../shared/icons/create-icon';
+
+const icon = createIcon('pencil'); // <svg class="icon"><use href="#icon-pencil"></use></svg>
+```
+
+- 生成 `class="icon"`、`viewBox="0 0 24 24"`、`aria-hidden="true"`、`focusable="false"` 的 `<svg>`。
+- 只负责引用 sprite，不内联路径、不设置尺寸和颜色；尺寸由 CSS 控制。
+- 设置页导航、主题卡编辑按钮和加号卡使用这个工具，避免在业务代码里拼 SVG 字符串。
 
 ## 颜色与主题
 
@@ -171,6 +186,15 @@ HTML 中这样使用：
 
 外观、语言、游戏主题三个导航图标于 2026-10-24 按用户提供的 Lucide SVG 替换；`palette` 的圆点保留 `fill="currentColor"`。设置页返回按钮复用游戏页重玩状态栏的 `exit-retry` 图标；`arrow-left` 仍保留在 sprite 中，当前设置页不再使用。
 
+### P8-4c-1 游戏主题图标
+
+| 名称     | 用途             | 来源            | 状态                  |
+| -------- | ---------------- | --------------- | --------------------- |
+| `plus`   | 新建主题加号卡   | Lucide `plus`   | 已加入（2026-10-24）  |
+| `pencil` | 编辑自定义主题   | Lucide `pencil` | 已加入（2026-10-24）  |
+
+`plus` 用于只有图标的加号卡，CSS 中放大到约 48px；`pencil` 用于主题卡右下角的编辑按钮，约 16px。两者都通过 `createIcon` 动态引用。
+
 ## 构建机制
 
 `vite.config.ts` 中的 `iconSpritePlugin()` 负责：
@@ -187,4 +211,4 @@ HTML 中这样使用：
 - 游戏页图标已全部迁移到 sprite；设置页图标已随 P8-4b 加入并登记，后续只处理占位页 `←`、弹窗/提示 `×`、首页 `→` 是否也改为 SVG。
 - 评估线宽是否从 `1.8` 统一为 Lucide 默认的 `2`。
 - 成绩页、回放页及后续游戏页新增图标时直接复用本方案。
-- 需要动态生成图标时，再在 `src/shared/icons/` 增加 `createIcon(name)` 工具，避免在业务代码里拼 SVG 字符串。
+- 动态图标使用 `src/shared/icons/create-icon.ts` 的 `createIcon(name)`，不要在业务代码里拼 SVG 字符串。

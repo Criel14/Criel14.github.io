@@ -1,9 +1,14 @@
-import type { AppearanceState, Theme } from '../../types';
+import type { AppearanceState, ColorMode, Theme } from '../../types';
 import { BUILTIN_THEMES, DEFAULT_THEME_ID } from './presets';
 import { cloneTheme } from './theme';
 
-/** UI 第一版展示的自定义主题槽位数量；空槽位不写入 themes。 */
-export const CUSTOM_THEME_SLOT_COUNT = 3;
+/**
+ * 自定义主题上限。
+ *
+ * 3 是旧版 UI 槽位数量；P8-4c 放宽到 20，同时用于数据归一化和加号卡禁用判断。
+ * 空槽位不写入 themes。
+ */
+export const CUSTOM_THEME_SLOT_COUNT = 20;
 
 const BUILTIN_THEME_IDS = new Set(BUILTIN_THEMES.map((theme) => theme.id));
 
@@ -80,4 +85,49 @@ export function removeCustomTheme(appearance: AppearanceState, themeId: string):
       appearance.activeThemeId === themeId ? DEFAULT_THEME_ID : appearance.activeThemeId,
     themes: appearance.themes.filter((theme) => theme.id !== themeId),
   };
+}
+
+/** 比较两个着色模式的所有字段，包括 palette 顺序。 */
+function isColorModeEqual(a: ColorMode, b: ColorMode): boolean {
+  if (a.mode !== b.mode) {
+    return false;
+  }
+  if (a.blankColor !== b.blankColor || a.fontColor !== b.fontColor) {
+    return false;
+  }
+  if (a.palette.length !== b.palette.length) {
+    return false;
+  }
+  return a.palette.every((color, index) => color === b.palette[index]);
+}
+
+/** 比较主题的全部可持久化字段；id/name/builtin 也参与比较。 */
+function isThemeEqual(a: Theme, b: Theme): boolean {
+  return (
+    a.id === b.id &&
+    a.name === b.name &&
+    a.builtin === b.builtin &&
+    a.blindTileColor === b.blindTileColor &&
+    a.metrics.fontSizeRatio === b.metrics.fontSizeRatio &&
+    a.metrics.gapRatio === b.metrics.gapRatio &&
+    a.metrics.radiusRatio === b.metrics.radiusRatio &&
+    isColorModeEqual(a.color, b.color)
+  );
+}
+
+/**
+ * 判断两份外观状态是否完全相同。
+ *
+ * 用于设置页主题选择的脏状态判断；主题顺序也参与比较，因为顺序决定卡片展示。
+ * 不修改入参，不做归一化；调用方应比较已归一化的 saved / draft。
+ */
+export function isAppearanceEqual(a: AppearanceState, b: AppearanceState): boolean {
+  if (a.activeThemeId !== b.activeThemeId || a.themes.length !== b.themes.length) {
+    return false;
+  }
+
+  return a.themes.every((theme, index) => {
+    const other = b.themes[index];
+    return other !== undefined && isThemeEqual(theme, other);
+  });
 }

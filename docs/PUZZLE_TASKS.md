@@ -4,7 +4,7 @@
 >
 > 当前分支：`refactor/vite-ts`
 >
-> 状态：P0–P7 已完成；P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b 独立设置页与网站偏好已实现（2026-10-24，见 `docs/SETTINGS_PAGE.md`，待手动验收），P8-4c～P8-6 待开始（P7-3 的交互与视觉随 P8 接入手动验收）；P5/P6 详细设计见 `docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`，成绩页与分组管理见 `docs/PUZZLE_SCORE_PAGE.md`
+> 状态：P0–P7 已完成；P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b 独立设置页与网站偏好已实现（2026-10-24，见 `docs/SETTINGS_PAGE.md`，待手动验收），P8-4c 拆成 P8-4c-1 主题列表（已实现，待手动验收）和 P8-4c-2 独立编辑器（待开始），P8-5～P8-6 待开始（P7-3 的交互与视觉随 P8 接入手动验收）；P5/P6 详细设计见 `docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`，成绩页与分组管理见 `docs/PUZZLE_SCORE_PAGE.md`，游戏主题见 `docs/PUZZLE_THEME.md`
 >
 > 标记：`[ ]` 未开始 / `[~]` 进行中 / `[x]` 已完成 / `[!]` 阻塞
 >
@@ -27,7 +27,7 @@
 | P10  | 回放页                    | P5、P6、P7 | `[ ]` |
 | P11  | 文档、清理与验收          | P8–P10     | `[ ]` |
 
-**当前进度：P0–P7 已完成，P8-0 已确认，P8-1 / P8-2 / P8-3 / P8-4a-0 / P8-4a / P8-4b 已完成；分组模型已切换为事件级 90 组，分组弹框已接通，设置页骨架与网站偏好已实现，下一步 P8-4c 游戏主题编辑器。** P8 起进入页面组装，按顺序推进，不提前写页面；游戏页详细设计和布局实验见 `docs/PUZZLE_GAME_PAGE.md`，设置页设计见 `docs/SETTINGS_PAGE.md`，成绩页与分组管理见 `docs/PUZZLE_SCORE_PAGE.md`，游戏页后续以 `docs/PUZZLE_GAME_PAGE.md` 的“5.5 实现基线”为准。
+**当前进度：P0–P7 已完成，P8-0 已确认，P8-1 / P8-2 / P8-3 / P8-4a-0 / P8-4a / P8-4b 已完成；分组模型已切换为事件级 90 组，分组弹框已接通，设置页骨架与网站偏好已实现，P8-4c-1 设置页主题列表已实现（待手动验收），下一步 P8-4c-2 独立主题编辑器。** P8 起进入页面组装，按顺序推进，不提前写页面；游戏页详细设计和布局实验见 `docs/PUZZLE_GAME_PAGE.md`，设置页设计见 `docs/SETTINGS_PAGE.md`，游戏主题与编辑器见 `docs/PUZZLE_THEME.md`，成绩页与分组管理见 `docs/PUZZLE_SCORE_PAGE.md`，游戏页后续以 `docs/PUZZLE_GAME_PAGE.md` 的“5.5 实现基线”为准。
 
 每个阶段结束都运行：
 
@@ -191,7 +191,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
   - `cloneAppearance(appearance)`。
   - `upsertCustomTheme`、`removeCustomTheme`、`setActiveTheme`：纯函数，返回新状态。
   - 内置主题不可删除、不可覆盖；自定义主题携带自己的颜色模式和 metrics。
-  - `CUSTOM_THEME_SLOT_COUNT = 3` 供 UI 展示空槽位，不写入 `themes`。
+  - `CUSTOM_THEME_SLOT_COUNT = 20` 供 UI 展示上限，不写入 `themes`；P8-4c-1 从 3 放宽到 20。
 - 测试：
   - 默认状态只有两套内置主题，activeThemeId 失效回退。
   - 新增/更新/删除自定义主题；自定义主题可带 row/fixed 模式和 metrics。
@@ -531,9 +531,9 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 ## P8 游戏页
 
-> 详细设计、布局实验与 P8-0～P8-6 任务见 `docs/PUZZLE_GAME_PAGE.md`；设置页设计见 `docs/SETTINGS_PAGE.md`。
+> 详细设计、布局实验与 P8-0～P8-6 任务见 `docs/PUZZLE_GAME_PAGE.md`；设置页设计见 `docs/SETTINGS_PAGE.md`；游戏主题与编辑器见 `docs/PUZZLE_THEME.md`。
 >
-> 当前：P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b 设置页与网站偏好已实现（2026-10-24，待手动验收）。下一步 P8-4c 游戏主题编辑器。后续游戏页实现以 `docs/PUZZLE_GAME_PAGE.md` 的“5.5 实现基线”为准，设置页以 `docs/SETTINGS_PAGE.md` 为准，`prototype/layout-lab.html` 保留到最终视觉验收。
+> 当前：P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b 设置页与网站偏好已实现（2026-10-24，待手动验收），P8-4c-1 设置页主题列表已实现（2026-10-24，待手动验收）。下一步 P8-4c-2 独立主题编辑器。后续游戏页实现以 `docs/PUZZLE_GAME_PAGE.md` 的“5.5 实现基线”为准，设置页以 `docs/SETTINGS_PAGE.md` 为准，`prototype/layout-lab.html` 保留到最终视觉验收。
 >
 > 分组管理和成绩页的交互见 `docs/PUZZLE_SCORE_PAGE.md`；P8-4a 只负责游戏页的分组切换，不负责重命名。
 >
@@ -548,11 +548,12 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 | P8-4a-0 | 分组模型与数据层（事件级 90 组） | `[x]` |
 | P8-4a | 游戏页分组弹框                    | `[x]` |
 | P8-4b | 设置页与网站偏好                  | `[x]` |
-| P8-4c | 游戏主题编辑器                    | `[ ]` |
+| P8-4c-1 | 设置页主题列表与选择              | `[x]` |
+| P8-4c-2 | 独立主题编辑器                    | `[ ]` |
 | P8-5 | 光标、极简 UI 与可访问性          | `[ ]` |
 | P8-6 | 游戏页 E2E                        | `[ ]` |
 
-> P8-4b/P8-4c 的详细任务、页面结构、存储和验收以 `docs/SETTINGS_PAGE.md` 为准。
+> P8-4b 的详细任务、页面结构和验收以 `docs/SETTINGS_PAGE.md` 为准；P8-4c-1/P8-4c-2 以 `docs/PUZZLE_THEME.md` 为准。
 
 ---
 

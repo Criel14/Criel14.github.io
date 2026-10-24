@@ -55,6 +55,7 @@ export default defineConfig({
         home: entry('./index.html'),
         puzzle: entry('./puzzle-game/puzzle.html'),
         puzzleSettings: entry('./puzzle-game/settings.html'),
+        puzzleThemeEditor: entry('./puzzle-game/theme-editor.html'),
         puzzleScores: entry('./puzzle-game/score-list.html'),
         puzzleReplay: entry('./puzzle-game/replay.html'),
       },

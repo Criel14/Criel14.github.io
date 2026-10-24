@@ -7,6 +7,7 @@
     <title>设置</title>
     <link rel="stylesheet" href="../src/shared/styles/base.css" />
     <link rel="stylesheet" href="../src/games/puzzle/styles/settings.css" />
+    <link rel="stylesheet" href="../src/games/puzzle/styles/board.css" />
   </head>
   <body class="settings-page">
     <!-- icon-sprite -->
@@ -214,23 +215,10 @@
             游戏主题
           </h2>
           <p class="settings-section__description">
-            自定义棋盘颜色、字号、间隙与圆角。主题编辑功能正在开发中。
+            选择棋盘主题。内置主题不可编辑；自定义主题可以调整颜色、字号、间隙与圆角。
           </p>
 
-          <div class="settings-empty">
-            <p class="settings-empty__title">主题编辑功能开发中</p>
-            <p class="settings-empty__text">
-              后续将支持降阶、按行和固定色三种着色模式，并可分别调整字号、间隙和圆角。
-            </p>
-            <ul class="settings-mode-list" aria-label="计划支持的着色模式">
-              <li>降阶</li>
-              <li>按行</li>
-              <li>固定色</li>
-            </ul>
-            <button class="settings-button" type="button" disabled title="功能开发中">
-              自定义主题
-            </button>
-          </div>
+          <div data-game-theme-picker></div>
         </section>
 
         <section

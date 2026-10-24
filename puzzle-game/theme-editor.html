@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="编辑数字华容道的自定义棋盘主题。" />
+    <title>编辑主题</title>
+    <link rel="stylesheet" href="../src/shared/styles/base.css" />
+    <link rel="stylesheet" href="../src/games/puzzle/styles/settings.css" />
+  </head>
+  <body class="settings-page">
+    <!-- icon-sprite -->
+    <header class="settings-header">
+      <a
+        class="settings-back"
+        href="/puzzle-game/settings.html#game-theme"
+        aria-label="返回游戏主题设置"
+        title="返回游戏主题设置"
+      >
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <use href="#icon-exit-retry"></use>
+        </svg>
+      </a>
+      <h1 class="settings-title">编辑主题</h1>
+    </header>
+
+    <main class="settings-layout settings-layout--single">
+      <section class="settings-section" aria-labelledby="theme-editor-title">
+        <h2 class="settings-section__title" id="theme-editor-title">主题编辑器</h2>
+        <p class="settings-section__description">
+          主题编辑器正在开发中。你仍然可以在设置页选择已有主题。
+        </p>
+
+        <div class="settings-empty">
+          <p class="settings-empty__title">编辑器开发中</p>
+          <p class="settings-empty__text">
+            后续将支持降阶、按行和固定色三种着色模式，并可分别调整色板、空白色、字体色、盲玩色、字号、间隙和圆角。
+          </p>
+          <a class="settings-button" href="/puzzle-game/settings.html#game-theme"> 返回游戏主题 </a>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

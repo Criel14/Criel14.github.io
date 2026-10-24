@@ -91,6 +91,12 @@ body.settings-page {
   margin: 0 auto;
 }
 
+/* 主题编辑器占位页没有左侧导航，内容单列居中。 */
+.settings-layout--single {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 800px;
+}
+
 .settings-nav {
   position: sticky;
   top: 24px;
@@ -170,6 +176,7 @@ body.settings-page {
   color: #6b4b00;
   box-shadow: var(--settings-raised-shadow);
   font-size: 0.92rem;
+  white-space: pre-line;
 }
 
 .settings-section {
@@ -405,6 +412,154 @@ body.settings-page {
   transform: scale(1);
 }
 
+/*
+ * 游戏主题卡片：上方是 10×10 棋盘预览，下方是名称/内置徽标/编辑按钮。
+ * 主题卡和加号卡共用最小高度，换行后尺寸保持一致。
+ */
+.theme-options.theme-options--game {
+  --game-theme-card-min-height: 19.5rem;
+
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+
+.theme-card--game,
+.theme-add-card {
+  min-height: var(--game-theme-card-min-height, 19.5rem);
+}
+
+.theme-card--game {
+  display: flex;
+}
+
+.theme-card--game .theme-card__surface {
+  flex: 1 1 auto;
+  justify-content: space-between;
+}
+
+.theme-card__preview {
+  display: grid;
+  place-items: center;
+  min-height: 15rem;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* BoardView 由 JS 创建，外层只负责限制预览尺寸。 */
+.theme-preview-board {
+  width: min(100%, 14rem);
+}
+
+.theme-card--game .theme-card__footer {
+  min-height: 30px;
+}
+
+/* 自定义主题右下角有编辑按钮，标题让出按钮宽度。 */
+.theme-card--game.theme-card--custom .theme-card__footer {
+  padding-right: 2.25rem;
+}
+
+.theme-card__title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 透明覆盖层负责整卡点击选中；棋盘里的 div 不直接放进 label。 */
+.theme-card__hitarea {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  cursor: pointer;
+}
+
+.theme-card__edit {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--settings-border);
+  border-radius: 8px;
+  background: var(--settings-surface);
+  color: var(--settings-text);
+  box-shadow: var(--settings-raised-shadow-active);
+  text-decoration: none;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+.theme-card__edit:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.theme-card__edit:focus-visible {
+  outline: 2px solid #1f6f9f;
+  outline-offset: 2px;
+}
+
+.theme-card__edit .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.theme-add-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--settings-border-strong);
+  border-radius: var(--settings-radius-sm);
+  background: var(--settings-surface);
+  color: var(--settings-muted);
+  box-shadow: var(--settings-raised-shadow);
+  text-decoration: none;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+.theme-add-card:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.theme-add-card:focus-visible {
+  outline: 2px solid #1f6f9f;
+  outline-offset: 3px;
+}
+
+.theme-add-card .icon {
+  width: 48px;
+  height: 48px;
+  stroke-width: 2;
+}
+
+.theme-add-card.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.theme-add-card.is-disabled:hover {
+  border-color: var(--settings-border-strong);
+  background: var(--settings-surface);
+  color: var(--settings-muted);
+}
+
+.theme-add-note {
+  margin-top: 1rem;
+}
+
 .language-options {
   display: grid;
   gap: 0.75rem;
@@ -484,24 +639,6 @@ body.settings-page {
   font-size: 0.9rem;
 }
 
-.settings-mode-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  padding: 0;
-  margin: 0.25rem 0 0.5rem;
-  list-style: none;
-}
-
-.settings-mode-list li {
-  padding: 0.25rem 0.6rem;
-  border: 1px solid var(--settings-border);
-  border-radius: 999px;
-  background: var(--settings-surface);
-  box-shadow: var(--settings-raised-shadow-active);
-  font-size: 0.8rem;
-}
-
 .settings-button {
   appearance: none;
   display: inline-flex;
@@ -518,6 +655,7 @@ body.settings-page {
   font: inherit;
   font-size: 0.92rem;
   font-weight: 600;
+  text-decoration: none;
   cursor: pointer;
   transition:
     background-color 120ms ease,

@@ -1,16 +1,17 @@
 # 数字华容道数据存储设计
 
-> 状态：P6 已完成（数据层与旧数据清理均已实现）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层已完成（2026-10-24）；P8-4b 独立设置页与 `site.v1.preferences` 已实现（2026-10-24，待手动验收）
+> 状态：P6 已完成（数据层与旧数据清理均已实现）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层已完成（2026-10-24）；P8-4b 独立设置页与 `site.v1.preferences` 已实现（2026-10-24，待手动验收）；P8-4c-1 主题存储与选择已实现（2026-10-24，待手动验收）；P8-4c-2 编辑器待开始
 >
 > 分支：`refactor/vite-ts`
 >
-> 范围：localStorage / IndexedDB 分层、全站偏好、数据库 schema、repository API、录像紧凑编码、错误处理、容量估算
+> 范围：localStorage / IndexedDB 分层、全站偏好、游戏主题、数据库 schema、repository API、录像紧凑编码、错误处理、容量估算
 >
-> 配套文档：`docs/PUZZLE_ARCHITECTURE.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_SCORE_PAGE.md`、`docs/PUZZLE_TASKS.md`、`docs/SETTINGS_PAGE.md`
+> 配套文档：`docs/PUZZLE_ARCHITECTURE.md`、`docs/PUZZLE_THEME.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_SCORE_PAGE.md`、`docs/PUZZLE_TASKS.md`、`docs/SETTINGS_PAGE.md`
 
 ## 0. 决策摘要
 
 - **设置和外观继续用 localStorage**：数据小、同步读写、页面启动即可用。
+- **游戏主题仍存 `puzzle.v2.appearance`**：内置主题 canonical、自定义主题最多 20 个；存储体积约 20–25KB 上限，不需要 IndexedDB。详见 `docs/PUZZLE_THEME.md`。
 - **全站偏好独立存储**：外观模式/语言存 localStorage `site.v1.preferences`（version 1），与拼图设置/外观分开；详见 `docs/SETTINGS_PAGE.md`。
 - **成绩列表和录像改用 IndexedDB**：数据大、需要按桶查询、需要原子事务。
 - **不使用 `puzzle.v2.meta`**：localStorage 的 envelope 自带 `version`，IndexedDB 用 `DB_VERSION`。
@@ -95,11 +96,14 @@ v2 没有正式上线，不提供从这些键迁移到 IndexedDB 的逻辑。若
 ### 2.3 外观
 
 - 存储 `AppearanceState`：`activeThemeId` + `themes`。
-- 内置主题不可修改、不可删除；自定义主题可以编辑颜色、盲玩色和 metrics。
+- 内置主题不可修改、不可删除；自定义主题可以编辑颜色、盲玩色和 metrics，上限 20 个（`CUSTOM_THEME_SLOT_COUNT = 20`）。
 - 主题非法时过滤；`activeThemeId` 失效时回退第一个内置主题。
 - `Theme.blindTileColor` 是盲玩隐藏数字时的方块背景色，必须是 `#rrggbb`；缺失或非法的主题会被过滤。
-- P8-4b 设置页不读写外观；P8-4c 的外观编辑器先写 draft，用户点击“保存”后才写 `puzzle.v2.appearance`。
+- 主题存储体积很小：`fixed` 模式 99 色约 1KB/主题，20 个全按最重计算约 20–25KB，远低于 localStorage 配额。
+- P8-4b 设置页不读写外观；P8-4c-1 设置页主题选择先写 draft，点击设置页“保存”后才写 `puzzle.v2.appearance`。
+- P8-4c-2 主题编辑器是独立页面，自己维护 draft，点击编辑器“保存”后才写 `puzzle.v2.appearance`；返回/刷新丢弃 draft。
 - 设置页是独立页面；从 `observing` / `solved` 进入，运行中/重玩中/保存中禁用入口，避免卸载当前局。
+- 主题选择与主题内容编辑都写完整 `AppearanceState`；多标签页最后写入覆盖，不做合并。详见 `docs/PUZZLE_THEME.md`。
 
 ### 2.4 全站偏好
 
@@ -483,6 +487,16 @@ saveAppearance(appearance: AppearanceState, storage?: StorageAdapter): void;
 3. 成绩缺失 → 空状态；成绩存在但录像缺失/损坏 → “录像不可用”状态。
 4. `buildReplayTimeline(score, replay)`，空时间轴或 issues 非空时显示提示，但仍允许播放可用部分。
 5. 使用当前外观主题渲染回放棋盘。
+
+### 6.4 设置页与主题编辑器
+
+1. 设置页启动时同步读取 `site.v1.preferences` 和 `puzzle.v2.appearance`；两者分别显示读取状态。
+2. 设置页主题列表使用 `loadAppearanceResult()` 的归一化结果；选择主题只更新页面 draft 的 `activeThemeId`。
+3. 点击设置页“保存”：先保存全站偏好，再 `saveAppearance(draft)`；写入完整 `AppearanceState`，包括当前 `themes` 和新的 `activeThemeId`。
+4. 主题编辑器读取 `puzzle.v2.appearance`，按 `?theme=<id>` 找到目标主题；新建时生成自定义主题草稿。
+5. 编辑器内所有修改只更新页面 draft；点击“保存”时合并目标主题、保留 `activeThemeId` 和其他主题，再调用 `saveAppearance()`。
+6. 编辑器“取消”/返回/刷新直接丢弃 draft；保存成功返回 `settings.html#game-theme`。
+7. 两处都只在显式保存时写 localStorage；读取 `corrupt` / `unavailable` 时页面提示，不自动覆盖。
 
 ## 7. 错误处理
 

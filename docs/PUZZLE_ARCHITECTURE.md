@@ -1,12 +1,12 @@
 # 数字华容道重构架构
 
-> 状态：P0–P7 已实现；P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b 独立设置页与网站偏好已实现（2026-10-24，详见 `docs/SETTINGS_PAGE.md`，待手动验收），P8-4c～P8-6 待开始（P7-3 交互与视觉随 P8 手动验收）；回放、存储、设置页和成绩页的详细设计见独立文档
+> 状态：P0–P7 已实现；P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b 独立设置页与网站偏好已实现（2026-10-24，详见 `docs/SETTINGS_PAGE.md`，待手动验收），P8-4c 拆成 P8-4c-1 设置页主题列表（已实现，待手动验收）和 P8-4c-2 独立编辑器（待开始），P8-5～P8-6 待开始（P7-3 交互与视觉随 P8 手动验收）；回放、存储、设置页、游戏主题和成绩页的详细设计见独立文档
 >
 > 分支：`refactor/vite-ts`
 >
 > 范围：拼图模块（`puzzle-game`）；其他游戏不在本文范围，接入约定见 `docs/GAMES.md`
 >
-> 配套文档：`docs/PUZZLE_GAME_PAGE.md`、`docs/SETTINGS_PAGE.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`、`docs/PUZZLE_SCORE_PAGE.md`、`docs/PUZZLE_TASKS.md`、`docs/REFACTOR_PLAN.md`、`docs/PUZZLE_GAME.md`
+> 配套文档：`docs/PUZZLE_GAME_PAGE.md`、`docs/SETTINGS_PAGE.md`、`docs/PUZZLE_THEME.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`、`docs/PUZZLE_SCORE_PAGE.md`、`docs/PUZZLE_TASKS.md`、`docs/REFACTOR_PLAN.md`、`docs/PUZZLE_GAME.md`
 >
 > 注意：`docs/PUZZLE_GAME.md` 描述的是旧版行为和历史数据格式，仅作功能参考；回放细节以 `docs/PUZZLE_REPLAY.md` 为准，存储细节以 `docs/PUZZLE_STORAGE.md` 为准，本文保留架构级约束。
 
@@ -20,7 +20,7 @@
 - **纯逻辑优先**。`core` 不碰 DOM / localStorage / IndexedDB；`data` 负责持久化与校验；`ui` 只做 DOM；`pages` 负责组装。
 - **成绩只存事实**。`tps`、`number`、`ao5`、`ao12`、时间格式化全部读时派生。
 - **页面间不通过 localStorage 传状态**。回放、重玩使用 URL 参数 + score id。
-- **外观统一到 `Theme`**：每个主题包含一种着色模式（降阶 / 按行 / 固定色）、盲玩隐藏数字颜色和自带的字号、间隙、圆角；内置先保留两套降阶预设。外观编辑器在 P8-4c 接入独立设置页。
+- **外观统一到 `Theme`**：每个主题包含一种着色模式（降阶 / 按行 / 固定色）、盲玩隐藏数字颜色和自带的字号、间隙、圆角；内置保留两套降阶预设，自定义主题上限 20。P8-4c-1 在设置页选择主题，P8-4c-2 在独立 `theme-editor.html` 编辑主题内容，详见 `docs/PUZZLE_THEME.md`。
 - **设置页独立**：P8-4b 使用 `/puzzle-game/settings.html`，采用分类导航 + 草稿/保存条；不再使用游戏页模态框。详见 `docs/SETTINGS_PAGE.md`。
 - **计时使用单调时钟 + 显式 session 状态机**；回放使用时间轴 + `requestAnimationFrame`，详见 `docs/PUZZLE_REPLAY.md`。
 - **不引入 UI 框架、状态库、插件系统**。项目规模不大，边界清晰比抽象层数更重要。
@@ -243,7 +243,7 @@ export interface AppearanceState {
 - `Theme.blindTileColor` 必须是 `#rrggbb`；默认 `#66ccff`，只用于盲玩隐藏数字时的非空方块，空白块仍使用 `blankColor`。
 - `Theme.metrics` 必须在约定范围内；非法值回退 `DEFAULT_METRICS`。
 - `AppearanceState.themes` 至少包含两套内置主题；`activeThemeId` 必须能解析到某个主题，否则回退第一个内置主题。
-- 内置主题不可修改、不可删除；自定义主题可以编辑颜色和 metrics，UI 第一版保留 3 个槽位。
+- 内置主题不可修改、不可删除；自定义主题可以编辑颜色和 metrics，上限 20 个（`CUSTOM_THEME_SLOT_COUNT = 20`）。
 - **不存储** `tps`、`number`、`ao5`、`ao12`、`dateTime` 字符串、`device`。
 
 ## 5. 存储
@@ -478,7 +478,7 @@ getSessionResult(state: SessionState): SessionResult | null;
 - `tps` 使用当前 `elapsedMs` 计算。
 - 页面用 `performance.now()` 作为 `createdAtMs` / `atMs` / `nowMs`；`createdAtEpochMs` 只在创建时取一次 `Date.now()`。
 - 不做暂停。页面切到后台时 rAF 停止，但墙钟继续；回到前台后 `getSessionView` 自动追上。
-- 设置页是独立页面；`observing` / `solved` 可进入，运行中/重玩中/保存中禁用，避免卸载当前局。P8-4c 的主题编辑在设置页内进行，不再有“打开设置面板”的模态流程。左栏参数切换允许，但会放弃当前局并重新开局。该策略由 UI 执行，core 不处理。
+- 设置页是独立页面；`observing` / `solved` 可进入，运行中/重玩中/保存中禁用，避免卸载当前局。P8-4c-1 在设置页选择主题，P8-4c-2 在独立 `theme-editor.html` 编辑主题内容；不再有“打开设置面板”的模态流程。左栏参数切换允许，但会放弃当前局并重新开局。该策略由 UI 执行，core 不处理。
 
 ### 7.5 移动
 
@@ -750,14 +750,15 @@ function getTileLayer(tile: number, size: PuzzleSize): number {
 ### 10.4 设置交互
 
 - 设置页是独立页面 `/puzzle-game/settings.html`，详见 `docs/SETTINGS_PAGE.md`。
-- P8-4b 只做设置页骨架、外观/语言偏好和保存条；P8-4c 才接入游戏主题编辑器。
-- 外观编辑在 P8-4c 中先进入本地 draft，显式保存后才写 `puzzle.v2.appearance`；不能在每次选色时直接落库。
+- P8-4b 只做设置页骨架、外观/语言偏好和保存条；P8-4c-1 接入设置页主题列表与选择；P8-4c-2 接入独立主题编辑器。
+- 设置页主题选择先进入本地 draft，点击设置页“保存”后才写 `puzzle.v2.appearance`；不能点击卡片就落库。
+- 主题编辑器是独立页面 `/puzzle-game/theme-editor.html`，自己维护 draft，点击编辑器“保存”后才写存储；不能在每次选色时直接落库。
 - 设置页从 `observing` / `solved` 进入；运行中/重玩中/保存中禁用，避免当前局被卸载。
 - 游戏主题编辑只编辑自定义主题；内置主题只读，修改时先复制成自定义主题，再编辑副本。
-- 自定义主题第一版展示 3 个 UI 槽位；数据模型允许列表扩展。
+- 自定义主题上限 20 个；数据模型允许列表扩展，但存储和 UI 以 `CUSTOM_THEME_SLOT_COUNT` 为准。
 - 分组管理集中在成绩页；设置页不重复实现，后续如需要只放跳转链接。
 - 自定义光标、极简 UI 属于 `GameSettings`，不属于 `Theme`；P8-5 再决定是否接入设置页“游戏”分类。
-- 预设加载/自定义方案加载只修改草稿；保存后才写 `puzzle.v2.appearance`。
+- 编辑器和设置页都按“显式保存”处理；返回/刷新丢弃 draft，确认弹框记录 TODO。详见 `docs/PUZZLE_THEME.md`。
 
 ### 10.5 页面主题 token
 
@@ -873,7 +874,8 @@ types ← core ← ui   ← pages
 | 页面     | URL                                                       | 说明                               |
 | -------- | --------------------------------------------------------- | ---------------------------------- |
 | 游戏页   | `/puzzle-game/puzzle.html`                                | 设置从 `puzzle.v2.settings` 读取   |
-| 设置页   | `/puzzle-game/settings.html`                              | 全站偏好 + 游戏主题；详见 `docs/SETTINGS_PAGE.md` |
+| 设置页   | `/puzzle-game/settings.html`                              | 全站偏好 + 游戏主题列表；详见 `docs/SETTINGS_PAGE.md` |
+| 主题编辑器 | `/puzzle-game/theme-editor.html?theme=<themeId>`        | 新建省略 `theme`；编辑自定义主题；详见 `docs/PUZZLE_THEME.md` |
 | 重玩     | `/puzzle-game/puzzle.html?retry=<scoreId>`                | 使用该成绩的配置与打乱，不保存结果 |
 | 成绩页   | `/puzzle-game/score-list.html?size=4&mode=normal&group=1` | 事件 + 分组筛选；group 使用事件内槽位 1–5 |
 | 成绩详情 | 同上，追加 `&score=<id>`                                  | 原生 `<dialog>`，可刷新恢复        |
@@ -948,7 +950,7 @@ types ← core ← ui   ← pages
 以下不阻塞当前实现：
 
 - 分组数量扩展（超过每事件 5 组）需要 IndexedDB / localStorage schema 迁移；当前固定 5 组/事件。
-- 设置页迁移到全站 `/settings.html`、深色主题、多语言和游戏主题编辑器（P8-4c），详见 `docs/SETTINGS_PAGE.md`。
+- 设置页迁移到全站 `/settings.html`、深色主题和多语言，详见 `docs/SETTINGS_PAGE.md`；游戏主题列表与独立编辑器见 `docs/PUZZLE_THEME.md`。
 - 分组名称 i18n：默认名按浏览器语言切换 `分组N` / `GroupN`，已有名称不自动翻译；见 `docs/PUZZLE_SCORE_PAGE.md`。
 - 录像保留策略（只保留最近 N 月、只保留最佳成绩录像、只删录像保留成绩）；当前先全量保存。
 - 更多内置预设（按行/固定色）与预设管理；当前只保留两套降阶内置主题。

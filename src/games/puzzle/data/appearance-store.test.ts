@@ -199,21 +199,20 @@ describe('normalizeAppearance', () => {
     expect(appearance.themes[2].blindTileColor).toBe('#ff8800');
   });
 
-  it('最多保留 3 个自定义主题，并回退失效 activeThemeId', () => {
-    const themes = [1, 2, 3, 4].map((index) =>
-      createCustomTheme(`custom-${index}`, `自定义 ${index}`),
+  it('最多保留 20 个自定义主题，并回退失效 activeThemeId', () => {
+    const themes = Array.from({ length: 21 }, (_, index) =>
+      createCustomTheme(`custom-${index + 1}`, `自定义 ${index + 1}`),
     );
     const appearance = normalizeAppearance({
       activeThemeId: 'missing',
       themes,
     });
 
+    expect(appearance.themes).toHaveLength(22);
     expect(appearance.themes.map((theme) => theme.id)).toEqual([
       'rainbow',
       'rainbow-soft',
-      'custom-1',
-      'custom-2',
-      'custom-3',
+      ...Array.from({ length: 20 }, (_, index) => `custom-${index + 1}`),
     ]);
     expect(appearance.activeThemeId).toBe('rainbow');
   });
