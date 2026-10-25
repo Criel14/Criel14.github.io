@@ -6,12 +6,7 @@ import {
 } from '../core/appearance/appearance';
 import { normalizeInnerBorder, normalizeMetrics } from '../core/appearance/metrics';
 import { DEFAULT_BLIND_TILE_COLOR, FALLBACK_THEME_ID } from '../core/appearance/presets';
-import {
-  cloneTheme,
-  isValidBlankColor,
-  isValidFontColor,
-  isValidHexColor,
-} from '../core/appearance/theme';
+import { cloneTheme, isValidBlankColor, isValidHexColor } from '../core/appearance/theme';
 import { isPuzzleSize, PUZZLE_SIZES } from '../core/board';
 import {
   createLocalStorage,
@@ -40,16 +35,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 /**
  * 修复逐块字体色。
- * 缺失或长度不对时全部补 auto；长度正确时单项非法只回退该项。
+ * 缺失或长度不对时全部补白色；长度正确时单项非法也回退白色。
  * 合法项保留 #rrggbb / #rrggbbaa，包括其 alpha。
  */
 function normalizeFontPalette(value: unknown, length: number): string[] {
   if (!Array.isArray(value) || value.length !== length) {
-    return Array.from({ length }, () => 'auto');
+    return Array.from({ length }, () => '#ffffff');
   }
 
   return value.map((color) =>
-    typeof color === 'string' && isValidFontColor(color) ? color : 'auto',
+    typeof color === 'string' && isValidHexColor(color) ? color : '#ffffff',
   );
 }
 

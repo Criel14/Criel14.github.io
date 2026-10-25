@@ -138,22 +138,22 @@ describe('FALLBACK_THEME', () => {
     expect(FALLBACK_THEME.builtin).toBe(true);
   });
 
-  it('支持全部阶数，使用中性蓝和 auto 字体色', () => {
+  it('支持全部阶数，使用中性蓝和明确白色字体', () => {
     expect(FALLBACK_THEME.supportedSizes).toEqual(PUZZLE_SIZES);
     expect(FALLBACK_THEME.color.mode).toBe('layer');
     expect(FALLBACK_THEME.color.palette).toHaveLength(18);
     expect(FALLBACK_THEME.color.palette.every((color) => color === '#3498db')).toBe(true);
     expect(FALLBACK_THEME.color.fontPalette).toHaveLength(18);
-    expect(FALLBACK_THEME.color.fontPalette.every((color) => color === 'auto')).toBe(true);
+    expect(FALLBACK_THEME.color.fontPalette.every((color) => color === '#ffffff')).toBe(true);
     expect(FALLBACK_THEME.color.blankColor).toBe('transparent');
     expect(FALLBACK_THEME.innerBorder).toEqual({ color: 'transparent', widthRatio: 0 });
     expect(FALLBACK_THEME.blindTileColor).toBe('#3498db');
   });
 
-  it('使用更疏的间距和无圆角', () => {
+  it('使用 4% 间距和无圆角', () => {
     expect(FALLBACK_THEME.metrics).toEqual({
       fontSizeRatio: 0.5,
-      gapRatio: 0.06,
+      gapRatio: 0.04,
       radiusRatio: 0,
     });
   });

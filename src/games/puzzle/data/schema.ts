@@ -14,7 +14,7 @@ import type {
 } from '../types';
 import { CUSTOM_THEME_SLOT_COUNT } from '../core/appearance/appearance';
 import { BUILTIN_THEMES, FALLBACK_THEME_ID } from '../core/appearance/presets';
-import { isValidBlankColor, isValidFontColor, isValidHexColor } from '../core/appearance/theme';
+import { isValidBlankColor, isValidHexColor } from '../core/appearance/theme';
 import { isPuzzleSize, isValidBoard, PUZZLE_SIZES } from '../core/board';
 import { EVENT_GAME_MODES, EVENT_SIZES, GROUP_COUNT, GROUP_IDS, isGroupId } from '../core/groups';
 import { isDirection } from '../core/moves';
@@ -95,12 +95,12 @@ function isSupportedSizes(value: unknown): value is readonly PuzzleSize[] {
   return true;
 }
 
-/** 字体色板：每项为 auto、#rrggbb 或 #rrggbbaa。 */
+/** 字体色板：每项为 #rrggbb 或 #rrggbbaa。 */
 function isFontPalette(value: unknown, length: number): value is readonly string[] {
   return (
     Array.isArray(value) &&
     value.length === length &&
-    value.every((color): color is string => typeof color === 'string' && isValidFontColor(color))
+    value.every((color): color is string => typeof color === 'string' && isValidHexColor(color))
   );
 }
 

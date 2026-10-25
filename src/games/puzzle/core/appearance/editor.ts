@@ -2,13 +2,16 @@ import type { ColorMode, PuzzleSize, Theme } from '../../types';
 import { isPuzzleSize, PUZZLE_SIZES } from '../board';
 import { CUSTOM_THEME_SLOT_COUNT, isThemeEqual } from './appearance';
 import { getThemeNameError } from './name';
-import { BUILTIN_THEMES, DEFAULT_BLIND_TILE_COLOR, FALLBACK_THEME_ID } from './presets';
+import {
+  BUILTIN_THEMES,
+  DEFAULT_BLIND_TILE_COLOR,
+  FALLBACK_THEME,
+  FALLBACK_THEME_ID,
+} from './presets';
 import {
   cloneTheme,
-  getReadableFontColor,
   getTilePaletteIndex,
   isValidBlankColor,
-  isValidFontColor,
   isValidHexColor,
   normalizeHexColor,
 } from './theme';
@@ -21,7 +24,7 @@ export const COLOR_MODE_PALETTE_LENGTHS: Readonly<Record<ColorMode['mode'], numb
     fixed: 99,
   });
 
-/** 编辑器样式刷：背景色和文字色都是明确的 #rrggbb / #rrggbbaa，不使用 auto。 */
+/** 编辑器样式刷：背景色和文字色都是明确的 #rrggbb / #rrggbbaa。 */
 export interface ThemeBrush {
   readonly background: string;
   readonly fontColor: string;
@@ -51,9 +54,9 @@ function createColorMode(
 /**
  * 切换主题的着色模式。
  *
- * 模式代表一整套新的分组方式，切换时不再按索引保留旧颜色，而是把整块
- * palette / fontPalette 重置为回退主题样式（默认蓝背景 + 对应的可读字体色），
- * 避免 18 / 10 / 99 三种索引语义混在一起。空白色和其他样式字段保持不变；
+ * 模式代表一整套新的分组方式，切换时把整块 palette / fontPalette 重置为
+ * 回退主题样式（默认蓝背景 + 白字），并把盲玩色、内边框、字号/间隙/圆角也
+ * 一并恢复到回退值，避免旧模式的配色和样式残留。名称和支持阶数保持不变；
  * 返回深拷贝，不修改入参；模式相同时返回原对象。
  *
  * 调用方把这次变化作为一步历史提交，用户可以用 Ctrl/Cmd+Z 撤销误触。
@@ -65,38 +68,35 @@ export function changeThemeColorMode(theme: Theme, mode: ColorMode['mode']): The
 
   const length = getColorModePaletteLength(mode);
   const palette = Array.from({ length }, () => DEFAULT_BLIND_TILE_COLOR);
-  // 编辑器不生成 auto；字体色取默认蓝对应的明确黑/白。
-  const fallbackFontColor = getReadableFontColor(DEFAULT_BLIND_TILE_COLOR);
+  // 与回退主题保持一致：默认蓝背景 + 明确白字。
+  const fallbackFontColor = FALLBACK_THEME.color.fontPalette[0] ?? '#ffffff';
   const fontPalette = Array.from({ length }, () => fallbackFontColor);
 
   return {
     ...cloneTheme(theme),
-    color: createColorMode(mode, palette, fontPalette, theme.color.blankColor),
+    color: createColorMode(mode, palette, fontPalette, FALLBACK_THEME.color.blankColor),
+    innerBorder: { ...FALLBACK_THEME.innerBorder },
+    blindTileColor: FALLBACK_THEME.blindTileColor,
+    metrics: { ...FALLBACK_THEME.metrics },
   };
 }
 
 /**
  * 把已保存主题转换成编辑器可直接编辑的形式。
  *
- * - 旧数据里的字体色 `auto` 转成当前背景对应的黑/白；编辑器不再提供自动模式。
  * - 8 位 alpha 颜色原样保留，并把所有 hex 统一成小写，避免 Color Picker
  *   输出大小写不同造成假脏状态。
+ * - 缺失或非法的字体色回退白色，保证编辑器里所有颜色都是具体值。
  * - 空白色统一固定为 `transparent`；空白块不再允许自定义。
  * - 其余字段和模式保持不变，返回深拷贝，不修改入参。
- *
- * 视觉上与原来的 auto 结果一致，因此这个转换本身不产生未保存状态。
  */
 export function prepareThemeForEditor(theme: Theme): Theme {
   const clone = cloneTheme(theme);
   const palette = clone.color.palette.map((color) => normalizeHexColor(color) ?? color);
-  const fontPalette = Array.from({ length: palette.length }, (_, index) => {
-    const configured = clone.color.fontPalette[index];
-    const normalized =
-      typeof configured === 'string' && configured !== 'auto'
-        ? normalizeHexColor(configured)
-        : null;
-    return normalized ?? getReadableFontColor(palette[index] ?? DEFAULT_BLIND_TILE_COLOR);
-  });
+  const fontPalette = Array.from(
+    { length: palette.length },
+    (_, index) => normalizeHexColor(clone.color.fontPalette[index] ?? '') ?? '#ffffff',
+  );
 
   return {
     ...clone,
@@ -199,8 +199,8 @@ export function readBrushFromTheme(
 
   return {
     background,
-    // auto 或非法值在吸管里也解析成明确的对比色，保证样式刷永远是具体颜色。
-    fontColor: fontColor ?? getReadableFontColor(background),
+    // 缺失或非法的字体色回退白色，保证样式刷永远是具体颜色。
+    fontColor: fontColor ?? '#ffffff',
   };
 }
 
@@ -301,10 +301,10 @@ export function validateTheme(
 
   if (theme.color.fontPalette.length !== theme.color.palette.length) {
     issues.push({ field: 'fontPalette', message: '文字色数量必须与背景色一致。' });
-  } else if (!theme.color.fontPalette.every((color) => isValidFontColor(color))) {
+  } else if (!theme.color.fontPalette.every((color) => isValidHexColor(color))) {
     issues.push({
       field: 'fontPalette',
-      message: '文字色必须是 auto、#rrggbb 或 #rrggbbaa 格式。',
+      message: '文字色必须是 #rrggbb 或 #rrggbbaa 格式。',
     });
   }
 

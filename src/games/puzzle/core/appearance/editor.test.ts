@@ -11,7 +11,7 @@ import {
   readBrushFromTheme,
   validateTheme,
 } from './editor';
-import { cloneTheme, getReadableFontColor } from './theme';
+import { cloneTheme } from './theme';
 import {
   BUILTIN_THEMES,
   DEFAULT_BLIND_TILE_COLOR,
@@ -24,7 +24,7 @@ const LAYER_COLORS = Array.from(
   (_, index) => `#${(index + 16).toString(16).padStart(6, '0')}`,
 );
 const LAYER_FONTS = Array.from({ length: 18 }, (_, index) =>
-  index % 2 === 0 ? 'auto' : '#ffffff',
+  index % 2 === 0 ? '#000000' : '#ffffff',
 );
 
 function createTheme(overrides: Partial<Theme> = {}): Theme {
@@ -71,24 +71,39 @@ describe('changeThemeColorMode', () => {
     expect(changeThemeColorMode(theme, 'layer')).toBe(theme);
   });
 
-  it('降阶切按行时整块重置为回退样式', () => {
-    const theme = createTheme();
+  it('降阶切按行时颜色和整盘样式都重置为回退样式', () => {
+    const theme = createTheme({
+      color: {
+        mode: 'layer',
+        palette: [...LAYER_COLORS],
+        fontPalette: [...LAYER_FONTS],
+        blankColor: '#ffffff',
+      },
+      innerBorder: { color: '#000000', widthRatio: 0.02 },
+      blindTileColor: '#ff0000',
+      metrics: { fontSizeRatio: 0.8, gapRatio: 0, radiusRatio: 0.3 },
+    });
     const next = changeThemeColorMode(theme, 'row');
-    const fallbackFont = getReadableFontColor(DEFAULT_BLIND_TILE_COLOR);
+    const fallbackFont = '#ffffff';
 
     expect(next.color.mode).toBe('row');
     expect(next.color.palette).toEqual(Array.from({ length: 10 }, () => DEFAULT_BLIND_TILE_COLOR));
     expect(next.color.fontPalette).toEqual(Array.from({ length: 10 }, () => fallbackFont));
-    expect(next.color.blankColor).toBe('transparent');
-    // 模式以外的字段保持不变。
-    expect(next.blindTileColor).toBe(theme.blindTileColor);
-    expect(next.innerBorder).toEqual(theme.innerBorder);
+    expect(next.color.blankColor).toBe(FALLBACK_THEME.color.blankColor);
+    // 盲玩色、内边框和 metrics 也回到回退值，避免旧样式残留。
+    expect(next.blindTileColor).toBe(FALLBACK_THEME.blindTileColor);
+    expect(next.innerBorder).toEqual(FALLBACK_THEME.innerBorder);
+    expect(next.metrics).toEqual(FALLBACK_THEME.metrics);
+    // 名称和支持范围不属于样式，保持不变。
+    expect(next.name).toBe(theme.name);
+    expect(next.supportedSizes).toEqual(theme.supportedSizes);
     // 原主题不被修改。
     expect(theme.color.mode).toBe('layer');
     expect(theme.color.palette).toEqual(LAYER_COLORS);
+    expect(theme.metrics.gapRatio).toBe(0);
   });
 
-  it('按行切固定色时重置为 99 项，不保留旧颜色', () => {
+  it('按行切固定色时重置为 99 项回退样式，不保留旧颜色', () => {
     const theme = createTheme({
       color: {
         mode: 'row',
@@ -98,7 +113,7 @@ describe('changeThemeColorMode', () => {
       },
     });
     const next = changeThemeColorMode(theme, 'fixed');
-    const fallbackFont = getReadableFontColor(DEFAULT_BLIND_TILE_COLOR);
+    const fallbackFont = '#ffffff';
 
     expect(next.color.mode).toBe('fixed');
     expect(next.color.palette).toHaveLength(99);
@@ -106,7 +121,7 @@ describe('changeThemeColorMode', () => {
     expect(next.color.palette.every((color) => color === DEFAULT_BLIND_TILE_COLOR)).toBe(true);
     expect(next.color.fontPalette.every((color) => color === fallbackFont)).toBe(true);
     expect(next.color.palette[0]).not.toBe(LAYER_COLORS[0]);
-    expect(next.color.blankColor).toBe('#ffffff');
+    expect(next.color.blankColor).toBe(FALLBACK_THEME.color.blankColor);
   });
 
   it('固定色切回降阶时重置为 18 项', () => {
@@ -118,12 +133,12 @@ describe('changeThemeColorMode', () => {
       color: {
         mode: 'fixed',
         palette: colors,
-        fontPalette: Array.from({ length: 99 }, () => 'auto'),
+        fontPalette: Array.from({ length: 99 }, () => '#ffffff'),
         blankColor: 'transparent',
       },
     });
     const next = changeThemeColorMode(theme, 'layer');
-    const fallbackFont = getReadableFontColor(DEFAULT_BLIND_TILE_COLOR);
+    const fallbackFont = '#ffffff';
 
     expect(next.color.palette).toHaveLength(18);
     expect(next.color.fontPalette).toHaveLength(18);
@@ -252,12 +267,9 @@ describe('applyBrushToTheme', () => {
     expect(same).toBe(painted);
   });
 
-  it('空白块、auto 和非法颜色不会修改主题', () => {
+  it('空白块和非法颜色不会修改主题', () => {
     const theme = createTheme();
     expect(applyBrushToTheme(theme, 0, 4, { background: '#123456', fontColor: '#ffffff' })).toBe(
-      theme,
-    );
-    expect(applyBrushToTheme(theme, 1, 4, { background: '#123456', fontColor: 'auto' })).toBe(
       theme,
     );
     expect(applyBrushToTheme(theme, 1, 4, { background: 'red', fontColor: '#ffffff' })).toBe(theme);
@@ -266,11 +278,11 @@ describe('applyBrushToTheme', () => {
 });
 
 describe('readBrushFromTheme', () => {
-  it('读取当前组背景色和字体色；auto 解析成明确颜色', () => {
+  it('读取当前组背景色和字体色', () => {
     const theme = createTheme();
     expect(readBrushFromTheme(theme, 2, 4)).toEqual({
       background: LAYER_COLORS[0],
-      fontColor: getReadableFontColor(LAYER_COLORS[0]!),
+      fontColor: LAYER_FONTS[0],
     });
   });
 
@@ -305,25 +317,25 @@ describe('readBrushFromTheme', () => {
     });
     expect(readBrushFromTheme(theme, 1, 4)).toEqual({
       background: DEFAULT_BLIND_TILE_COLOR,
-      fontColor: getReadableFontColor(DEFAULT_BLIND_TILE_COLOR),
+      fontColor: '#ffffff',
     });
   });
 });
 
 describe('prepareThemeForEditor', () => {
-  it('把 auto 转成明确的对比色，并把空白色固定为透明', () => {
+  it('把空白色固定为透明，统一小写并回退非法字体色', () => {
     const theme = createTheme({
       color: {
         mode: 'layer',
         palette: [...LAYER_COLORS],
-        fontPalette: [...LAYER_FONTS],
+        fontPalette: ['#AABBCC', 'red', ...LAYER_FONTS.slice(2)],
         blankColor: '#ffffff',
       },
     });
     const prepared = prepareThemeForEditor(theme);
 
     expect(prepared.color.blankColor).toBe('transparent');
-    expect(prepared.color.fontPalette[0]).toBe(getReadableFontColor(LAYER_COLORS[0]!));
+    expect(prepared.color.fontPalette[0]).toBe('#aabbcc');
     expect(prepared.color.fontPalette[1]).toBe('#ffffff');
     expect(prepared.color.fontPalette.every((color) => /^#[0-9a-f]{6}$/i.test(color))).toBe(true);
     expect(prepared.color.palette).toEqual(theme.color.palette);
@@ -366,7 +378,7 @@ describe('prepareThemeForEditor', () => {
     expect(prepared.color).not.toBe(theme.color);
     expect(prepared.color.palette).not.toBe(theme.color.palette);
     expect(theme.color.blankColor).toBe('#123456');
-    expect(theme.color.fontPalette[0]).toBe('auto');
+    expect(theme.color.fontPalette[0]).toBe(LAYER_FONTS[0]);
   });
 });
 
@@ -461,7 +473,7 @@ describe('validateTheme', () => {
       color: {
         mode: 'layer',
         palette: ['#ffffff'],
-        fontPalette: ['auto'],
+        fontPalette: ['#ffffff'],
         blankColor: 'transparent',
       },
     });

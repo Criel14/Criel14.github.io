@@ -174,7 +174,7 @@ interface ColorModeFields {
 
   /**
    * 方块字体色。与 palette 等长，索引一一对应。
-   * 每项为 'auto'、'#rrggbb' 或 '#rrggbbaa'；'auto' 根据该块背景自动选黑/白。
+   * 每项为 '#rrggbb' 或 '#rrggbbaa'。
    */
   fontPalette: readonly string[];
 
@@ -258,14 +258,14 @@ export interface AppearanceState {
 - `ScoreRecord.groupId`、`GameSettings.groupId`、`ScoreFilter.groupId` 必须是 1–5 的整数。分组身份由 `size + gameMode + groupId` 共同确定；分组固定存在，因此不需要处理“分组被删除”的引用失效。
 - 分组只允许改名，不允许改变所属事件或槽位；改名不影响已保存成绩。
 - `ScoreRecord.id` 全局唯一；新成绩用 `crypto.randomUUID()`，无该 API 时使用带随机后缀的回退实现。
-- `Theme.color.palette` / `fontPalette` 长度由 mode 决定：layer 18、row 10、fixed 99；`palette` 颜色为 `#rrggbb` / `#rrggbbaa`，`fontPalette` 每项为 `auto` / `#rrggbb` / `#rrggbbaa`，`blankColor` 允许 `transparent` / `#rrggbb` / `#rrggbbaa`。
+- `Theme.color.palette` / `fontPalette` 长度由 mode 决定：layer 18、row 10、fixed 99；`palette` 和 `fontPalette` 每项均为 `#rrggbb` / `#rrggbbaa`，`blankColor` 允许 `transparent` / `#rrggbb` / `#rrggbbaa`。
 - `Theme.innerBorder.color` 允许 `transparent` / `#rrggbb` / `#rrggbbaa`；`widthRatio` 为 0–0.1；默认 `{ transparent, 0 }`。内边框不改变方块外尺寸，字号按“格子边长 − 2 × 内边框宽度”计算。
 - `Theme.supportedSizes` 非空、升序、去重，每项为 2–10；默认全部。
 - `Theme.blindTileColor` 必须是 `#rrggbb` 或 `#rrggbbaa`；默认 `#3498db`，只用于盲玩隐藏数字时的非空方块，空白块仍使用 `blankColor`。
 - `Theme.metrics` 必须在约定范围内；非法值回退 `DEFAULT_METRICS`。
 - `AppearanceState.themeIdBySize` 必须有 2–10 共 9 个键；每个值要么是 `FALLBACK_THEME_ID`，要么能解析到 `themes` 中一个 `supportedSizes` 包含该阶数的主题。
 - `AppearanceState.themes` 至少包含两套内置主题；回退主题不在 `themes` 中。
-- 内置主题不可修改、不可删除；自定义主题数据结构支持逐块颜色/字体色、空白色、盲玩色、内边框和 metrics，上限 20 个（`CUSTOM_THEME_SLOT_COUNT = 20`）。主题编辑器不提供空白色和文字色 `auto` 编辑：打开时固定空白色透明、把 `auto` 转成显式颜色。
+- 内置主题不可修改、不可删除；自定义主题数据结构支持逐块颜色/字体色、空白色、盲玩色、内边框和 metrics，上限 20 个（`CUSTOM_THEME_SLOT_COUNT = 20`）。主题编辑器不提供空白色编辑：打开时固定空白色透明；文字色全部为显式 hex。
 - **不存储** `tps`、`number`、`ao5`、`ao12`、`dateTime` 字符串、`device`。
 
 ## 5. 存储
@@ -750,7 +750,7 @@ function getTileLayer(tile: number, size: PuzzleSize): number {
   - `rainbow`：旧“预设1 / 彩虹”，高饱和，metrics 为 `0.5 / 0.03 / 0.04`。
   - `rainbow-soft`：旧“预设2 / 彩虹微调”，低饱和，metrics 为 `0.5 / 0 / 0.01`。
 - 按行、固定色当前只作为自定义主题可选的模式，不提供内置预设。
-- 两套内置主题的 `fontPalette` 都是 18 个 `#ffffff`，沿用旧版白色；回退主题和 `createCustomThemeDraft()` 默认 18 个 `'auto'`，根据背景亮度自动选择黑/白。编辑器打开时会把这些 `auto` 转成显式黑/白，之后保存的主题不再包含 auto。
+- 两套内置主题的 `fontPalette` 都是 18 个 `#ffffff`，沿用旧版白色；回退主题和 `createCustomThemeDraft()` 也默认 18 个显式 `#ffffff`。字体色直接使用配置值，不再支持 `auto`；旧值在读取时回退白色。
 - `blankColor` 默认 `transparent`，让棋盘背景透出。
 - `innerBorder` 默认 `{ transparent, 0 }`；内边框不改变方块外尺寸，字号按边框内区域计算。
 - `blindTileColor` 默认 `#3498db`，属于 `Theme`，用户可在自定义主题里调整；空白块不参与这个颜色。
@@ -765,7 +765,7 @@ function getTileLayer(tile: number, size: PuzzleSize): number {
   - 按行：`Math.floor((tile - 1) / size)` 取 `palette` / `fontPalette`，颜色跟随数字块原本所属行；
   - 固定色：`tile - 1` 取 `palette` / `fontPalette`，数字与颜色永久绑定；
   - 空白块使用 `theme.color.blankColor`，字体色为 `transparent`。
-- `fontPalette[index] === 'auto'` 时由该块背景亮度自动选择黑/白；否则使用配置的 `#rrggbb` / `#rrggbbaa`。8 位背景色的 alpha 不参与对比度计算，`auto` 只作为旧数据兼容路径。
+- `fontPalette[index]` 直接使用配置的 `#rrggbb` / `#rrggbbaa`，不再根据背景亮度计算黑白；缺失或非法值回退白色。
 - `ui/board-view.ts` 给每个 tile 设置 `--tile-bg` / `--tile-fg`；CSS 使用这两个变量，不关心当前是哪种模式。
 - `core/appearance/metrics.ts` 的 `toCssVariables(theme)` 从 `theme.metrics`、`color.blankColor`、`innerBorder` 和 `blindTileColor` 生成 `--tile-font-ratio`、`--tile-gap-ratio`、`--tile-radius-ratio`、`--blank-color`、`--blind-tile-bg`、`--tile-inner-border-color`、`--tile-inner-border-width-ratio`；页面通过 CSS 变量渲染，不逐项写死样式。
 - 内边框用 `inset box-shadow` 绘制；`.puzzle-board__tile` 用 `padding: var(--tile-inner-border-width)` 把文字限制在边框内，字号使用 `calc(var(--tile-inner-size) * var(--tile-font-ratio))`。边框宽度 0 时退化为原字号公式。
@@ -785,7 +785,7 @@ function getTileLayer(tile: number, size: PuzzleSize): number {
 - 主题编辑器是独立页面 `/puzzle-game/theme-editor.html`，自己维护 draft，点击编辑器“保存”后才写存储；不能在每次选色时直接落库。
 - 编辑器布局为左侧控制、右侧最大支持阶数预览的 `1 : 2` 两栏；预览复用 `board-view`，滚动时 sticky。
 - 编辑器使用“样式刷 + 油漆桶”：点击棋盘按阶/行/单块涂色；吸管从棋盘读回当前组样式后自动切回油漆桶。样式刷、吸管和工具切换不属于主题，不触发脏状态。
-- 编辑器颜色全部是显式 `#rrggbb` / `#rrggbbaa`；旧数据里的 `auto` 在打开时由 `prepareThemeForEditor()` 转成明确黑/白。空白色固定为 `transparent`，编辑器不提供空白色编辑和“显示数字”开关，预览始终显示数字。
+- 编辑器颜色全部是显式 `#rrggbb` / `#rrggbbaa`；旧数据里的 `auto` 在读取时回退白色。空白色固定为 `transparent`，编辑器不提供空白色编辑和“显示数字”开关，预览始终显示数字。
 - 新建编辑器只在内存创建“新的主题 + 回退样式”draft，不写 `themes`；未修改退出不产生主题，保存后才写入。
 - 编辑器保存后停留在当前页；新建保存成功后用 `history.replaceState` 写入 `?theme=<id>`，刷新进入编辑模式。保存后不自动分配阶数。
 - 编辑器提供 50 步快照撤销/重做，页头按钮 + `Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z` / `Ctrl/Cmd+Y`；历史只保存 `Theme` 深拷贝，不保存 DOM、棋盘对象、样式刷或预览状态。
@@ -961,7 +961,7 @@ types ← core ← ui   ← pages
 - session：normal/blind 计时、观察时间、无效移动、整行多步、复原锁定、重玩不保存。
 - stats：空桶、单条、算术平均、去尾 ao、5 分钟边界、并列高亮、删除后重编号、清空分组后为空。
 - replay：0 步、正常回放、盲玩偏移、非法 move、倍速切换、暂停恢复、seek 边界、10×10 约 3,000 步长录像。
-- appearance：2–10 层映射、三种着色模式取色、逐块字体色 `auto`/固定色、内边框消失/存在时的字号公式、两套内置主题不可变、主题级 metrics clamp、`supportedSizes` / `themeIdBySize` 分配、回退主题、自定义主题复制/删除、主题切换不重建棋盘。
+- appearance：2–10 层映射、三种着色模式取色、逐块字体色、内边框消失/存在时的字号公式、两套内置主题不可变、主题级 metrics clamp、`supportedSizes` / `themeIdBySize` 分配、回退主题、自定义主题复制/删除、主题切换不重建棋盘。
 - ui：lifecycle 的 signal / 监听器 / 定时器 / rAF 清理；dialog / notice 的 Esc、焦点回收、非阻塞提示在 P8 手动验收。
 - data：localStorage 设置/外观读写、IndexedDB 原子事务、`by-bucket` / `by-event` 索引、按桶/事件/全部清空、录像编码往返、90 个事件级分组与改名、旧键不读取、清理旧键。
 - preferences：缺键/损坏/不可用状态、字段归一化、保存往返、脏状态比较和重置。
@@ -989,7 +989,7 @@ types ← core ← ui   ← pages
 | 外观       | 每个 Theme 内含 ColorMode + innerBorder + blindTileColor + BoardMetrics | 颜色、字体色、边框和尺寸随主题切换，用户可自定义；避免全局状态分叉 |
 | 主题分配   | `supportedSizes` + `themeIdBySize`，覆盖范围派生 | 主题能力与当前分配分离；每个阶数独立选择；不存两份覆盖数据 |
 | 回退主题   | `FALLBACK_THEME`，不进入主题列表         | 主题损坏/版本不兼容时使用中性外观，不误报为彩虹主题被重置 |
-| 逐块字体色 | `fontPalette`，与 `palette` 等长，每项 `auto`/hex(a) | 支持不同层/行/数字提高辨识度；`auto` 保留对比度逻辑      |
+| 逐块字体色 | `fontPalette`，与 `palette` 等长，每项 hex(a) | 支持不同层/行/数字提高辨识度；直接使用配置色 |
 | 内边框     | `ThemeInnerBorder`，整盘统一，inset shadow + padding | 不改变方块外尺寸；字号按边框内区域计算；颜色支持 alpha  |
 | 盲玩颜色   | `Theme.blindTileColor`，默认 `#3498db`，支持 alpha | 隐藏数字时的方块颜色也属于外观主题，用户可调整          |
 | 着色模式   | 降阶 / 按行 / 固定色                     | 覆盖分层、按行、逐数字三种需求；一个主题只用一种模式    |

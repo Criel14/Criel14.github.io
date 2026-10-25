@@ -10,7 +10,6 @@ export interface TileVisual {
 
 const FALLBACK_COLOR = '#ffffff';
 const TRANSPARENT = 'transparent';
-const AUTO_FONT_COLOR = 'auto';
 
 /** 判断 tile 是否是当前阶数下的有效非空白方块。 */
 function isRenderableTile(tile: number, size: number): boolean {
@@ -21,7 +20,7 @@ function isRenderableTile(tile: number, size: number): boolean {
  * 按主题模式把方块映射到 palette / fontPalette 的 0-based 索引；空白/非法返回 null。
  *
  * 编辑器的油漆桶、吸管和悬停高亮都复用这个映射，避免在 UI 里重新实现
- * 按层/按行/固定色的规则。
+ * 按阶/按行/固定色的规则。
  */
 export function getTilePaletteIndex(tile: number, size: number, color: ColorMode): number | null {
   if (!isRenderableTile(tile, size)) {
@@ -49,13 +48,13 @@ function getPaletteColor(tile: number, size: number, color: ColorMode): string |
   return color.palette[index] ?? FALLBACK_COLOR;
 }
 
-/** 取方块对应的字体色配置；索引越界时回退 auto。 */
+/** 取方块对应的字体色；索引越界或值非法时回退白色。 */
 function getFontPaletteColor(tile: number, size: number, color: ColorMode): string {
   const index = getTilePaletteIndex(tile, size, color);
-  if (index === null) {
-    return AUTO_FONT_COLOR;
-  }
-  return color.fontPalette[index] ?? AUTO_FONT_COLOR;
+  const configured = index === null ? undefined : color.fontPalette[index];
+  return typeof configured === 'string' && isValidHexColor(configured)
+    ? configured
+    : FALLBACK_COLOR;
 }
 
 /** 主题里的空白色非法时退回透明，避免把棋盘染成白色。 */
@@ -98,59 +97,6 @@ export function isValidBlankColor(value: string): boolean {
   return value === TRANSPARENT || isValidHexColor(value);
 }
 
-/** 字体色允许 auto、#rrggbb 或 #rrggbbaa。 */
-export function isValidFontColor(value: string): boolean {
-  return value === AUTO_FONT_COLOR || isValidHexColor(value);
-}
-
-/**
- * 提取 RGB 通道用于对比度计算。
- *
- * 8 位色只取前 6 位，alpha 不参与亮度；`auto` 只用于旧数据兼容，
- * 主题编辑器会把 auto 解析成明确颜色。非法值返回 null。
- */
-function parseHexColor(value: string): [number, number, number] | null {
-  if (!isValidHexColor(value)) {
-    return null;
-  }
-  return [
-    Number.parseInt(value.slice(1, 3), 16),
-    Number.parseInt(value.slice(3, 5), 16),
-    Number.parseInt(value.slice(5, 7), 16),
-  ];
-}
-
-function linearizeChannel(value: number): number {
-  return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
-}
-
-/**
- * 根据背景亮度选择黑色或白色字体。
- * 阈值使用 WCAG 常用的 0.179 相对亮度分界，非法背景回退白色字体；
- * 8 位背景色的 alpha 不参与计算，只按 RGB 通道判断。
- */
-export function getReadableFontColor(background: string): string {
-  const rgb = parseHexColor(background);
-  if (rgb === null) {
-    return FALLBACK_COLOR;
-  }
-
-  const [red, green, blue] = rgb;
-  const luminance =
-    0.2126 * linearizeChannel(red / 255) +
-    0.7152 * linearizeChannel(green / 255) +
-    0.0722 * linearizeChannel(blue / 255);
-  return luminance > 0.179 ? '#000000' : FALLBACK_COLOR;
-}
-
-/** 解析单个字体色；auto 或非法值都按背景亮度计算。 */
-function resolveFontColor(background: string, fontColor: string): string {
-  if (fontColor !== AUTO_FONT_COLOR && isValidHexColor(fontColor)) {
-    return fontColor;
-  }
-  return getReadableFontColor(background);
-}
-
 /** 返回方块背景色；空白/非法方块使用主题空白色。 */
 export function getTileColor(tile: number, size: number, theme: Theme): string {
   if (!isRenderableTile(tile, size)) {
@@ -164,8 +110,7 @@ export function getTileFontColor(tile: number, size: number, theme: Theme): stri
   if (!isRenderableTile(tile, size)) {
     return TRANSPARENT;
   }
-  const background = getPaletteColor(tile, size, theme.color) ?? FALLBACK_COLOR;
-  return resolveFontColor(background, getFontPaletteColor(tile, size, theme.color));
+  return getFontPaletteColor(tile, size, theme.color);
 }
 
 /** 统一返回方块视觉；board-view 只需消费这一个函数。 */
@@ -174,10 +119,9 @@ export function getTileVisual(tile: number, size: number, theme: Theme): TileVis
     return { background: getSafeBlankColor(theme.color), color: TRANSPARENT };
   }
 
-  const background = getPaletteColor(tile, size, theme.color) ?? FALLBACK_COLOR;
   return {
-    background,
-    color: resolveFontColor(background, getFontPaletteColor(tile, size, theme.color)),
+    background: getPaletteColor(tile, size, theme.color) ?? FALLBACK_COLOR,
+    color: getFontPaletteColor(tile, size, theme.color),
   };
 }
 

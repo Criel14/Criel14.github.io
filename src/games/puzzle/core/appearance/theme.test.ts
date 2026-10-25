@@ -4,12 +4,10 @@ import { PUZZLE_SIZES } from '../board';
 import {
   cloneTheme,
   formatHexColorWithAlpha,
-  getReadableFontColor,
   getTileColor,
   getTileFontColor,
   getTileVisual,
   isValidBlankColor,
-  isValidFontColor,
   isValidHexColor,
   normalizeHexColor,
 } from './theme';
@@ -33,7 +31,7 @@ const fixedPalette = Array.from(
   (_, index) => `#2000${index.toString(16).padStart(2, '0')}`,
 );
 
-function createFontPalette(length: number, color = 'auto'): string[] {
+function createFontPalette(length: number, color = '#ffffff'): string[] {
   return Array.from({ length }, () => color);
 }
 
@@ -123,16 +121,16 @@ describe('getTileVisual', () => {
     });
   });
 
-  it('色板缺项时回退白色背景，字体色按背景自动计算', () => {
+  it('色板缺项时背景和字体色都回退白色', () => {
     const shortTheme = createTheme({
       mode: 'layer',
       palette: ['#000000'],
-      fontPalette: ['auto'],
+      fontPalette: ['#000000'],
       blankColor: 'transparent',
     });
     expect(getTileVisual(5, 4, shortTheme)).toEqual({
       background: '#ffffff',
-      color: '#000000',
+      color: '#ffffff',
     });
   });
 });
@@ -155,15 +153,15 @@ describe('字体色', () => {
     expect(getTileFontColor(1, 4, theme)).toBe('#123456');
   });
 
-  it('auto 根据背景亮度选择黑或白', () => {
+  it('字体色完全由配置决定，不随背景变化', () => {
     const theme = createTheme({
       mode: 'fixed',
       palette: ['#000000', '#ffffff'],
-      fontPalette: ['auto', 'auto'],
+      fontPalette: ['#ffffff', '#123456'],
       blankColor: 'transparent',
     });
     expect(getTileFontColor(1, 4, theme)).toBe('#ffffff');
-    expect(getTileFontColor(2, 4, theme)).toBe('#000000');
+    expect(getTileFontColor(2, 4, theme)).toBe('#123456');
   });
 
   it('逐块字体色按层索引分别生效', () => {
@@ -177,10 +175,10 @@ describe('字体色', () => {
     });
 
     expect(getTileFontColor(5, 4, theme)).toBe('#123456');
-    expect(getTileFontColor(1, 4, theme)).toBe(getReadableFontColor(layerPalette[0]!));
+    expect(getTileFontColor(1, 4, theme)).toBe('#ffffff');
   });
 
-  it('非法固定字体色回退自动对比色', () => {
+  it('非法固定字体色回退白色', () => {
     const theme = createTheme({
       mode: 'fixed',
       palette: ['#000000'],
@@ -190,39 +188,18 @@ describe('字体色', () => {
     expect(getTileFontColor(1, 4, theme)).toBe('#ffffff');
   });
 
-  it('字体色缺失时回退 auto', () => {
+  it('字体色缺失时回退白色', () => {
     const theme = createTheme({
       mode: 'layer',
       palette: layerPalette,
       fontPalette: [],
       blankColor: 'transparent',
     });
-    expect(getTileFontColor(5, 4, theme)).toBe(getReadableFontColor(layerPalette[1]!));
+    expect(getTileFontColor(5, 4, theme)).toBe('#ffffff');
   });
 
   it('空白块字体为透明', () => {
     expect(getTileFontColor(0, 4, layerTheme)).toBe('transparent');
-  });
-});
-
-describe('getReadableFontColor', () => {
-  it('深色背景使用白色字体，浅色背景使用黑色字体', () => {
-    expect(getReadableFontColor('#000000')).toBe('#ffffff');
-    expect(getReadableFontColor('#ffffff')).toBe('#000000');
-    expect(getReadableFontColor('#6810fa')).toBe('#ffffff');
-    expect(getReadableFontColor('#f1c40f')).toBe('#000000');
-  });
-
-  it('8 位背景色只按 RGB 计算对比度，忽略 alpha', () => {
-    expect(getReadableFontColor('#00000000')).toBe('#ffffff');
-    expect(getReadableFontColor('#00000080')).toBe('#ffffff');
-    expect(getReadableFontColor('#ffffff00')).toBe('#000000');
-    expect(getReadableFontColor('#ffffff80')).toBe('#000000');
-  });
-
-  it('非法背景回退白色字体', () => {
-    expect(getReadableFontColor('transparent')).toBe('#ffffff');
-    expect(getReadableFontColor('#fff')).toBe('#ffffff');
   });
 });
 
@@ -264,14 +241,6 @@ describe('颜色校验', () => {
     expect(isValidBlankColor('#00000080')).toBe(true);
     expect(isValidBlankColor('none')).toBe(false);
     expect(isValidBlankColor('#fff')).toBe(false);
-  });
-
-  it('字体色允许 auto、6 位或 8 位色', () => {
-    expect(isValidFontColor('auto')).toBe(true);
-    expect(isValidFontColor('#abcdef')).toBe(true);
-    expect(isValidFontColor('#abcdef80')).toBe(true);
-    expect(isValidFontColor('transparent')).toBe(false);
-    expect(isValidFontColor('#fff')).toBe(false);
   });
 });
 

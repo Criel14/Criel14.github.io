@@ -176,7 +176,7 @@ interface ColorModeFields {
 
   /**
    * 方块字体色。与 palette 等长，索引一一对应。
-   * 每一项为 'auto'、'#rrggbb' 或 '#rrggbbaa'；'auto' 根据该块背景自动选黑/白。
+   * 每一项为 '#rrggbb' 或 '#rrggbbaa'。
    */
   readonly fontPalette: readonly string[];
 

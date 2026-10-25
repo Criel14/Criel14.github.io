@@ -80,7 +80,7 @@ P8-4c-2 会替换 P8-4c-1 的“单主题 radio + 固定 10×10 预览”交互�
   - 名称上限 20 显示宽度（10 个汉字或 20 个英文字母）；允许重名。
   - 油漆桶点击棋盘按阶/行/单块涂色；吸管从棋盘读回当前组样式并自动切回油漆桶；悬停只高亮受影响方块。
   - 盲玩色、内边框、字号、间隙、圆角实时预览；空白色固定透明，不提供编辑。
-  - 文字色全部使用明确颜色，不提供 auto；旧主题的 auto 在打开时转成黑/白。
+  - 文字色全部使用明确 hex，不提供 auto；旧数据中的 auto 在载入时回退白色。
   - 新建主题只在内存中复制回退主题，名称“新的主题”；未修改退出不创建主题。
   - 保存后停留在编辑器并更新 URL；新主题不自动分配阶数；不做离开确认。
   - 50 步撤销/重做，页头按钮 + 快捷键；重置可撤销；样式刷/吸管不进入历史。
@@ -117,8 +117,7 @@ interface ColorModeFields {
 
   /**
    * 方块字体色。与 palette 等长，索引一一对应。
-   * 每一项为 'auto'、'#rrggbb' 或 '#rrggbbaa'。
-   * 'auto' 根据该方块自己的背景色自动选黑/白。
+   * 每一项为 '#rrggbb' 或 '#rrggbbaa'。
    */
   readonly fontPalette: readonly string[];
 
@@ -203,25 +202,22 @@ interface Theme {
 `fontPalette` 取代 P8-4c-1 的单个 `fontColor`。
 
 - 长度：`layer 18`、`row 10`、`fixed 99`。
-- 每一项：`'auto'`、`#rrggbb` 或 `#rrggbbaa`。
-- `'auto'`：用该方块背景色计算 WCAG 相对亮度，自动选择黑/白；复用现有 `getReadableFontColor`。
-- 固定色：直接使用；编辑器可以提示对比度，但不强制。
-- 内置主题：18 个 `#ffffff`，保持旧版白字视觉。
-- 回退主题：18 个 `'auto'`；编辑器新建/打开主题时会转成显式黑/白，不再保留 auto。
+- 每一项：`#rrggbb` 或 `#rrggbbaa`，直接使用配置值，不再根据背景自动计算。
+- 内置主题、回退主题和新建主题均为 18 个显式 `#ffffff`。
 - 取色索引与 `palette` 完全一致：`getPaletteIndex(tile, size, color)`。
 - 归一化时：
-  - `fontPalette` 缺失或长度不对 → 全部补 `'auto'`；
-  - 单项非法 → `'auto'`；
+  - `fontPalette` 缺失或长度不对 → 全部补 `#ffffff`；
+  - 单项非法（包括旧数据里的 `auto`）→ `#ffffff`；
   - `palette` 本身非法 → 丢弃主题（与旧规则一致）。
 
 示例：
 
 ```ts
-// layer 模式：第 1–3 层白字，第 4 层黑字，其余自动
-fontPalette: ['#ffffff', '#ffffff', '#ffffff', '#000000', ...Array(14).fill('auto')];
+// layer 模式：第 1–3 层白字，第 4 层黑字，其余白字
+fontPalette: ['#ffffff', '#ffffff', '#ffffff', '#000000', ...Array(14).fill('#ffffff')];
 
-// fixed 模式：数字 1 用白字，其余自动
-fontPalette: ['#ffffff', ...Array(98).fill('auto')];
+// fixed 模式：数字 1 用白字，其余白字
+fontPalette: ['#ffffff', ...Array(98).fill('#ffffff')];
 ```
 
 ### 2.5 内边框
@@ -294,7 +290,7 @@ CSS 落点：
 - `widthRatio = 0`：`padding: 0`、字号公式退化成原来的 `cellSize × fontSizeRatio`，内置主题和回退主题视觉不变。
 - `widthRatio > 0`：字号自动缩小；用户可以在编辑器里调大 `fontSizeRatio` 补偿。
 - `fontSizeRatio` 的范围仍是 0–1，但现在相对于“边框内区域”，不是整个格子。
-- 字体色 `auto` 仍按方块背景色计算，不参与边框颜色。
+- 字体色直接使用配置的 hex，不参与边框颜色。
 
 ### 2.6 BoardMetrics
 
@@ -342,14 +338,14 @@ const FALLBACK_THEME: Theme = {
   color: {
     mode: 'layer',
     palette: Array(18).fill('#3498db'),
-    fontPalette: Array(18).fill('auto'),
+    fontPalette: Array(18).fill('#ffffff'),
     blankColor: 'transparent',
   },
   innerBorder: { color: 'transparent', widthRatio: 0 },
   blindTileColor: '#3498db',
   metrics: {
     fontSizeRatio: 0.5,
-    gapRatio: 0.06,
+    gapRatio: 0.04,
     radiusRatio: 0,
   },
 };
@@ -405,7 +401,7 @@ const FALLBACK_THEME: Theme = {
 - `id`：非空、唯一，不能使用内置 ID 或回退 ID。
 - `supportedSizes`：非空、每一项是 2–10 的整数、升序、去重。
 - `palette`：长度等于 mode 约定值，全部为 `#rrggbb` 或 `#rrggbbaa`。
-- `fontPalette`：长度等于 `palette`，每一项为 `'auto'`、`#rrggbb` 或 `#rrggbbaa`。
+- `fontPalette`：长度等于 `palette`，每一项为 `#rrggbb` 或 `#rrggbbaa`。
 - `blankColor`：`'transparent'`、`#rrggbb` 或 `#rrggbbaa`。
 - `innerBorder.color`：`'transparent'`、`#rrggbb` 或 `#rrggbbaa`。
 - `innerBorder.widthRatio`：0–0.1 的有限数。
@@ -562,7 +558,7 @@ envelope: { version: 4, data: AppearanceState }
    - `name` `trim()` 后非空；
    - `supportedSizes` 非法或为空 → 丢弃主题；
    - `palette` 长度/颜色非法 → 丢弃主题；
-   - `fontPalette` 缺失/长度不对 → 全部补 `'auto'`；单项非法 → `'auto'`；
+   - `fontPalette` 缺失/长度不对 → 全部补 `#ffffff`；单项非法（包括旧 `auto`）→ `#ffffff`；
    - `blankColor` 非法 → `transparent`；
    - `innerBorder` 缺失/非法 → `{ transparent, 0 }`；宽度越界夹取；
    - `blindTileColor` 非法 → `#3498db`；
@@ -801,7 +797,7 @@ envelope: { version: 4, data: AppearanceState }
 │ 整盘样式                 │                                 │
 │ 盲玩色 [■]               │                                 │
 │ 内边框 [透明] 宽 0%      │                                 │
-│ 字号 50% 间隙 6% 圆角 0% │                                 │
+│ 字号 50% 间隙 4% 圆角 0% │                                 │
 └──────────────────────────┴─────────────────────────────────┘
             [你有未保存的修改。]  [重置] [保存]
 ```
@@ -824,7 +820,7 @@ type ThemeEditorTool = 'bucket' | 'eyedropper';
 interface ThemeBrush {
   /** 方块背景色，必须是 #rrggbb 或 #rrggbbaa。 */
   readonly background: string;
-  /** 方块文字色，必须是 #rrggbb 或 #rrggbbaa；编辑器不再使用 auto。 */
+  /** 方块文字色，必须是 #rrggbb 或 #rrggbbaa。 */
   readonly fontColor: string;
 }
 
@@ -841,18 +837,18 @@ interface ThemeEditorState {
 }
 ```
 
-- `baseline` / `draft` 都使用 `prepareThemeForEditor()` + `cloneTheme()`；该函数把旧数据里的 `auto` 字体色转成明确黑/白，并把空白色固定为 `transparent`。
+- `baseline` / `draft` 都使用 `prepareThemeForEditor()` + `cloneTheme()`；该函数把字体色统一成小写 hex（缺失或非法回退白色），并把空白色固定为 `transparent`。
 - 禁止原地修改 `FALLBACK_THEME`、内置主题或存储中的对象。
 - `dirty = !isThemeDirty(baseline, draft)`；名称首尾空格在比较前按 `trim()` 处理。
 - `brush`、`tool` 只影响编辑体验，不进入主题、存储或脏状态。
 - 不支持在一个主题里混用多种着色模式；模式是 `Theme.color.mode` 的一部分。
-- **不升级 schema**：`Theme` / `AppearanceState` 字段不变，`APPEARANCE_SCHEMA_VERSION` 仍为 4；`auto` 与 `blankColor` 继续为旧数据保留，但编辑器不再提供编辑入口。
+- **不升级 schema**：`Theme` / `AppearanceState` 字段不变，`APPEARANCE_SCHEMA_VERSION` 仍为 4；`fontPalette` 不再接受 `auto`，旧值在读取时回退白色；`blankColor` 继续为旧数据兼容。
 
 ### 6.4 新建、保存、重置与离开
 
 #### 6.4.1 新建
 
-- 打开新建页时只在内存中生成 draft：`prepareThemeForEditor(createCustomThemeDraft(id, '新的主题'))`，复制 `FALLBACK_THEME`、换新 ID、`builtin: false`，并把旧 `auto` 字体色转成显式白色、空白色固定透明。
+- 打开新建页时只在内存中生成 draft：`prepareThemeForEditor(createCustomThemeDraft(id, '新的主题'))`，复制 `FALLBACK_THEME`、换新 ID、`builtin: false`；回退主题本身使用显式白色字体，空白色固定透明。
 - **此时不写 localStorage，也不把主题加入 `AppearanceState.themes`。**
 - 初始 `baseline = draft`，`dirty = false`，底部保存条不显示。
 - 用户没有做任何修改就返回/刷新/关闭页面时，不产生任何主题，也不留下“新的主题”空壳。
@@ -932,13 +928,13 @@ UI 使用三个分段选项：
 
 - “按阶”对应内部模式 `layer` 和文档中的“降阶”，继续使用 `getTileLayer()` 的 L 形分层，不改同心环；2×2 有 2 层，10×10 有 18 层。
 - 一个主题只能对应一种模式；切换模式会改变模式的语义和 palette 的长度。
-- 切换模式会把整块色板重置为回退主题样式：`layer` 18、`row` 10、`fixed` 99，背景全部为默认蓝 `#3498db`，字体全部为该背景对应的可读色（当前为 `#000000`）；不再按索引保留旧颜色。切换本身计入一步历史，可用页头撤销或 `Ctrl/Cmd+Z` 整体恢复，避免误触后颜色丢失。
+- 切换模式会把整块色板重置为回退主题样式：`layer` 18、`row` 10、`fixed` 99，背景全部为默认蓝 `#3498db`，字体全部为白色 `#ffffff`；不再按索引保留旧颜色。同时把盲玩色、内边框和字号/间隙/圆角恢复到回退主题（50% / 4% / 0、无边框、默认蓝盲玩色），名称和支持阶数不受影响。切换本身计入一步历史，可用页头撤销或 `Ctrl/Cmd+Z` 整体恢复，避免误触后颜色丢失。
 - 颜色始终绑定数字，不绑定棋盘位置；编辑器预览使用已复原棋盘，游戏页打乱后颜色跟随数字移动。
 
 #### 6.7.2 样式刷
 
 - 样式刷由背景色和文字色组成，两者都必须是明确的 `#rrggbb` / `#rrggbbaa`；编辑器不提供“自动”文字色。
-- 打开主题时，旧数据里的 `fontPalette: 'auto'` 由 `prepareThemeForEditor()` 转成当前背景对应的黑/白，保证编辑器里所有颜色都是具体值。
+- 打开主题时，`prepareThemeForEditor()` 会把字体色统一成小写 hex；旧数据里的 `auto` 或非法值回退白色，保证编辑器里所有颜色都是具体值。
 - 左侧样式刷旁显示一个迷你方块预览，实时展示当前背景与文字色。
 - 样式刷自身变化**不修改主题、不显示保存条、不进入撤销历史**；只有点击棋盘应用后才算修改。
 - 首次进入编辑器时，样式刷从当前主题第一个可编辑色板项读取；读取不到时使用默认蓝色和白色。
@@ -956,7 +952,7 @@ UI 使用三个分段选项：
   - 有实际变化时每次点击产生一步撤销历史。
 - **吸管**：
   - 点击右侧任意非空白方块，把该组当前的 `palette[index]` / `fontPalette[index]` 读入样式刷；
-  - 如果主题里仍是旧 `auto` 字体色，吸管解析成明确的对比色，保证样式刷始终是具体颜色；
+  - 读取字体色时统一规范化为小写 hex；缺失或非法值回退白色，保证样式刷始终是具体颜色；
   - 取色成功后自动切换回油漆桶，方便紧接着把颜色涂到目标方块；点击空白块不取色，也不切换工具；
   - 不修改主题、不显示保存条、不进入历史；
   - 用于“只改某一层的文字色，但保留原背景色”这类场景。
@@ -1011,7 +1007,7 @@ UI 使用三个分段选项：
 - 进入历史的内容：
   - 名称；
   - 支持阶数；
-  - 着色模式及切换时 palette/fontPalette 的整块重置；
+  - 着色模式及切换时颜色和整盘样式的整块重置；
   - 油漆桶涂色结果；
   - 盲玩色、内边框、metrics；
   - 重置操作。
@@ -1042,7 +1038,7 @@ UI 使用三个分段选项：
   - 名称 `trim()` 后非空且不超过 20 显示宽度；
   - `supportedSizes` 非空、每一项 2–10、升序去重；
   - `palette` 长度匹配 mode，全部为 `#rrggbb` 或 `#rrggbbaa`；
-  - `fontPalette` 与 `palette` 等长，每项为 `'auto'`、`#rrggbb` 或 `#rrggbbaa`；
+  - `fontPalette` 与 `palette` 等长，每项为 `#rrggbb` 或 `#rrggbbaa`；
   - `blankColor` / `innerBorder.color` 为 `transparent`、`#rrggbb` 或 `#rrggbbaa`；
   - `blindTileColor` 为 `#rrggbb` 或 `#rrggbbaa`；
   - `innerBorder.widthRatio` 0–0.1，metrics 在约定范围内；
@@ -1220,8 +1216,8 @@ function replaceBoard(size: PuzzleSize): void {
 - [x] 新增 `pages/theme-editor.ts` 与 `ui/theme-editor.ts`：参数解析、new/edit 状态、baseline/draft、错误边界。
 - [x] 名称输入：默认“新的主题”、20 显示宽度、计数器、trim、空值/超限错误、允许重名。
 - [x] 支持阶数：2×5 多选框（只显示数字）、无“全选”、至少一个、使用中红色标记 + 保存条禁用保存。
-- [x] 着色模式：按阶/按行/全自定义；模式切换时整块重置为回退样式，可 `Ctrl/Cmd+Z` 撤销。
-- [x] 样式刷：背景色 + 明确文字色（无 auto）；迷你预览；默认从当前主题读取，旧 auto 转显式色。
+- [x] 着色模式：按阶/按行/全自定义；模式切换时颜色和整盘样式整块重置为回退样式，可 `Ctrl/Cmd+Z` 撤销。
+- [x] 样式刷：背景色 + 明确文字色；迷你预览；默认从当前主题读取，缺失/非法字体色回退白色。
 - [x] 涂色：油漆桶点击按模式修改 palette/fontPalette；吸管读回样式后自动切回油漆桶；悬停只高亮受影响方块；空白块不参与。
 - [x] 整盘样式：盲玩色、内边框颜色/宽度、字号、间隙、圆角；空白色固定透明、不提供编辑；实时预览并在拖动结束后合并历史。
 - [x] 颜色：数据层与编辑器支持 `#rrggbbaa` alpha；四个颜色字段统一使用 Pickr Nano，透明色在预览和游戏页按 CSS 自然混色。
@@ -1236,7 +1232,7 @@ function replaceBoard(size: PuzzleSize): void {
 
 实现备注（2026-10-25）：新增 `core/appearance/editor.ts`（模式切换、涂色目标、样式刷应用/读取、`prepareThemeForEditor()`、脏比较和保存前校验）、`core/appearance/name.ts`（grapheme/显示宽度计算）、`ui/theme-history.ts`（50 份快照线性历史与连续输入合并）、`ui/theme-editor-board.ts`（棋盘悬停/点击/高亮）、`ui/theme-editor-controls.ts`（左侧控件）和 `ui/theme-editor.ts`（controller）。`board-view` 的 tile 增加稳定的 `data-tile` 钩子；`getTilePaletteIndex` 从 `theme.ts` 导出复用。设置页新增 `pageshow` + `persisted` 处理，bfcache 返回时重新读取外观并重渲染主题列表。
 
-视觉收敛（2026-10-25）：移除预览和左侧的全部操作说明文字；移除“显示数字”开关，预览始终显示数字；移除空白色编辑，编辑器固定透明；移除文字色“自动”，旧 auto 在打开时转成显式黑/白；预览棋盘最大宽度收到约 `34rem`。颜色 alpha 与 Pickr（2026-10-25）：`theme` / `fontPalette` / `blankColor` / `blindTileColor` / `innerBorder.color` 接受 `#rrggbb` 或 `#rrggbbaa`，不升级 v4 schema；新增 `ui/color-picker-field.ts` 封装 Pickr Nano，四个颜色字段实时预览，`change` 连续合并、滑杆结束/保存/关闭时结束历史合并；内边框“透明”复选框同日移除，改用 alpha 0。样式刷和工具切换不进入主题、脏状态或历史。`npm test`（476 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 通过；手动验收待执行。
+视觉收敛（2026-10-25）：移除预览和左侧的全部操作说明文字；移除“显示数字”开关，预览始终显示数字；移除空白色编辑，编辑器固定透明；移除文字色“自动”，旧 auto 在载入时回退白色；预览棋盘最大宽度收到约 `34rem`。颜色 alpha 与 Pickr（2026-10-25）：`theme` / `fontPalette` / `blankColor` / `blindTileColor` / `innerBorder.color` 接受 `#rrggbb` 或 `#rrggbbaa`，不升级 v4 schema；新增 `ui/color-picker-field.ts` 封装 Pickr Nano，四个颜色字段实时预览，`change` 连续合并、滑杆结束/保存/关闭时结束历史合并；内边框“透明”复选框同日移除，改用 alpha 0。样式刷和工具切换不进入主题、脏状态或历史。`npm test`（476 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 通过；手动验收待执行。
 
 ### 10.5 P8-4c-2e 测试与验收
 
@@ -1285,7 +1281,7 @@ const custom = {
   color: {
     mode: 'layer',
     palette: Array(18).fill('#3498db'),
-    fontPalette: Array(18).fill('auto'),
+    fontPalette: Array(18).fill('#ffffff'),
     blankColor: 'transparent',
   },
   innerBorder: { color: 'transparent', widthRatio: 0 },
@@ -1346,8 +1342,8 @@ location.reload();
 - [ ] 自定义主题设置内边框颜色和宽度后，边框画在方块内部，方块外尺寸不变。
 - [ ] 边框宽度 >0 时字号按“格子边长减去左右内边框”计算，文字位于边框内。
 - [ ] 边框颜色透明但宽度 >0 时仍占用内边距；宽度设为 0 后恢复原始字号。
-- [ ] 逐块字体色按层/行/数字正确应用；`auto` 根据该块背景选黑/白。
-- [ ] 内置主题字体色仍为白色；回退主题和新建主题默认 `auto`。
+- [ ] 逐块字体色按层/行/数字正确应用；字体色直接使用配置的 hex，不随背景变化。
+- [ ] 内置主题、回退主题和新建主题的字体色均为显式白色。
 - [ ] 空白块没有字体色；盲玩模式不显示字体色。
 - [ ] 设置页卡片预览、编辑器预览和游戏页三者一致。
 
@@ -1363,7 +1359,7 @@ location.reload();
 
 新建与保存：
 
-- [ ] 新建主题默认复制回退主题：18 个 `#3498db`、18 个显式白色、空白色透明、透明边框/0、gap 0.06、radius 0；名称为“新的主题”。
+- [ ] 新建主题默认复制回退主题：18 个 `#3498db`、18 个显式白色、空白色透明、透明边框/0、gap 0.04、radius 0；名称为“新的主题”。
 - [ ] 新建页打开后不写 localStorage；未修改直接返回不会产生主题。
 - [ ] 修改后显示保存条；重置回到基线并消失；重置可通过撤销恢复。
 - [ ] 保存成功后停留在编辑器，URL 从无参数变为 `?theme=<id>`；刷新进入编辑模式。
@@ -1386,9 +1382,9 @@ location.reload();
 涂色与预览：
 
 - [ ] 按阶模式点击一个方块会改变整层；按行改变整行；全自定义只改变该数字。
-- [ ] 切换模式时 palette/fontPalette 整块重置为回退样式（默认蓝背景 + 可读字体色），旧颜色不保留；`Ctrl/Cmd+Z` 可恢复切换前的模式与全部颜色。
+- [ ] 切换模式时 palette/fontPalette 整块重置为回退样式（默认蓝背景 + 白字），旧 metrics、盲玩色和内边框也不保留；`Ctrl/Cmd+Z` 可恢复切换前的模式与全部样式。
 - [ ] 样式刷背景/文字色都可直接选择，没有“自动”开关；迷你预览正确。
-- [ ] 打开旧主题时，`auto` 字体色变成明确黑/白；保存后写回显式颜色。
+- [ ] 旧数据里的 `auto` 字体色载入后回退白色；保存后写回显式 hex。
 - [ ] 油漆桶点击后立即更新预览和保存条；吸管点击只更新样式刷并自动切回油漆桶，不修改主题。
 - [ ] 悬停时只高亮全部受影响方块，不显示层/行/数字和数量摘要。
 - [ ] 点击空白块不涂色；空白块固定透明，界面上没有空白色编辑控件。
@@ -1456,10 +1452,10 @@ location.reload();
   - `supportedSizes`、`fontPalette`、`innerBorder`、`blindTileColor`、metrics 不同返回 false；
   - 不修改入参。
 - `upsertCustomTheme()` / `removeCustomTheme()`：内置/回退保护；自定义主题顺序；删除后受影响阶数落回退。
-- `prepareThemeForEditor()`：旧 `auto` 字体色转成明确黑/白，空白色固定为透明，返回深拷贝。
-- 编辑器模式切换：`layer`/`row`/`fixed` 之间整块重置为回退样式，长度正确（18/10/99）；背景全部 `#3498db`，字体全部为默认蓝对应的可读色；不修改入参。
-- 编辑器涂色：按阶/行/固定色解析目标索引；空白块、非法阶数、越界数字和 `auto`/非法文字色不涂色；同一组多个方块只改一个 palette 项。
-- 编辑器吸管：旧 `auto` 字体色解析成明确对比色；空白块返回 null。
+- `prepareThemeForEditor()`：字体色统一小写，缺失或非法值回退白色；空白色固定为透明，返回深拷贝。
+- 编辑器模式切换：`layer`/`row`/`fixed` 之间整块重置为回退样式，长度正确（18/10/99）；背景全部 `#3498db`，字体全部为白色；不修改入参。
+- 编辑器涂色：按阶/行/固定色解析目标索引；空白块、非法阶数、越界数字和非法文字色不涂色；同一组多个方块只改一个 palette 项。
+- 编辑器吸管：字体色统一规范化为小写 hex，缺失或非法回退白色；空白块返回 null。
 - 编辑器名称宽度：10 个汉字 = 20；20 个英文 = 20；混合文本正确；emoji/组合字符按 grapheme；超限判定正确。
 - 编辑器历史：50 步上限；新修改清空 redo；撤销/重做移动快照；重置可撤销；快照数量不超过 50。
 - 编辑器校验：空名称、超限名称、空支持阶数、非法颜色、非法 metrics、重复/保留 ID、20 个上限均被拦截。
@@ -1468,10 +1464,9 @@ location.reload();
 
 - `getTileVisual()`：
   - 三种模式按索引取背景色和字体色；
-  - `fontPalette` 为 `auto` 时按该块背景计算黑白；
-  - 固定字体色直接使用；
+  - 字体色直接使用配置的 hex，不再根据背景计算黑白；
   - 空白/非法块返回空白色 + 透明字体；
-  - 缺失 palette/fontPalette 项回退。
+  - 缺失 palette/fontPalette 项回退白色。
 - `toCssVariables()`：
   - `--blank-color`、`--blind-tile-bg`；
   - `--tile-inner-border-color`、`--tile-inner-border-width-ratio`；
@@ -1486,7 +1481,7 @@ location.reload();
 - `isAppearanceState()`：9 个 `themeIdBySize` 键；值要么是 `fallback`，要么能解析到支持该阶数的主题。
 - `normalizeAppearance()`：
   - 缺失/非法 `supportedSizes` 丢弃主题；
-  - `fontPalette` 缺失/长度不对补 `auto`；
+  - `fontPalette` 缺失/长度不对或单项非法补 `#ffffff`；
   - `innerBorder` 缺失/非法回退透明/0；
   - `blindTileColor` 非法回退 `#3498db`；
   - `themeIdBySize` 非法/不支持落回退；
@@ -1542,7 +1537,7 @@ location.reload();
 - 撤销历史是否需要跨刷新保留；当前只存在页面内存中。
 - 主题名称是否需要在数据层也强制 20 显示宽度；当前只由编辑器限制，数据层保持宽松。
 - 小支持范围是否缩短 `palette` / `fontPalette` 长度；已确认不缩短，固定 18/10/99，隐藏项保留。
-- 数据层仍接受旧主题的 `fontPalette: 'auto'` 和自定义 `blankColor`；编辑器打开时会转成显式颜色并把空白色固定为透明，是否需要在未来版本做一次性迁移待定。
+- 数据层已不接受 `fontPalette: 'auto'`；旧值读取时回退白色。是否在版本升级时一次性清理旧值待定（当前仍是本地测试阶段，可直接清缓存）。`blankColor` 继续兼容 `transparent`。
 
 ## 14. 决策记录
 
@@ -1590,7 +1585,9 @@ location.reload();
 | 2026-10-25 | 支持阶数按钮只显示数字并移除“使用中”徽标；取消使用中的阶数改为红色边框 + 保存条说明 + 禁用保存，不再显示内联错误 |
 | 2026-10-25 | 吸管取色成功后自动切回油漆桶；点击空白块不取色也不切换工具 |
 | 2026-10-25 | 编辑器滑杆改为自定义轨道：左侧主题蓝、右侧白色、浅描边；滑块为按钮风格圆角矩形，进度由 `--range-progress` 驱动 |
-| 2026-10-25 | 切换着色模式不再按索引保留颜色，整块重置为回退主题样式；切换作为一步历史，可用 `Ctrl/Cmd+Z` 撤销 |
+| 2026-10-25 | 切换着色模式不再按索引保留颜色，整块重置为回退主题样式（含盲玩色、内边框和 metrics）；切换作为一步历史，可用 `Ctrl/Cmd+Z` 撤销 |
+| 2026-10-25 | 回退主题字体色改为显式白色 `#ffffff`，间距改为 4%；字号 50% 和圆角 0 保持不变 |
+| 2026-10-25 | 移除 `fontPalette` 的 `auto`：不再校验和渲染对比色；缺失或旧 `auto` 读取时回退白色。本地测试阶段可清缓存，不升级 schema |
 | 2026-10-25 | 编辑器 hex 文本统一补齐为 8 位大写并固定宽度，避免透明度有无导致的色块错位；只改展示，不改变存储格式 |
 
 ## 15. 参考

@@ -55,10 +55,10 @@ const RAINBOW_SOFT_METRICS: BoardMetrics = Object.freeze({
   radiusRatio: 0.01,
 });
 
-/** 回退主题的中性间距：比彩虹主题更疏、无圆角，异常时不继承某个预设的视觉。 */
+/** 回退主题的中性间距：比彩虹主题略疏、无圆角，异常时不继承某个预设的视觉。 */
 const FALLBACK_METRICS: BoardMetrics = Object.freeze({
   fontSizeRatio: 0.5,
-  gapRatio: 0.06,
+  gapRatio: 0.04,
   radiusRatio: 0,
 });
 
@@ -146,7 +146,8 @@ export const FALLBACK_THEME: Theme = freezeTheme({
   color: {
     mode: 'layer',
     palette: createFontPalette(18, DEFAULT_BLIND_TILE_COLOR),
-    fontPalette: createFontPalette(18, 'auto'),
+    // 回退主题使用明确白字。
+    fontPalette: createFontPalette(18, '#ffffff'),
     blankColor: 'transparent',
   },
   innerBorder: { ...DEFAULT_INNER_BORDER },

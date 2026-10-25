@@ -113,7 +113,7 @@ describe('saveAppearance / loadAppearanceResult', () => {
     const storedValue = stored.value as { version: number; data: unknown };
     expect(storedValue.version).toBe(APPEARANCE_SCHEMA_VERSION);
     const data = storedValue.data as AppearanceState;
-    expect(data.themes[2].color.fontPalette).toEqual(Array(18).fill('auto'));
+    expect(data.themes[2].color.fontPalette).toEqual(Array(18).fill('#ffffff'));
     expect(data.themes[2].innerBorder).toEqual({ color: 'transparent', widthRatio: 0.1 });
   });
 
@@ -218,7 +218,7 @@ describe('saveAppearance / loadAppearanceResult', () => {
       custom.id,
     ]);
     expect(result.appearance.themeIdBySize[10]).toBe(custom.id);
-    expect(result.appearance.themes[2].color.fontPalette).toEqual(Array(18).fill('auto'));
+    expect(result.appearance.themes[2].color.fontPalette).toEqual(Array(18).fill('#ffffff'));
   });
 
   it('localStorage 读取不可用时使用回退外观', () => {
@@ -269,7 +269,7 @@ describe('normalizeAppearance', () => {
       id: custom.id,
       color: {
         blankColor: 'transparent',
-        fontPalette: Array(18).fill('auto'),
+        fontPalette: Array(18).fill('#ffffff'),
       },
       innerBorder: {
         color: 'transparent',

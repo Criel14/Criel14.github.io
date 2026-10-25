@@ -102,7 +102,7 @@ v2 没有正式上线，不提供从这些键迁移到 IndexedDB 的逻辑。若
 - 内置主题不可修改、不可删除；自定义主题可以编辑逐块背景色/字体色、盲玩色、内边框和 metrics，上限 20 个（`CUSTOM_THEME_SLOT_COUNT = 20`）。编辑器不提供空白色编辑，保存时固定为 `transparent`；数据字段继续保留以兼容旧主题。
 - `Theme.supportedSizes` 表示主题设计上支持的阶数，默认全部 2–10；`themeIdBySize` 表示当前分配，两者不能混用。
 - 主题非法时过滤；`themeIdBySize` 指向缺失主题、主题不支持该阶数或值为回退 ID 时，该阶数使用 `FALLBACK_THEME`。
-- `Theme.color.palette` 与 `Theme.color.fontPalette` 长度均由 mode 决定（18/10/99）；palette 每项为 `#rrggbb` / `#rrggbbaa`，fontPalette 每项为 `auto` / `#rrggbb` / `#rrggbbaa`。
+- `Theme.color.palette` 与 `Theme.color.fontPalette` 长度均由 mode 决定（18/10/99）；palette 和 fontPalette 每项均为 `#rrggbb` / `#rrggbbaa`，不再接受 `auto`。
 - `Theme.color.blankColor` 允许 `transparent` / `#rrggbb` / `#rrggbbaa`；编辑器仍固定保存为 `transparent`。
 - `Theme.innerBorder` 是方块内边框，整盘统一；颜色允许 `transparent` / `#rrggbb` / `#rrggbbaa`，宽度 0–0.1。它不改变方块外尺寸，字号按“格子边长 − 2 × 内边框宽度”计算。
 - `Theme.blindTileColor` 是盲玩隐藏数字时的方块背景色，必须是 `#rrggbb` 或 `#rrggbbaa`；默认 `#3498db`，空白块仍使用 `blankColor`。
@@ -114,7 +114,7 @@ v2 没有正式上线，不提供从这些键迁移到 IndexedDB 的逻辑。若
 - 新建主题只在内存中复制回退主题（名称“新的主题”），未修改退出不写入 `themes`；保存成功后才创建自定义主题，并停留在编辑器把 URL 改为 `?theme=<id>`。
 - 编辑器保存后不自动分配阶数；`themeIdBySize` 保持不变，用户在设置页手动选择。
 - 编辑器名称限制 20 显示宽度只在前端执行；数据层仍只要求 `trim()` 后非空，不改变存储 schema。
-- 编辑器不提供文字色 `auto`；打开旧主题时把 `auto` 解析成显式黑/白，保存后写回显式 `#rrggbb` / `#rrggbbaa`。数据层仍接受旧 `auto`，不改变 schema。
+- 编辑器不提供文字色 `auto`；数据层也不再接受 `auto`。旧数据读取时由 `normalizeFontPalette()` 把缺失、非法或 `auto` 项回退 `#ffffff`，保存后写回显式 hex。
 - 编辑器提供 50 步内存撤销/重做，只保存 `Theme` 快照，不写 localStorage。
 - 设置页是独立页面；从 `observing` / `solved` 进入，运行中/重玩中/保存中禁用入口，避免卸载当前局。
 - 主题分配与主题内容编辑都写完整 `AppearanceState`；多标签页最后写入覆盖，不做合并。详见 `docs/PUZZLE_THEME.md`。

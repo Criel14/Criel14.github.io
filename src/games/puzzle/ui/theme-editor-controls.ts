@@ -7,11 +7,7 @@ import {
   THEME_NAME_MAX_WIDTH,
 } from '../core/appearance/name';
 import { DEFAULT_BLIND_TILE_COLOR } from '../core/appearance/presets';
-import {
-  formatHexColorWithAlpha,
-  getReadableFontColor,
-  normalizeHexColor,
-} from '../core/appearance/theme';
+import { formatHexColorWithAlpha, normalizeHexColor } from '../core/appearance/theme';
 import { createColorPickerField, type ColorPickerField } from './color-picker-field';
 
 export type ThemeEditorTool = 'bucket' | 'eyedropper';
@@ -344,7 +340,7 @@ export function createThemeEditorControls(
 
   function renderBrush(nextBrush: ThemeBrush): void {
     const background = normalizeHex(nextBrush.background, '#3498db');
-    const fontColor = normalizeHex(nextBrush.fontColor, getReadableFontColor(background));
+    const fontColor = normalizeHex(nextBrush.fontColor, '#ffffff');
 
     brushBackgroundPicker.setColor(background);
     brushBackgroundHex.textContent = formatHexForDisplay(background);

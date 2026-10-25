@@ -12,7 +12,7 @@ const theme: Theme = {
   color: {
     mode: 'layer',
     palette: ['#ffffff'],
-    fontPalette: ['auto'],
+    fontPalette: ['#ffffff'],
     blankColor: 'transparent',
   },
   innerBorder: { color: 'transparent', widthRatio: 0 },

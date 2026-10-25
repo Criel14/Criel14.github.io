@@ -26,7 +26,9 @@ const rowPalette = Array.from(
   (_, index) => `#1000${index.toString(16).padStart(2, '0')}`,
 );
 
-const rowFontPalette = Array.from({ length: 10 }, (_, index) => (index === 0 ? '#ffffff' : 'auto'));
+const rowFontPalette = Array.from({ length: 10 }, (_, index) =>
+  index === 0 ? '#000000' : '#ffffff',
+);
 
 function createCustomTheme(overrides: Partial<Theme> = {}): Theme {
   return {
