@@ -580,7 +580,7 @@ P8-1 以当前实验室为视觉基线。正式实现时先复用结构和样式
   - 游戏页 `replaceBoard(size)` 按阶数解析主题；重玩按成绩阶数解析。
   - 独立 `/puzzle-game/theme-editor.html`；新建无参数，编辑使用 `?theme=<themeId>`；保存成功后停留并 `replaceState` 为 `?theme=<id>`。
   - 编辑器采用左右 `1 : 2` 布局：左侧名称、支持阶数（无“全选”）、着色模式、样式刷、整盘样式；右侧最大支持阶数实时预览。
-  - 涂色使用样式刷 + 油漆桶/吸管；按层/按行/全自定义决定点击一个方块影响的整组；悬停高亮受影响方块。
+  - 涂色使用样式刷 + 油漆桶/吸管；按阶/按行/全自定义决定点击一个方块影响的整组；悬停高亮受影响方块。
   - 编辑器可编辑盲玩色、内边框、字号、间隙、圆角；空白色固定透明，文字色全部显式；新建只创建内存 draft，名称“新的主题”，未修改退出不创建主题。
   - 增加 50 步撤销/重做（页头按钮 + 快捷键）；重置可撤销，保存不清空历史；不做离开确认。
   - 取消勾选正在被使用的支持阶数时阻止保存。
@@ -589,7 +589,7 @@ P8-1 以当前实验室为视觉基线。正式实现时先复用结构和样式
 - 依赖：P2、P6-4、P8-4b、P8-4c-1。
 - 详细验收见 `docs/PUZZLE_THEME.md` 第 11 节。
 - 实现备注（2026-10-25）：P8-4c-2a 外观 v4 与按阶数解析已完成；P8-4c-2b 设置页按钮卡片、覆盖徽标、回退警告和“应用到”对话框已完成，读取结果新增 `issue` 区分版本不兼容；P8-4c-2d 主题编辑器已实现，详见 `docs/PUZZLE_THEME.md` 第 6 节；自动检查已通过，P8-4c-2c 游戏页回退提示待实现，编辑器手动验收待执行。
-- 实现备注（2026-10-25，P8-4c-2d）：新增 `theme-editor.html`、`theme-editor.css`、编辑器 controller/控件/棋盘/历史模块，以及 `core/appearance/editor.ts` / `name.ts`。视觉收敛后移除全部操作说明和“显示数字”，空白色固定透明，文字色不再使用 auto（旧 auto 在打开时转显式）；样式刷、吸管、工具切换不进入主题、脏状态或历史；50 份快照线性历史支持连续输入合并；设置页通过 `pageshow` + `persisted` 处理 bfcache。`npm test`（463 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 通过，手动验收待执行。
+- 实现备注（2026-10-25，P8-4c-2d）：新增 `theme-editor.html`、`theme-editor.css`、编辑器 controller/控件/棋盘/历史模块，以及 `core/appearance/editor.ts` / `name.ts`。视觉收敛后移除全部操作说明和“显示数字”，空白色固定透明，文字色不再使用 auto（旧 auto 在打开时转显式）；样式刷、吸管、工具切换不进入主题、脏状态或历史；50 份快照线性历史支持连续输入合并；设置页通过 `pageshow` + `persisted` 处理 bfcache。颜色增强（2026-10-25）：主题颜色支持 `#rrggbbaa`，编辑器四个颜色字段使用 Pickr Nano，透明色由 CSS 自然混色。`npm test`（476 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 通过，手动验收待执行。
 
 ### P8-5 光标、极简 UI 与可访问性
 

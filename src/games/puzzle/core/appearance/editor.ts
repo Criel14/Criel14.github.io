@@ -10,9 +10,10 @@ import {
   isValidBlankColor,
   isValidFontColor,
   isValidHexColor,
+  normalizeHexColor,
 } from './theme';
 
-/** 各着色模式的 palette / fontPalette 固定长度；切换模式时按这个长度截断补齐。 */
+/** 各着色模式的 palette / fontPalette 固定长度；切换模式时按这个长度重建色板。 */
 export const COLOR_MODE_PALETTE_LENGTHS: Readonly<Record<ColorMode['mode'], number>> =
   Object.freeze({
     layer: 18,
@@ -20,7 +21,7 @@ export const COLOR_MODE_PALETTE_LENGTHS: Readonly<Record<ColorMode['mode'], numb
     fixed: 99,
   });
 
-/** 编辑器样式刷：背景色和文字色都是明确的 #rrggbb，不使用 auto。 */
+/** 编辑器样式刷：背景色和文字色都是明确的 #rrggbb / #rrggbbaa，不使用 auto。 */
 export interface ThemeBrush {
   readonly background: string;
   readonly fontColor: string;
@@ -50,8 +51,12 @@ function createColorMode(
 /**
  * 切换主题的着色模式。
  *
- * 按索引保留重叠部分，新模式多出来的背景色补站点主题蓝、字体色补 auto；
- * 缩小时直接截断。空白色保持不变。返回深拷贝，不修改入参；模式相同时返回原对象。
+ * 模式代表一整套新的分组方式，切换时不再按索引保留旧颜色，而是把整块
+ * palette / fontPalette 重置为回退主题样式（默认蓝背景 + 对应的可读字体色），
+ * 避免 18 / 10 / 99 三种索引语义混在一起。空白色和其他样式字段保持不变；
+ * 返回深拷贝，不修改入参；模式相同时返回原对象。
+ *
+ * 调用方把这次变化作为一步历史提交，用户可以用 Ctrl/Cmd+Z 撤销误触。
  */
 export function changeThemeColorMode(theme: Theme, mode: ColorMode['mode']): Theme {
   if (theme.color.mode === mode) {
@@ -59,16 +64,10 @@ export function changeThemeColorMode(theme: Theme, mode: ColorMode['mode']): The
   }
 
   const length = getColorModePaletteLength(mode);
-  const palette = Array.from(
-    { length },
-    (_, index) => theme.color.palette[index] ?? DEFAULT_BLIND_TILE_COLOR,
-  );
-  // 编辑器不再生成 auto；新模式多出来的项使用默认蓝对应的白色字体。
+  const palette = Array.from({ length }, () => DEFAULT_BLIND_TILE_COLOR);
+  // 编辑器不生成 auto；字体色取默认蓝对应的明确黑/白。
   const fallbackFontColor = getReadableFontColor(DEFAULT_BLIND_TILE_COLOR);
-  const fontPalette = Array.from(
-    { length },
-    (_, index) => theme.color.fontPalette[index] ?? fallbackFontColor,
-  );
+  const fontPalette = Array.from({ length }, () => fallbackFontColor);
 
   return {
     ...cloneTheme(theme),
@@ -80,6 +79,8 @@ export function changeThemeColorMode(theme: Theme, mode: ColorMode['mode']): The
  * 把已保存主题转换成编辑器可直接编辑的形式。
  *
  * - 旧数据里的字体色 `auto` 转成当前背景对应的黑/白；编辑器不再提供自动模式。
+ * - 8 位 alpha 颜色原样保留，并把所有 hex 统一成小写，避免 Color Picker
+ *   输出大小写不同造成假脏状态。
  * - 空白色统一固定为 `transparent`；空白块不再允许自定义。
  * - 其余字段和模式保持不变，返回深拷贝，不修改入参。
  *
@@ -87,18 +88,27 @@ export function changeThemeColorMode(theme: Theme, mode: ColorMode['mode']): The
  */
 export function prepareThemeForEditor(theme: Theme): Theme {
   const clone = cloneTheme(theme);
-  const palette = clone.color.palette;
+  const palette = clone.color.palette.map((color) => normalizeHexColor(color) ?? color);
   const fontPalette = Array.from({ length: palette.length }, (_, index) => {
     const configured = clone.color.fontPalette[index];
-    if (typeof configured === 'string' && configured !== 'auto' && isValidHexColor(configured)) {
-      return configured;
-    }
-    return getReadableFontColor(palette[index] ?? DEFAULT_BLIND_TILE_COLOR);
+    const normalized =
+      typeof configured === 'string' && configured !== 'auto'
+        ? normalizeHexColor(configured)
+        : null;
+    return normalized ?? getReadableFontColor(palette[index] ?? DEFAULT_BLIND_TILE_COLOR);
   });
 
   return {
     ...clone,
     color: createColorMode(clone.color.mode, palette, fontPalette, 'transparent'),
+    innerBorder: {
+      ...clone.innerBorder,
+      color:
+        clone.innerBorder.color === 'transparent'
+          ? 'transparent'
+          : (normalizeHexColor(clone.innerBorder.color) ?? clone.innerBorder.color),
+    },
+    blindTileColor: normalizeHexColor(clone.blindTileColor) ?? clone.blindTileColor,
   };
 }
 
@@ -140,20 +150,23 @@ export function applyBrushToTheme(
   brush: ThemeBrush,
 ): Theme {
   const index = getTilePaletteIndex(tile, size, theme.color);
-  if (index === null || !isValidHexColor(brush.background) || !isValidHexColor(brush.fontColor)) {
-    return theme;
-  }
-  if (
-    theme.color.palette[index] === brush.background &&
-    theme.color.fontPalette[index] === brush.fontColor
-  ) {
+  const background = normalizeHexColor(brush.background);
+  const fontColor = normalizeHexColor(brush.fontColor);
+  if (index === null || background === null || fontColor === null) {
     return theme;
   }
 
   const palette = [...theme.color.palette];
   const fontPalette = [...theme.color.fontPalette];
-  palette[index] = brush.background;
-  fontPalette[index] = brush.fontColor;
+  if (
+    normalizeHexColor(palette[index] ?? '') === background &&
+    normalizeHexColor(fontPalette[index] ?? '') === fontColor
+  ) {
+    return theme;
+  }
+
+  palette[index] = background;
+  fontPalette[index] = fontColor;
 
   return {
     ...theme,
@@ -178,17 +191,16 @@ export function readBrushFromTheme(
 
   const rawBackground = theme.color.palette[index];
   const background =
-    typeof rawBackground === 'string' && isValidHexColor(rawBackground)
-      ? rawBackground
+    typeof rawBackground === 'string'
+      ? (normalizeHexColor(rawBackground) ?? DEFAULT_BLIND_TILE_COLOR)
       : DEFAULT_BLIND_TILE_COLOR;
-  const fontColor = theme.color.fontPalette[index];
+  const rawFontColor = theme.color.fontPalette[index];
+  const fontColor = typeof rawFontColor === 'string' ? normalizeHexColor(rawFontColor) : null;
+
   return {
     background,
     // auto 或非法值在吸管里也解析成明确的对比色，保证样式刷永远是具体颜色。
-    fontColor:
-      typeof fontColor === 'string' && isValidHexColor(fontColor)
-        ? fontColor
-        : getReadableFontColor(background),
+    fontColor: fontColor ?? getReadableFontColor(background),
   };
 }
 
@@ -230,7 +242,8 @@ function isFiniteInRange(value: number, min: number, max: number): boolean {
   return Number.isFinite(value) && value >= min && value <= max;
 }
 
-function formatSizeList(sizes: readonly PuzzleSize[]): string {
+/** 把阶数格式化成“3×3、4×4”，供校验错误和保存条共用，避免文案不一致。 */
+export function formatSizeList(sizes: readonly PuzzleSize[]): string {
   return sizes.map((size) => `${size}×${size}`).join('、');
 }
 
@@ -283,20 +296,26 @@ export function validateTheme(
       message: `背景色数量必须为 ${paletteLength} 个。`,
     });
   } else if (!theme.color.palette.every((color) => isValidHexColor(color))) {
-    issues.push({ field: 'palette', message: '所有背景色都必须是 #rrggbb 格式。' });
+    issues.push({ field: 'palette', message: '所有背景色都必须是 #rrggbb 或 #rrggbbaa 格式。' });
   }
 
   if (theme.color.fontPalette.length !== theme.color.palette.length) {
     issues.push({ field: 'fontPalette', message: '文字色数量必须与背景色一致。' });
   } else if (!theme.color.fontPalette.every((color) => isValidFontColor(color))) {
-    issues.push({ field: 'fontPalette', message: '文字色必须是 auto 或 #rrggbb 格式。' });
+    issues.push({
+      field: 'fontPalette',
+      message: '文字色必须是 auto、#rrggbb 或 #rrggbbaa 格式。',
+    });
   }
 
   if (!isValidBlankColor(theme.color.blankColor)) {
-    issues.push({ field: 'blankColor', message: '空白色必须是 transparent 或 #rrggbb。' });
+    issues.push({
+      field: 'blankColor',
+      message: '空白色必须是 transparent、#rrggbb 或 #rrggbbaa。',
+    });
   }
   if (!isValidHexColor(theme.blindTileColor)) {
-    issues.push({ field: 'blindTileColor', message: '盲玩色必须是 #rrggbb 格式。' });
+    issues.push({ field: 'blindTileColor', message: '盲玩色必须是 #rrggbb 或 #rrggbbaa 格式。' });
   }
   if (
     !isValidBlankColor(theme.innerBorder.color) ||

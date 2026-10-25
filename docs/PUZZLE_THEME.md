@@ -1,6 +1,6 @@
 # 数字华容道游戏主题与按阶数分配（P8-4c）
 
-> 状态：P8-4c-1 设置页主题列表已实现（2026-10-24），待手动验收；P8-4c-2 设计确认（2026-10-24），P8-4c-2a 领域模型与存储已实现并通过自动检查（2026-10-24），P8-4c-2b 设置页按阶数分配已实现并通过自动检查（2026-10-25），待手动验收；P8-4c-2d 主题编辑器已实现（2026-10-25，第 6 节），自动检查通过，待手动验收；P8-4c-2c 游戏页回退提示、P8-4c-2e 最终验收待开始。P8-4c-2 拆成 P8-4c-2a 领域模型与存储、P8-4c-2b 设置页按阶数分配、P8-4c-2c 游戏页按阶数解析、P8-4c-2d 主题编辑器、P8-4c-2e 测试与验收。P8-4c-2d 的界面已从早期“逐行色板列表”改为左右 `1 : 2` 的实时预览 + 油漆桶/吸管涂色，并加入 50 步撤销/重做。
+> 状态：P8-4c-1 设置页主题列表已实现（2026-10-24），待手动验收；P8-4c-2 设计确认（2026-10-24），P8-4c-2a 领域模型与存储已实现并通过自动检查（2026-10-24），P8-4c-2b 设置页按阶数分配已实现并通过自动检查（2026-10-25），待手动验收；P8-4c-2d 主题编辑器已实现（2026-10-25，第 6 节），补充 `#rrggbbaa` 颜色 alpha 与 Pickr Nano 取色器（2026-10-25），自动检查通过，待手动验收；P8-4c-2c 游戏页回退提示、P8-4c-2e 最终验收待开始。P8-4c-2 拆成 P8-4c-2a 领域模型与存储、P8-4c-2b 设置页按阶数分配、P8-4c-2c 游戏页按阶数解析、P8-4c-2d 主题编辑器、P8-4c-2e 测试与验收。P8-4c-2d 的界面已从早期“逐行色板列表”改为左右 `1 : 2` 的实时预览 + 油漆桶/吸管涂色，并加入 50 步撤销/重做。
 >
 > 分支：`refactor/vite-ts`
 >
@@ -76,9 +76,9 @@ P8-4c-2 会替换 P8-4c-1 的“单主题 radio + 固定 10×10 预览”交互�
 - **P8-4c-2d 主题编辑器**（已实现 2026-10-25，待手动验收）
   - 独立 `theme-editor.html` 真实页面；页头返回 + 标题“游戏主题设置” + 撤销/重做按钮。
   - 桌面端左右 `1 : 2` 布局：左侧名称/支持阶数/着色模式/样式刷/整盘样式，右侧最大支持阶数的实时预览。
-  - 支持阶数使用 2×5 多选框，不提供“全选”；正在使用的阶数不能取消支持后保存。
+  - 支持阶数使用 2×5 多选框，按钮只显示阶数数字，不提供“全选”；正在使用的阶数取消后不能保存。
   - 名称上限 20 显示宽度（10 个汉字或 20 个英文字母）；允许重名。
-  - 油漆桶点击棋盘按层/行/单块涂色；吸管从棋盘读回当前组样式；悬停只高亮受影响方块。
+  - 油漆桶点击棋盘按阶/行/单块涂色；吸管从棋盘读回当前组样式并自动切回油漆桶；悬停只高亮受影响方块。
   - 盲玩色、内边框、字号、间隙、圆角实时预览；空白色固定透明，不提供编辑。
   - 文字色全部使用明确颜色，不提供 auto；旧主题的 auto 在打开时转成黑/白。
   - 新建主题只在内存中复制回退主题，名称“新的主题”；未修改退出不创建主题。
@@ -111,17 +111,18 @@ interface ColorModeFields {
    * - layer：18，索引 0–17 对应层 1–18；
    * - row：10，索引 0–9 对应数字块原本所属的第 1–10 行；
    * - fixed：99，索引 0–98 对应数字 1–99。
+   * 每项为 '#rrggbb' 或 '#rrggbbaa'；省略 alpha 表示完全不透明。
    */
   readonly palette: readonly string[];
 
   /**
    * 方块字体色。与 palette 等长，索引一一对应。
-   * 每一项为 'auto' 或 '#rrggbb'。
+   * 每一项为 'auto'、'#rrggbb' 或 '#rrggbbaa'。
    * 'auto' 根据该方块自己的背景色自动选黑/白。
    */
   readonly fontPalette: readonly string[];
 
-  /** 空白块背景色；整盘统一。允许 'transparent' 或 '#rrggbb'。 */
+  /** 空白块背景色；整盘统一。允许 'transparent'、'#rrggbb' 或 '#rrggbbaa'。 */
   readonly blankColor: string;
 }
 
@@ -141,7 +142,7 @@ type ColorMode = LayerColorMode | RowColorMode | FixedColorMode;
 
 /** 方块内边框；整盘统一，不随数字变化。 */
 interface ThemeInnerBorder {
-  /** 'transparent' 或 '#rrggbb'。 */
+  /** 'transparent'、'#rrggbb' 或 '#rrggbbaa'。 */
   readonly color: string;
   /** 单边宽度 = 格子边长 × widthRatio；范围 0–0.1，0 表示无边框。 */
   readonly widthRatio: number;
@@ -166,7 +167,7 @@ interface Theme {
 
   /**
    * 盲玩隐藏数字时，所有非空方块的背景色。
-   * 必须为 #rrggbb；默认 #3498db。空白块仍使用 blankColor。
+   * 必须为 #rrggbb 或 #rrggbbaa；默认 #3498db。空白块仍使用 blankColor。
    */
   readonly blindTileColor: string;
 
@@ -202,7 +203,7 @@ interface Theme {
 `fontPalette` 取代 P8-4c-1 的单个 `fontColor`。
 
 - 长度：`layer 18`、`row 10`、`fixed 99`。
-- 每一项：`'auto'` 或 `#rrggbb`。
+- 每一项：`'auto'`、`#rrggbb` 或 `#rrggbbaa`。
 - `'auto'`：用该方块背景色计算 WCAG 相对亮度，自动选择黑/白；复用现有 `getReadableFontColor`。
 - 固定色：直接使用；编辑器可以提示对比度，但不强制。
 - 内置主题：18 个 `#ffffff`，保持旧版白字视觉。
@@ -229,7 +230,7 @@ fontPalette: ['#ffffff', ...Array(98).fill('auto')];
 
 - 不改变方块外尺寸：方块在 grid 中的 track 仍是 `--cell-size`。
 - 用 `padding` 预留边框占用，用 `inset box-shadow` 绘制边框；文字限制在 padding 内。
-- 颜色：`'transparent'` 或 `#rrggbb`。
+- 颜色：`'transparent'`、`#rrggbb` 或 `#rrggbbaa`。
 - 宽度：单边 `--cell-size × widthRatio`，范围 `0–0.1`；`0` 表示无边框。
 - **边框颜色透明但 `widthRatio > 0` 时仍然占用内边距**，这样颜色和尺寸解耦，改颜色不会导致字号跳动；不需要占位时把宽度设为 0。
 - 边框应用到所有方块，包括空白块；空白块没有文字，但会显示边框。
@@ -403,12 +404,12 @@ const FALLBACK_THEME: Theme = {
 - `name`：`trim()` 后非空；编辑器限制 20 显示宽度；允许重名。
 - `id`：非空、唯一，不能使用内置 ID 或回退 ID。
 - `supportedSizes`：非空、每一项是 2–10 的整数、升序、去重。
-- `palette`：长度等于 mode 约定值，全部为 `#rrggbb`。
-- `fontPalette`：长度等于 `palette`，每一项为 `'auto'` 或 `#rrggbb`。
-- `blankColor`：`'transparent'` 或 `#rrggbb`。
-- `innerBorder.color`：`'transparent'` 或 `#rrggbb`。
+- `palette`：长度等于 mode 约定值，全部为 `#rrggbb` 或 `#rrggbbaa`。
+- `fontPalette`：长度等于 `palette`，每一项为 `'auto'`、`#rrggbb` 或 `#rrggbbaa`。
+- `blankColor`：`'transparent'`、`#rrggbb` 或 `#rrggbbaa`。
+- `innerBorder.color`：`'transparent'`、`#rrggbb` 或 `#rrggbbaa`。
 - `innerBorder.widthRatio`：0–0.1 的有限数。
-- `blindTileColor`：`#rrggbb`。
+- `blindTileColor`：`#rrggbb` 或 `#rrggbbaa`。
 - `metrics`：在约定范围内；读取时归一化。
 - `themeIdBySize`：9 个键齐全，值为非空字符串。
 - 对每个阶数，`themeIdBySize[size]` 要么是 `'fallback'`，要么能解析到 `themes` 中一个 `supportedSizes` 包含该阶数的主题。
@@ -528,15 +529,15 @@ envelope: { version: 4, data: AppearanceState }
         "supportedSizes": [10],
         "color": {
           "mode": "layer",
-          "palette": ["#e74c3c", "...18 项"],
-          "fontPalette": ["#ffffff", "...18 项"],
+          "palette": ["#e74c3c80", "...18 项"],
+          "fontPalette": ["#ffffffcc", "...18 项"],
           "blankColor": "transparent"
         },
         "innerBorder": {
-          "color": "#ffffff",
+          "color": "#ffffff40",
           "widthRatio": 0.02
         },
-        "blindTileColor": "#3498db",
+        "blindTileColor": "#3498db80",
         "metrics": {
           "fontSizeRatio": 0.5,
           "gapRatio": 0.03,
@@ -584,8 +585,8 @@ envelope: { version: 4, data: AppearanceState }
 
 ### 4.5 容量
 
-- `fixed` 模式最重：99 个背景色 + 99 个字体色，约 2KB/主题。
-- 20 个自定义主题约 40KB，加上 `themeIdBySize` 和边框字段，仍远低于 localStorage 常见配额。
+- `fixed` 模式最重：99 个背景色 + 99 个字体色，约 2KB/主题；全部使用 8 位 alpha 时约 2.4KB/主题。
+- 20 个自定义主题约 48KB，加上 `themeIdBySize` 和边框字段，仍远低于 localStorage 常见配额。
 - 内置主题不落库；回退主题不落库。
 - 主题数据不是性能瓶颈；设置页渲染 22+ 张卡片的预览是主要成本，必要时给卡片加 `content-visibility`。
 
@@ -791,7 +792,7 @@ envelope: { version: 4, data: AppearanceState }
 │ [7][8][9][10]            │ └───────────────────────────┘   │
 │                          │                                 │
 │ 着色模式                 │                                 │
-│ [按层][按行][全自定义]   │                                 │
+│ [按阶][按行][全自定义]   │                                 │
 │                          │                                 │
 │ 样式刷                   │                                 │
 │ 背景 [■] 文字 [■]        │                                 │
@@ -821,9 +822,9 @@ type ThemeEditorKind = 'new' | 'edit';
 type ThemeEditorTool = 'bucket' | 'eyedropper';
 
 interface ThemeBrush {
-  /** 方块背景色，必须是 #rrggbb。 */
+  /** 方块背景色，必须是 #rrggbb 或 #rrggbbaa。 */
   readonly background: string;
-  /** 方块文字色，必须是 #rrggbb；编辑器不再使用 auto。 */
+  /** 方块文字色，必须是 #rrggbb 或 #rrggbbaa；编辑器不再使用 auto。 */
   readonly fontColor: string;
 }
 
@@ -907,10 +908,11 @@ interface ThemeEditorState {
 
 ### 6.6 支持阶数
 
-- 使用 2×5 的 9 个多选框：2×2–10×10；**不提供“全选”按钮**，减少视觉杂乱。
+- 使用 2×5 的 9 个多选框，按钮只显示阶数数字（如 `3`），完整 `3×3` 和“使用中”只在 `aria-label` 中补充；**不提供“全选”按钮**，减少视觉杂乱。
 - 至少选择一个阶数；取消最后一个阶数时立即恢复并提示。
-- 已保存的主题如果正在被某些阶数使用，对应阶数显示“使用中”提示。
-- 允许取消勾选正在被使用的阶数，但立即显示错误并阻止保存，直到重新勾选或回设置页为这些阶数选择其他主题。
+- 不再显示“使用中”徽标，避免文字把按钮撑满。
+- 允许取消勾选正在被使用的阶数；取消后该按钮保留红色边框，保存条说明原因并禁用“保存”，直到重新勾选或回设置页为这些阶数选择其他主题。
+- 取消使用中的阶数不显示下方内联错误，保存条是唯一的阻止说明；重新勾选后红色标记和禁用状态立即恢复。
 - 新增支持阶数不冲突，直接允许。
 - 预览阶数 = `Math.max(...supportedSizes)`；取消最大阶数后预览自动降级。支持阶数不改变 `palette` / `fontPalette` 的固定长度。
 - 缩小支持范围不会截断 palette；隐藏的层/行/数字颜色仍保留，之后扩大支持范围时继续使用。
@@ -924,18 +926,18 @@ UI 使用三个分段选项：
 
 | UI 文案 | `color.mode` | 点击一个方块影响的范围 |
 | --- | --- | --- |
-| 按层 | `layer` | 该数字所在的旧版 L 形层，整层一起变色 |
+| 按阶 | `layer` | 该数字所在的旧版 L 形层，整层一起变色 |
 | 按行 | `row` | 该数字在已复原棋盘中原本所属的行，整行一起变色 |
 | 全自定义 | `fixed` | 只影响该数字自己 |
 
-- “按层”对应文档中的“降阶”（`layer`），继续使用 `getTileLayer()` 的 L 形分层，不改同心环；2×2 为 2 层，10×10 为 18 层。
+- “按阶”对应内部模式 `layer` 和文档中的“降阶”，继续使用 `getTileLayer()` 的 L 形分层，不改同心环；2×2 有 2 层，10×10 有 18 层。
 - 一个主题只能对应一种模式；切换模式会改变模式的语义和 palette 的长度。
-- 切换模式时按索引保留重叠部分：`layer` 18、`row` 10、`fixed` 99；新模式多出来的背景色补 `#3498db`，字体色补默认蓝对应的白色 `#ffffff`。切换本身计入历史。
+- 切换模式会把整块色板重置为回退主题样式：`layer` 18、`row` 10、`fixed` 99，背景全部为默认蓝 `#3498db`，字体全部为该背景对应的可读色（当前为 `#000000`）；不再按索引保留旧颜色。切换本身计入一步历史，可用页头撤销或 `Ctrl/Cmd+Z` 整体恢复，避免误触后颜色丢失。
 - 颜色始终绑定数字，不绑定棋盘位置；编辑器预览使用已复原棋盘，游戏页打乱后颜色跟随数字移动。
 
 #### 6.7.2 样式刷
 
-- 样式刷由背景色和文字色组成，两者都必须是明确的 `#rrggbb`；编辑器不提供“自动”文字色。
+- 样式刷由背景色和文字色组成，两者都必须是明确的 `#rrggbb` / `#rrggbbaa`；编辑器不提供“自动”文字色。
 - 打开主题时，旧数据里的 `fontPalette: 'auto'` 由 `prepareThemeForEditor()` 转成当前背景对应的黑/白，保证编辑器里所有颜色都是具体值。
 - 左侧样式刷旁显示一个迷你方块预览，实时展示当前背景与文字色。
 - 样式刷自身变化**不修改主题、不显示保存条、不进入撤销历史**；只有点击棋盘应用后才算修改。
@@ -949,31 +951,44 @@ UI 使用三个分段选项：
 - **油漆桶（默认）**：
   - 点击右侧任意非空白方块，按当前模式计算 palette 索引；
   - 把样式刷的背景色写入 `palette[index]`，文字色写入 `fontPalette[index]`；
-  - 按层/按行模式会同时改变该组的所有方块；全自定义只改该数字；
+  - 按阶/按行模式会同时改变该组的所有方块；全自定义只改该数字；
   - 样式刷与目标组当前颜色完全相同时视为 no-op，不修改主题、不显示保存条、不产生历史；
   - 有实际变化时每次点击产生一步撤销历史。
 - **吸管**：
   - 点击右侧任意非空白方块，把该组当前的 `palette[index]` / `fontPalette[index]` 读入样式刷；
   - 如果主题里仍是旧 `auto` 字体色，吸管解析成明确的对比色，保证样式刷始终是具体颜色；
+  - 取色成功后自动切换回油漆桶，方便紧接着把颜色涂到目标方块；点击空白块不取色，也不切换工具；
   - 不修改主题、不显示保存条、不进入历史；
   - 用于“只改某一层的文字色，但保留原背景色”这类场景。
 - 悬停非空白方块时只高亮所有将受影响的方块，不显示数量或操作说明文字。
 - 点击空白块不涂色；空白块固定透明，编辑器不提供空白色设置。
 - 棋盘涂色第一版以鼠标/触屏为主；左侧控件、撤销/重做、保存条完整支持键盘。棋盘涂色的完整键盘/读屏替代方案随 P8-5 可访问性工作补充。
 
+#### 6.7.4 颜色选择器（Pickr）
+
+- 样式刷背景/文字色、盲玩色、内边框颜色统一使用 `@simonwep/pickr@1.10.2` 的 `nano` 主题；只在主题编辑器 chunk 加载，游戏页不加载。
+- 每个字段一个 Pickr 实例，挂载在外层 `.theme-editor-pickr` 中；按钮外观沿用设置页表面、边框和焦点环。
+- 启用 `opacity` 组件，使用透明度滑杆调整 alpha；颜色统一输出为小写 `#rrggbb` / `#rrggbbaa`，alpha 为 1 时省略 alpha 字节。
+- 编辑器里的 hex 文本统一补成 8 位大写（如 `#3498DBFF`、`#FFFFFFC4`），并用固定宽度保持色块左对齐；存储值仍保留 6 位 / 8 位原样，补位只发生在展示层。
+- 选择器内提供 `HEXA` 输入和“确定”按钮；不显示 RGBA/HSVA/CMYK 切换和 swatches，保持 Nano 弹层紧凑。
+- `comparison: false`：拖动或输入时实时更新预览，关闭弹层不会留下旧色块；弹层外的页面保存条仍是唯一落库入口。
+- Pickr 的 `change` 只更新 draft；拖动滑杆结束、保存或关闭弹层时结束 600ms 历史合并。样式刷自身变化仍不进入历史。
+- 内边框不再提供“透明”复选框：完全透明通过 Pickr 的 alpha 0 表示；旧主题里的 `transparent` 打开时按 `#00000000` 展示和编辑。
+
 ### 6.8 整盘样式
 
 这些字段整盘统一，不随数字变化；全部实时更新右侧预览，计入脏状态和撤销历史。
 
 - **空白色**：编辑器固定使用 `transparent`，不提供编辑控件；旧主题打开时由 `prepareThemeForEditor()` 统一为透明，保存后写回透明。
-- **盲玩色**：`#rrggbb`；默认 `#3498db`；用于盲玩隐藏数字时的所有非空方块，空白块仍使用空白色。
-- **内边框颜色**：`transparent` 或 `#rrggbb`；默认 `transparent`。
+- **盲玩色**：`#rrggbb` / `#rrggbbaa`；默认 `#3498db`；用于盲玩隐藏数字时的所有非空方块，空白块仍使用空白色。
+- **内边框颜色**：`transparent`、`#rrggbb` 或 `#rrggbbaa`；默认 `transparent`。编辑器不提供“透明”复选框，完全透明用 `#00000000` 表示，旧 `transparent` 按此显示；数据层继续接受 `transparent`。
 - **内边框宽度**：0–0.1，UI 显示为格子边长的百分比，默认 0。
   - 边框颜色透明但宽度大于 0 时仍占用内边距。
 - **字号**：0–1，UI 显示为 0%–100%，相对于“边框内区域”，不是整个格子。
 - **间隙**：0–0.1，UI 显示为 0%–10%，相对于格子边长。
 - **圆角**：0–0.5，UI 显示为 0%–50%，相对于格子边长。
 - 滑杆使用原生 `<input type="range">`，同时显示数值；拖动时实时预览，但不能每移动一像素写一次历史或存储。
+- 滑杆轨道自定义为左侧主题蓝、右侧白色（`--settings-surface-inset`），带一圈浅描边；滑块是横向按钮风格的圆角矩形（30 × 18px，浅色表面、细边框、轻微浮起）。进度由 JS 写入 `--range-progress` 驱动轨道渐变。
 - 整盘样式区域不显示额外说明文字。
 
 ### 6.9 预览
@@ -985,6 +1000,7 @@ UI 使用三个分段选项：
 - 预览下方不显示悬停摘要、涂色说明或解释文字；错误文案仍显示在对应控件旁或保存条内。
 - 预览不保存 DOM、不把棋盘对象放入撤销历史。
 - 预览棋盘宽度限制在约 `34rem`，比右侧整栏略窄，避免 10×10 棋盘过大。
+- 预览底板使用 `var(--settings-page-bg)`（`#ebebeb`），与游戏页背景一致；半透明主题色的混色结果因此和游戏页接近。
 
 ### 6.10 撤销/重做
 
@@ -995,7 +1011,7 @@ UI 使用三个分段选项：
 - 进入历史的内容：
   - 名称；
   - 支持阶数；
-  - 着色模式及切换时 palette/fontPalette 的截断/补齐；
+  - 着色模式及切换时 palette/fontPalette 的整块重置；
   - 油漆桶涂色结果；
   - 盲玩色、内边框、metrics；
   - 重置操作。
@@ -1004,7 +1020,7 @@ UI 使用三个分段选项：
   - 油漆桶/吸管工具切换；
   - 读取状态、焦点和悬停状态。
 - 连续操作要合并成一步：
-  - 同一个滑杆或颜色选择器从第一次 `input` 到 `change`（或约 600ms 内的连续输入）算一步；
+  - 同一个滑杆或颜色选择器从第一次变化到结束（约 600ms 内的连续输入、Pickr `changestop`/保存/关闭）算一步；
   - 名称输入按连续输入合并，暂停或失焦后开始新的一步；
   - 复选框、模式切换、支持阶数变化、每次油漆桶点击各自算一步。
 - 快捷键：
@@ -1025,15 +1041,15 @@ UI 使用三个分段选项：
 - 保存前校验：
   - 名称 `trim()` 后非空且不超过 20 显示宽度；
   - `supportedSizes` 非空、每一项 2–10、升序去重；
-  - `palette` 长度匹配 mode，全部为 `#rrggbb`；
-  - `fontPalette` 与 `palette` 等长，每项为 `'auto'` 或 `#rrggbb`；
-  - `blankColor` / `innerBorder.color` 为 `transparent` 或 `#rrggbb`；
-  - `blindTileColor` 为 `#rrggbb`；
+  - `palette` 长度匹配 mode，全部为 `#rrggbb` 或 `#rrggbbaa`；
+  - `fontPalette` 与 `palette` 等长，每项为 `'auto'`、`#rrggbb` 或 `#rrggbbaa`；
+  - `blankColor` / `innerBorder.color` 为 `transparent`、`#rrggbb` 或 `#rrggbbaa`；
+  - `blindTileColor` 为 `#rrggbb` 或 `#rrggbbaa`；
   - `innerBorder.widthRatio` 0–0.1，metrics 在约定范围内；
   - 自定义主题不超过 20 个；
   - ID 不是内置 ID、回退 ID 或其他主题 ID。
-- 取消正在被使用的阶数支持时阻止保存，错误文案列出完整阶数，例如“该主题正在用于 8×8、9×9，请先在设置页为这些阶数选择其他主题。”
-- 名称错误显示在名称输入框下方并聚焦；支持阶数错误显示在支持阶数区域；保存失败显示在保存条内。
+- 取消正在被使用的阶数支持时禁用保存按钮，保存条文案列出完整阶数，例如“该主题正在用于 8×8、9×9，当前无法保存；请先在设置页为这些阶数选择其他主题。”
+- 名称错误显示在名称输入框下方并聚焦；“至少选择一个阶数”显示在支持阶数区域；使用中阶数只在保存条说明；保存失败显示在保存条内。
 - 不使用 `alert`；保存失败保留 draft、控件值和当前预览。
 - 读取 `corrupt` / `unavailable` / 版本不兼容时显示顶部 banner；仍然允许编辑，但保存失败时在保存条内提示存储问题。
 - 20 个上限：新建入口在设置页禁用；直接访问新建 URL 时显示上限说明，不生成可保存草稿。
@@ -1050,7 +1066,7 @@ UI 使用三个分段选项：
 ### 6.13 响应式与可访问性
 
 - 桌面两栏，窄屏单列；预览在窄屏放在控制区上方，尽量保持可见。
-- 所有标签使用 `<label>` / `<fieldset>` / `<legend>`；原生 checkbox、range、color、text input 保留键盘和读屏语义。
+- 表单控件使用 `<label>`；分组标题统一用 `<section aria-labelledby>` + `<h3>`，让分隔线始终独占一行；原生 checkbox、range、text input 保留键盘和读屏语义；颜色字段的可见标签为文本，Pickr 按钮通过 i18n 设置中文 `aria-label`。
 - 模式切换、油漆桶/吸管使用带 `aria-pressed` 的按钮，不能只靠颜色表达状态。
 - 撤销/重做按钮有 `aria-label`、`title` 和禁用态；快捷键有文字提示。
 - 按 2026-10-25 的视觉收敛，预览悬停只高亮受影响方块，不显示文字摘要；完整键盘/读屏高亮方案随 P8-5 补充。
@@ -1112,7 +1128,8 @@ function replaceBoard(size: PuzzleSize): void {
 - 键缺失时使用默认彩虹外观；不自动写入。
 - 旧版 `config` / `scores` / `currentScore` / `currentScoreList` 仍不读取；显式清理入口不变。
 - 成绩、录像、分组、IndexedDB 不受主题模型升级影响。
-- 主题编辑器不新增 localStorage key，不升级 schema；新建主题、撤销/重做和名称宽度限制都不改变存储格式。
+- 主题编辑器不新增 localStorage key，不升级 schema；颜色格式从 `#rrggbb` 向后兼容地扩展到 `#rrggbb` / `#rrggbbaa`，旧 v4 数据仍然合法。
+- Pickr 只影响主题编辑器的输入方式，不改变 `Theme` 结构；8 位色直接存为字符串，不需要迁移。
 - 编辑器名称限制只在 UI 执行；数据层保持 `trim()` 后非空和允许重名的规则。
 - 主题导入/导出、设置迁移、数据清理 UI 属于后续扩展。
 
@@ -1125,7 +1142,7 @@ function replaceBoard(size: PuzzleSize): void {
 | `src/games/puzzle/core/appearance/theme.ts` | 逐块取色、字体色解析、克隆、颜色校验；导出可复用的 palette 索引解析 |
 | `src/games/puzzle/core/appearance/metrics.ts` | metrics 归一化、CSS 变量（含内边框） |
 | `src/games/puzzle/core/appearance/appearance.ts` | 默认/回退外观、按阶数解析、分配、覆盖、相等比较；导出 `isThemeEqual` 供编辑器判断脏状态 |
-| `src/games/puzzle/core/appearance/editor.ts` | 编辑器纯函数：模式切换时 palette/fontPalette 截断补齐、按方块取涂色目标、样式刷应用、主题校验 |
+| `src/games/puzzle/core/appearance/editor.ts` | 编辑器纯函数：模式切换时重置色板、按方块取涂色目标、样式刷应用、主题校验 |
 | `src/games/puzzle/core/appearance/name.ts` | 主题名称显示宽度、grapheme 计数、trim 与长度校验（纯函数，可供测试） |
 | `src/games/puzzle/data/schema.ts` | 版本常量、Theme/AppearanceState 校验 |
 | `src/games/puzzle/data/appearance-store.ts` | v4 读取、归一化、保存 |
@@ -1134,6 +1151,7 @@ function replaceBoard(size: PuzzleSize): void {
 | `src/games/puzzle/ui/theme-coverage.ts` | 覆盖范围摘要、完整阶数列表和尺寸文案 |
 | `src/games/puzzle/ui/theme-preview.ts` | 设置页卡片等装饰性主题预览（复用 BoardView，`aria-hidden`） |
 | `src/games/puzzle/ui/theme-history.ts` | 编辑器快照历史：50 步上限、undo/redo、连续输入合并辅助 |
+| `src/games/puzzle/ui/color-picker-field.ts` | Pickr Nano 适配层：颜色转换、透明度、事件合并、禁用和销毁 |
 | `src/games/puzzle/ui/theme-editor-controls.ts` | 名称、支持阶数、模式、样式刷、吸管、整盘样式控件与校验展示 |
 | `src/games/puzzle/ui/theme-editor-board.ts` | 编辑器棋盘交互：悬停高亮、涂色目标、油漆桶/吸管 |
 | `src/games/puzzle/ui/theme-editor.ts` | 编辑器页面 controller：草稿、历史、保存、重置、URL、bfcache |
@@ -1143,7 +1161,7 @@ function replaceBoard(size: PuzzleSize): void {
 | `src/games/puzzle/pages/theme-editor.ts` | 编辑器页面入口、参数解析、错误边界和组装 |
 | `src/games/puzzle/styles/board.css` | 内边框、字号内区域公式、逐块字体色 |
 | `src/games/puzzle/styles/settings.css` | 主题卡、徽标、回退警告、对话框内容、保存条、响应式 |
-| `src/games/puzzle/styles/theme-editor.css` | 编辑器两栏布局、预览卡、控件、涂色工具、撤销按钮、窄屏 |
+| `src/games/puzzle/styles/theme-editor.css` | 编辑器两栏布局、预览卡、控件、Pickr 按钮/弹层、涂色工具、撤销按钮、窄屏 |
 | `src/games/puzzle/styles/overlays.css` / `dialog.css` | 对话框基础样式 |
 | `src/shared/icons/sprite.svg` | 新增 `undo` / `redo` 图标；实现时登记到 `docs/ICONS.md` |
 | `puzzle-game/settings.html` | 游戏主题 section 文案和挂载点；加载 board.css / dialog 样式 |
@@ -1201,11 +1219,12 @@ function replaceBoard(size: PuzzleSize): void {
 - [x] 新增 `styles/theme-editor.css`：桌面 `1 : 2` 两栏、右侧 sticky 预览、窄屏单列、控件和工具样式。
 - [x] 新增 `pages/theme-editor.ts` 与 `ui/theme-editor.ts`：参数解析、new/edit 状态、baseline/draft、错误边界。
 - [x] 名称输入：默认“新的主题”、20 显示宽度、计数器、trim、空值/超限错误、允许重名。
-- [x] 支持阶数：2×5 多选框、无“全选”、至少一个、使用中提示、阻止取消使用中的阶数。
-- [x] 着色模式：按层/按行/全自定义；模式切换时 palette/fontPalette 按索引截断/补齐。
+- [x] 支持阶数：2×5 多选框（只显示数字）、无“全选”、至少一个、使用中红色标记 + 保存条禁用保存。
+- [x] 着色模式：按阶/按行/全自定义；模式切换时整块重置为回退样式，可 `Ctrl/Cmd+Z` 撤销。
 - [x] 样式刷：背景色 + 明确文字色（无 auto）；迷你预览；默认从当前主题读取，旧 auto 转显式色。
-- [x] 涂色：油漆桶点击按模式修改 palette/fontPalette；吸管读回样式；悬停只高亮受影响方块；空白块不参与。
+- [x] 涂色：油漆桶点击按模式修改 palette/fontPalette；吸管读回样式后自动切回油漆桶；悬停只高亮受影响方块；空白块不参与。
 - [x] 整盘样式：盲玩色、内边框颜色/宽度、字号、间隙、圆角；空白色固定透明、不提供编辑；实时预览并在拖动结束后合并历史。
+- [x] 颜色：数据层与编辑器支持 `#rrggbbaa` alpha；四个颜色字段统一使用 Pickr Nano，透明色在预览和游戏页按 CSS 自然混色。
 - [x] 预览：最大支持阶数、始终显示数字、支持阶数变化时重建、与设置页/游戏页一致；无悬停说明文字。
 - [x] 撤销/重做：50 步快照、页头图标按钮、Ctrl/Cmd+Z、Ctrl/Cmd+Shift+Z、Ctrl/Cmd+Y；连续输入合并；重置可撤销；保存不清空历史。
 - [x] 新建草稿只在内存：未修改退出不创建主题；保存后停留编辑器并用 `replaceState` 更新 `?theme=<id>`。
@@ -1217,7 +1236,7 @@ function replaceBoard(size: PuzzleSize): void {
 
 实现备注（2026-10-25）：新增 `core/appearance/editor.ts`（模式切换、涂色目标、样式刷应用/读取、`prepareThemeForEditor()`、脏比较和保存前校验）、`core/appearance/name.ts`（grapheme/显示宽度计算）、`ui/theme-history.ts`（50 份快照线性历史与连续输入合并）、`ui/theme-editor-board.ts`（棋盘悬停/点击/高亮）、`ui/theme-editor-controls.ts`（左侧控件）和 `ui/theme-editor.ts`（controller）。`board-view` 的 tile 增加稳定的 `data-tile` 钩子；`getTilePaletteIndex` 从 `theme.ts` 导出复用。设置页新增 `pageshow` + `persisted` 处理，bfcache 返回时重新读取外观并重渲染主题列表。
 
-视觉收敛（2026-10-25）：移除预览和左侧的全部操作说明文字；移除“显示数字”开关，预览始终显示数字；移除空白色编辑，编辑器固定透明；移除文字色“自动”，旧 auto 在打开时转成显式黑/白；预览棋盘最大宽度收到约 `34rem`。样式刷和工具切换不进入主题、脏状态或历史；名称连续输入、滑杆和颜色选择器按 600ms 窗口或 `change` 合并。`npm test`（463 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 通过；手动验收待执行。
+视觉收敛（2026-10-25）：移除预览和左侧的全部操作说明文字；移除“显示数字”开关，预览始终显示数字；移除空白色编辑，编辑器固定透明；移除文字色“自动”，旧 auto 在打开时转成显式黑/白；预览棋盘最大宽度收到约 `34rem`。颜色 alpha 与 Pickr（2026-10-25）：`theme` / `fontPalette` / `blankColor` / `blindTileColor` / `innerBorder.color` 接受 `#rrggbb` 或 `#rrggbbaa`，不升级 v4 schema；新增 `ui/color-picker-field.ts` 封装 Pickr Nano，四个颜色字段实时预览，`change` 连续合并、滑杆结束/保存/关闭时结束历史合并；内边框“透明”复选框同日移除，改用 alpha 0。样式刷和工具切换不进入主题、脏状态或历史。`npm test`（476 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 通过；手动验收待执行。
 
 ### 10.5 P8-4c-2e 测试与验收
 
@@ -1360,23 +1379,28 @@ location.reload();
 - [ ] 混合中英文、emoji、组合字符按 grapheme 和显示宽度计数。
 - [ ] 名称为空或超限时出现错误、阻止保存并聚焦名称输入框。
 - [ ] 允许创建同名主题。
-- [ ] 支持阶数为 2×5 多选框，没有“全选”；至少保留一个。
-- [ ] 取消正在被使用的阶数时出现错误并阻止保存；重新勾选后可保存。
+- [ ] 支持阶数为 2×5 多选框，按钮只显示数字，没有“全选”和“使用中”徽标；至少保留一个。
+- [ ] 取消正在被使用的阶数时该按钮显示红色边框，保存条说明原因且保存按钮禁用，下方没有重复错误；重新勾选后恢复。
 - [ ] 预览始终使用支持的最大阶数；只在最大值变化时重建棋盘。
 
 涂色与预览：
 
-- [ ] 按层模式点击一个方块会改变整层；按行改变整行；全自定义只改变该数字。
-- [ ] 切换模式时 palette/fontPalette 按索引截断/补齐，背景补 `#3498db`、字体补显式白色。
+- [ ] 按阶模式点击一个方块会改变整层；按行改变整行；全自定义只改变该数字。
+- [ ] 切换模式时 palette/fontPalette 整块重置为回退样式（默认蓝背景 + 可读字体色），旧颜色不保留；`Ctrl/Cmd+Z` 可恢复切换前的模式与全部颜色。
 - [ ] 样式刷背景/文字色都可直接选择，没有“自动”开关；迷你预览正确。
 - [ ] 打开旧主题时，`auto` 字体色变成明确黑/白；保存后写回显式颜色。
-- [ ] 油漆桶点击后立即更新预览和保存条；吸管点击只更新样式刷，不修改主题。
+- [ ] 油漆桶点击后立即更新预览和保存条；吸管点击只更新样式刷并自动切回油漆桶，不修改主题。
 - [ ] 悬停时只高亮全部受影响方块，不显示层/行/数字和数量摘要。
 - [ ] 点击空白块不涂色；空白块固定透明，界面上没有空白色编辑控件。
 - [ ] 预览标题只有“预览”，棋盘始终显示数字，没有“显示数字”开关或盲玩预览。
 - [ ] 盲玩色、内边框颜色/宽度、字号、间隙、圆角实时预览。
+- [ ] 四个颜色字段都使用 Pickr Nano，透明度滑杆、HEXA 输入和“确定”按钮可用；弹层不溢出、不被保存条遮挡。
+- [ ] 四个颜色字段的 hex 文本始终为 8 位（含 alpha），色块和文本在不同透明度下保持左对齐。
+- [ ] 滑杆轨道左侧为主题蓝、右侧为白色并带浅描边，滑块是按钮风格的圆角矩形；拖动时填充长度与百分比同步。
+- [ ] 背景色、文字色、盲玩色、内边框色分别设置 alpha 后，预览与游戏页都按透明混色显示；`#rrggbbaa` 保存后刷新仍保留。
+- [ ] 内边框没有“透明”复选框；完全透明通过 Pickr 把透明度调到 0%，旧的 `transparent` 主题显示为 `#00000000`，保存和撤销正常。
 - [ ] 内边框透明但宽度 >0 时仍占用内边距。
-- [ ] 预览、设置页卡片和游戏页的三者视觉一致。
+- [ ] 预览底色与游戏页一致（`#ebebeb`），半透明主题色在两者中的混色结果接近。
 
 撤销/重做：
 
@@ -1405,7 +1429,7 @@ location.reload();
 - [ ] 回退警告可被读屏读出完整阶数；设置页不再有“当前分配”总览。
 - [ ] 预览和徽标不抢焦点。
 - [ ] 编辑器撤销/重做按钮可 Tab 到达，禁用态正确，快捷键有可读说明。
-- [ ] 编辑器名称、支持阶数、模式、滑杆、颜色选择器和保存条均可键盘操作。
+- [ ] 编辑器名称、支持阶数、模式、滑杆、Pickr 取色器、透明度/色相滑杆和保存条均可键盘操作；Esc 可关闭取色弹层。
 - [ ] 尊重 `prefers-reduced-motion`。
 
 ## 12. 测试点
@@ -1433,8 +1457,8 @@ location.reload();
   - 不修改入参。
 - `upsertCustomTheme()` / `removeCustomTheme()`：内置/回退保护；自定义主题顺序；删除后受影响阶数落回退。
 - `prepareThemeForEditor()`：旧 `auto` 字体色转成明确黑/白，空白色固定为透明，返回深拷贝。
-- 编辑器模式切换：`layer`/`row`/`fixed` 之间按索引保留，长度正确截断/补齐；背景补 `#3498db`、字体补显式白色；不修改入参。
-- 编辑器涂色：按层/行/固定色解析目标索引；空白块、非法阶数、越界数字和 `auto`/非法文字色不涂色；同一组多个方块只改一个 palette 项。
+- 编辑器模式切换：`layer`/`row`/`fixed` 之间整块重置为回退样式，长度正确（18/10/99）；背景全部 `#3498db`，字体全部为默认蓝对应的可读色；不修改入参。
+- 编辑器涂色：按阶/行/固定色解析目标索引；空白块、非法阶数、越界数字和 `auto`/非法文字色不涂色；同一组多个方块只改一个 palette 项。
 - 编辑器吸管：旧 `auto` 字体色解析成明确对比色；空白块返回 null。
 - 编辑器名称宽度：10 个汉字 = 20；20 个英文 = 20；混合文本正确；emoji/组合字符按 grapheme；超限判定正确。
 - 编辑器历史：50 步上限；新修改清空 redo；撤销/重做移动快照；重置可撤销；快照数量不超过 50。
@@ -1496,7 +1520,7 @@ location.reload();
 - 编辑器：
   - 新建未修改退出、修改后退出、重置、保存、保存后刷新、URL 变化；
   - 名称 20 显示宽度、中文/英文/emoji、同名主题；
-  - 支持阶数多选、无全选、使用中阻止取消；
+  - 支持阶数多选（只显示数字）、无全选、取消使用中的阶数后禁用保存；
   - 三种模式涂色、吸管、悬停高亮、空白块固定透明、始终显示数字；
   - 整盘样式实时预览、内边框透明宽度；
   - 撤销/重做按钮与快捷键、连续拖动合并、IME、保存后撤销；
@@ -1556,9 +1580,18 @@ location.reload();
 | 2026-10-25 | 编辑器移除文字色“自动”；旧 auto 在打开时转成显式黑/白，模式切换新增项补显式白色 |
 | 2026-10-25 | 预览棋盘最大宽度缩小到约 `34rem` |
 | 2026-10-25 | 名称上限 20 显示宽度（10 个汉字 / 20 个英文字母），允许重名；数据层保持宽松 |
-| 2026-10-25 | “按层”继续保持旧版 L 形分层，不改为同心环 |
+| 2026-10-25 | “按阶”（原名“按层”）继续保持旧版 L 形分层，不改为同心环 |
+| 2026-10-25 | 着色模式 UI 文案由“按层”改为“按阶”；内部 `layer` 与 L 形分层算法不变 |
 | 2026-10-25 | 主题编辑器不升级 schema；历史只保存 Theme 快照，不保存 DOM 或棋盘对象 |
 | 2026-10-25 | 设置页从编辑器返回时处理 bfcache，重新读取外观并重渲染主题列表 |
+| 2026-10-25 | 主题颜色格式扩展为 `#rrggbb` / `#rrggbbaa`；palette/fontPalette/blankColor/blindTileColor/innerBorder 均支持 alpha；v4 schema 不升级，旧数据兼容；`auto` 对比度只按 RGB 计算 |
+| 2026-10-25 | 主题编辑器颜色选择器改用 Pickr 1.10.2 Nano，启用透明度与 HEXA 输入，不加 swatches；内边框“透明”复选框同日移除 |
+| 2026-10-25 | 内边框完全透明改用 alpha 0 表示，不再提供“透明”复选框；旧数据 `transparent` 在编辑器里按 `#00000000` 展示和编辑，数据层继续兼容 |
+| 2026-10-25 | 支持阶数按钮只显示数字并移除“使用中”徽标；取消使用中的阶数改为红色边框 + 保存条说明 + 禁用保存，不再显示内联错误 |
+| 2026-10-25 | 吸管取色成功后自动切回油漆桶；点击空白块不取色也不切换工具 |
+| 2026-10-25 | 编辑器滑杆改为自定义轨道：左侧主题蓝、右侧白色、浅描边；滑块为按钮风格圆角矩形，进度由 `--range-progress` 驱动 |
+| 2026-10-25 | 切换着色模式不再按索引保留颜色，整块重置为回退主题样式；切换作为一步历史，可用 `Ctrl/Cmd+Z` 撤销 |
+| 2026-10-25 | 编辑器 hex 文本统一补齐为 8 位大写并固定宽度，避免透明度有无导致的色块错位；只改展示，不改变存储格式 |
 
 ## 15. 参考
 

@@ -181,6 +181,34 @@ describe('isTheme / isAppearanceState', () => {
     expect(isAppearanceState(createFallbackAppearance())).toBe(true);
   });
 
+  it('接受带 alpha 的主题颜色', () => {
+    const alphaTheme: Theme = {
+      ...theme,
+      id: 'custom-alpha',
+      name: '带透明主题',
+      builtin: false,
+      color: {
+        ...theme.color,
+        palette: theme.color.palette.map((color, index) => (index === 0 ? '#12345680' : color)),
+        fontPalette: theme.color.fontPalette.map((color, index) =>
+          index === 0 ? '#ffffff40' : color,
+        ),
+        blankColor: '#00000080',
+      },
+      innerBorder: { color: '#ffffff40', widthRatio: 0.02 },
+      blindTileColor: '#3498db80',
+    };
+
+    expect(isTheme(alphaTheme)).toBe(true);
+    expect(
+      isAppearanceState({
+        ...appearance,
+        themes: [...appearance.themes, alphaTheme],
+        themeIdBySize: { ...appearance.themeIdBySize, 10: alphaTheme.id },
+      }),
+    ).toBe(true);
+  });
+
   it('拒绝色板、字体色、空白色、内边框和 metrics 非法', () => {
     expect(
       isTheme({
@@ -198,6 +226,15 @@ describe('isTheme / isAppearanceState', () => {
       isTheme({
         ...theme,
         color: { ...theme.color, fontPalette: Array(18).fill('#fff') },
+      }),
+    ).toBe(false);
+    expect(
+      isTheme({
+        ...theme,
+        color: {
+          ...theme.color,
+          palette: ['#1234567', ...theme.color.palette.slice(1)],
+        },
       }),
     ).toBe(false);
     expect(

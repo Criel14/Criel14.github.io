@@ -1,6 +1,6 @@
 # 数字华容道数据存储设计
 
-> 状态：P6 已完成（数据层与旧数据清理均已实现）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层已完成（2026-10-24）；P8-4b 独立设置页与 `site.v1.preferences` 已实现（2026-10-24，待手动验收）；P8-4c-1 主题存储与选择已实现（2026-10-24，待手动验收）；P8-4c-2 设计确认（2026-10-24），P8-4c-2a 外观 v4 领域模型与存储已实现（2026-10-24，不做 v3 迁移，自动检查通过），P8-4c-2b 设置页按阶数分配已实现（2026-10-25，自动检查通过，待手动验收），P8-4c-2d 主题编辑器已实现（2026-10-25，自动检查通过，待手动验收，不改变存储 schema），P8-4c-2c、P8-4c-2e 待开始
+> 状态：P6 已完成（数据层与旧数据清理均已实现）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层已完成（2026-10-24）；P8-4b 独立设置页与 `site.v1.preferences` 已实现（2026-10-24，待手动验收）；P8-4c-1 主题存储与选择已实现（2026-10-24，待手动验收）；P8-4c-2 设计确认（2026-10-24），P8-4c-2a 外观 v4 领域模型与存储已实现（2026-10-24，不做 v3 迁移，自动检查通过），P8-4c-2b 设置页按阶数分配已实现（2026-10-25，自动检查通过，待手动验收），P8-4c-2d 主题编辑器已实现（2026-10-25，自动检查通过，待手动验收，不改变存储 schema），并补充 `#rrggbbaa` 颜色 alpha 与 Pickr Nano 取色器（2026-10-25，自动检查通过，待手动验收），P8-4c-2c、P8-4c-2e 待开始
 >
 > 分支：`refactor/vite-ts`
 >
@@ -11,7 +11,7 @@
 ## 0. 决策摘要
 
 - **设置和外观继续用 localStorage**：数据小、同步读写、页面启动即可用。
-- **游戏主题仍存 `puzzle.v2.appearance`**：内置主题 canonical、自定义主题最多 20 个；v4 数据包含 `themeIdBySize`、`supportedSizes`、`fontPalette`、`innerBorder`，自定义主题全按最重估算约 40KB，不需要 IndexedDB。详见 `docs/PUZZLE_THEME.md`。
+- **游戏主题仍存 `puzzle.v2.appearance`**：内置主题 canonical、自定义主题最多 20 个；v4 数据包含 `themeIdBySize`、`supportedSizes`、`fontPalette`、`innerBorder`，颜色支持 `#rrggbb` / `#rrggbbaa`，自定义主题全按最重估算约 48KB，不需要 IndexedDB。详见 `docs/PUZZLE_THEME.md`。
 - **外观版本独立**：`puzzle.v2.settings` 保持 version 3，`puzzle.v2.appearance` 升到 version 4；不做 v3 → v4 迁移，升级时清一次 `puzzle.v2.appearance`，自定义主题会丢失。
 - **全站偏好独立存储**：外观模式/语言存 localStorage `site.v1.preferences`（version 1），与拼图设置/外观分开；详见 `docs/SETTINGS_PAGE.md`。
 - **成绩列表和录像改用 IndexedDB**：数据大、需要按桶查询、需要原子事务。
@@ -102,17 +102,19 @@ v2 没有正式上线，不提供从这些键迁移到 IndexedDB 的逻辑。若
 - 内置主题不可修改、不可删除；自定义主题可以编辑逐块背景色/字体色、盲玩色、内边框和 metrics，上限 20 个（`CUSTOM_THEME_SLOT_COUNT = 20`）。编辑器不提供空白色编辑，保存时固定为 `transparent`；数据字段继续保留以兼容旧主题。
 - `Theme.supportedSizes` 表示主题设计上支持的阶数，默认全部 2–10；`themeIdBySize` 表示当前分配，两者不能混用。
 - 主题非法时过滤；`themeIdBySize` 指向缺失主题、主题不支持该阶数或值为回退 ID 时，该阶数使用 `FALLBACK_THEME`。
-- `Theme.color.palette` 与 `Theme.color.fontPalette` 长度均由 mode 决定（18/10/99）；`fontPalette` 每项为 `auto` 或 `#rrggbb`。
-- `Theme.innerBorder` 是方块内边框，整盘统一；颜色允许 `transparent`，宽度 0–0.1。它不改变方块外尺寸，字号按“格子边长 − 2 × 内边框宽度”计算。
-- `Theme.blindTileColor` 是盲玩隐藏数字时的方块背景色，必须是 `#rrggbb`；默认 `#3498db`，空白块仍使用 `blankColor`。
+- `Theme.color.palette` 与 `Theme.color.fontPalette` 长度均由 mode 决定（18/10/99）；palette 每项为 `#rrggbb` / `#rrggbbaa`，fontPalette 每项为 `auto` / `#rrggbb` / `#rrggbbaa`。
+- `Theme.color.blankColor` 允许 `transparent` / `#rrggbb` / `#rrggbbaa`；编辑器仍固定保存为 `transparent`。
+- `Theme.innerBorder` 是方块内边框，整盘统一；颜色允许 `transparent` / `#rrggbb` / `#rrggbbaa`，宽度 0–0.1。它不改变方块外尺寸，字号按“格子边长 − 2 × 内边框宽度”计算。
+- `Theme.blindTileColor` 是盲玩隐藏数字时的方块背景色，必须是 `#rrggbb` 或 `#rrggbbaa`；默认 `#3498db`，空白块仍使用 `blankColor`。
+- 颜色格式扩展是 v4 内的向后兼容变化：旧 6 位数据继续合法，不升级 envelope 版本，也不需要迁移；回滚到旧代码时，8 位色会被旧校验视为非法，这是已知的回滚风险。
 - 外观 v4 不做 v3 迁移：升级时清一次 `puzzle.v2.appearance`；不清时使用回退主题并提示。自定义主题会丢失，设置/分组/成绩不受影响。
-- 主题存储体积：`fixed` 模式 99 个背景色 + 99 个字体色约 2KB/主题，20 个全按最重计算约 40KB，远低于 localStorage 配额。
+- 主题存储体积：`fixed` 模式 99 个背景色 + 99 个字体色约 2KB/主题；全部使用 8 位色时 20 个主题约 48KB，远低于 localStorage 配额。
 - P8-4c-2 设置页主题分配先写 draft，点击设置页“保存”后才写 `puzzle.v2.appearance`。
 - 主题编辑器是独立页面，自己维护 `baseline` / `draft`，点击编辑器“保存”后才写 `puzzle.v2.appearance`；返回/刷新丢弃 draft，不做离开确认。
 - 新建主题只在内存中复制回退主题（名称“新的主题”），未修改退出不写入 `themes`；保存成功后才创建自定义主题，并停留在编辑器把 URL 改为 `?theme=<id>`。
 - 编辑器保存后不自动分配阶数；`themeIdBySize` 保持不变，用户在设置页手动选择。
 - 编辑器名称限制 20 显示宽度只在前端执行；数据层仍只要求 `trim()` 后非空，不改变存储 schema。
-- 编辑器不提供文字色 `auto`；打开旧主题时把 `auto` 解析成显式黑/白，保存后写回显式 `#rrggbb`。数据层仍接受旧 `auto`，不改变 schema。
+- 编辑器不提供文字色 `auto`；打开旧主题时把 `auto` 解析成显式黑/白，保存后写回显式 `#rrggbb` / `#rrggbbaa`。数据层仍接受旧 `auto`，不改变 schema。
 - 编辑器提供 50 步内存撤销/重做，只保存 `Theme` 快照，不写 localStorage。
 - 设置页是独立页面；从 `observing` / `solved` 进入，运行中/重玩中/保存中禁用入口，避免卸载当前局。
 - 主题分配与主题内容编辑都写完整 `AppearanceState`；多标签页最后写入覆盖，不做合并。详见 `docs/PUZZLE_THEME.md`。

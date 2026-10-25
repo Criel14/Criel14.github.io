@@ -6,7 +6,13 @@ import {
   getThemeNameWidth,
   THEME_NAME_MAX_WIDTH,
 } from '../core/appearance/name';
-import { getReadableFontColor } from '../core/appearance/theme';
+import { DEFAULT_BLIND_TILE_COLOR } from '../core/appearance/presets';
+import {
+  formatHexColorWithAlpha,
+  getReadableFontColor,
+  normalizeHexColor,
+} from '../core/appearance/theme';
+import { createColorPickerField, type ColorPickerField } from './color-picker-field';
 
 export type ThemeEditorTool = 'bucket' | 'eyedropper';
 
@@ -54,7 +60,6 @@ interface SizeOption {
   readonly size: PuzzleSize;
   readonly input: HTMLInputElement;
   readonly label: HTMLLabelElement;
-  readonly badge: HTMLElement;
 }
 
 const TOOL_LABELS: Readonly<Record<ThemeEditorTool, string>> = {
@@ -75,7 +80,29 @@ function formatPercent(value: number, fractionDigits = 0): string {
 }
 
 function normalizeHex(value: string, fallback: string): string {
-  return /^#[0-9a-fA-F]{6}$/.test(value) ? value.toLowerCase() : fallback;
+  return normalizeHexColor(value) ?? fallback;
+}
+
+/**
+ * 编辑器里统一显示 `#` + 8 位 hex，alpha 为 1 时补齐 `FF`。
+ * 固定 9 个字符配合等宽字体，保证不同透明度下色块和文本始终对齐。
+ */
+function formatHexForDisplay(color: string): string {
+  return formatHexColorWithAlpha(color) ?? color;
+}
+
+/**
+ * 把滑杆当前值换算成百分比写入 `--range-progress`，供轨道渐变绘制已填充部分。
+ * 值超出 min/max 时夹紧；min 与 max 相等时按 0% 处理，避免除零。
+ */
+function syncRangeFill(input: HTMLInputElement): void {
+  const min = Number(input.min);
+  const max = Number(input.max);
+  const value = Number(input.value);
+  const span = max - min;
+  const ratio = span > 0 ? (value - min) / span : 0;
+  const percent = Math.min(100, Math.max(0, ratio * 100));
+  input.style.setProperty('--range-progress', `${percent}%`);
 }
 
 function withMetric(theme: Theme, key: MetricKey, value: number): Theme {
@@ -107,24 +134,17 @@ export function createThemeEditorControls(
   const sizesRoot = requireElement<HTMLElement>(root, '[data-supported-sizes]');
   const sizesError = requireElement<HTMLElement>(root, '[data-sizes-error]');
   const modeGroup = requireElement<HTMLElement>(root, '[data-mode-group]');
-  const brushBackground = requireElement<HTMLInputElement>(root, '[data-brush="background"]');
-  const brushFont = requireElement<HTMLInputElement>(root, '[data-brush="fontColor"]');
+  const brushBackgroundMount = requireElement<HTMLElement>(root, '[data-brush="background"]');
+  const brushFontMount = requireElement<HTMLElement>(root, '[data-brush="fontColor"]');
   const brushBackgroundHex = requireElement<HTMLElement>(root, '[data-brush-background-hex]');
   const brushFontHex = requireElement<HTMLElement>(root, '[data-brush-font-hex]');
   const brushPreview = requireElement<HTMLElement>(root, '[data-brush-preview]');
   const styleError = requireElement<HTMLElement>(root, '[data-style-error]');
 
-  const blindColorInput = requireElement<HTMLInputElement>(root, '[data-color="blindTileColor"]');
+  const blindColorMount = requireElement<HTMLElement>(root, '[data-color="blindTileColor"]');
   const blindHex = requireElement<HTMLElement>(root, '[data-hex="blindTileColor"]');
-  const borderColorInput = requireElement<HTMLInputElement>(
-    root,
-    '[data-color="innerBorderColor"]',
-  );
+  const borderColorMount = requireElement<HTMLElement>(root, '[data-color="innerBorderColor"]');
   const borderHex = requireElement<HTMLElement>(root, '[data-hex="innerBorderColor"]');
-  const borderTransparent = requireElement<HTMLInputElement>(
-    root,
-    '[data-inner-border-transparent]',
-  );
   const borderWidth = requireElement<HTMLInputElement>(root, '[data-range="innerBorderWidth"]');
   const fontSize = requireElement<HTMLInputElement>(root, '[data-range="fontSizeRatio"]');
   const gap = requireElement<HTMLInputElement>(root, '[data-range="gapRatio"]');
@@ -136,7 +156,64 @@ export function createThemeEditorControls(
   let theme: Theme | null = null;
   let brush: ThemeBrush = { background: '#3498db', fontColor: '#ffffff' };
   let tool: ThemeEditorTool = 'bucket';
-  let borderFallbackColor = '#ffffff';
+
+  const brushBackgroundPicker: ColorPickerField = createColorPickerField({
+    mount: brushBackgroundMount,
+    label: '样式刷背景色',
+    initialColor: brush.background,
+    onChange(color) {
+      setBrush({ background: color, fontColor: brush.fontColor });
+    },
+  });
+  const brushFontPicker: ColorPickerField = createColorPickerField({
+    mount: brushFontMount,
+    label: '样式刷文字色',
+    initialColor: brush.fontColor,
+    onChange(color) {
+      setBrush({ background: brush.background, fontColor: color });
+    },
+  });
+
+  const blindColorPicker: ColorPickerField = createColorPickerField({
+    mount: blindColorMount,
+    label: '盲玩色',
+    initialColor: DEFAULT_BLIND_TILE_COLOR,
+    onChange(color) {
+      const current = getTheme();
+      emitTheme(
+        { ...current, blindTileColor: color },
+        {
+          mergeKey: 'blindTileColor',
+          final: false,
+        },
+      );
+      blindHex.textContent = formatHexForDisplay(color);
+    },
+    onSettle() {
+      emitTheme(getTheme(), { mergeKey: 'blindTileColor', final: true });
+    },
+  });
+
+  const borderColorPicker: ColorPickerField = createColorPickerField({
+    mount: borderColorMount,
+    label: '内边框颜色',
+    // 内边框完全不透明时用 alpha 0 表示，旧数据里的 transparent 也按这个值展示。
+    initialColor: '#00000000',
+    onChange(color) {
+      const current = getTheme();
+      emitTheme(
+        {
+          ...current,
+          innerBorder: { ...current.innerBorder, color },
+        },
+        { mergeKey: 'innerBorderColor', final: false },
+      );
+      updateBorderControls();
+    },
+    onSettle() {
+      emitTheme(getTheme(), { mergeKey: 'innerBorderColor', final: true });
+    },
+  });
 
   const sizeOptions = new Map<PuzzleSize, SizeOption>();
 
@@ -154,12 +231,9 @@ export function createThemeEditorControls(
     const surface = document.createElement('span');
     surface.className = 'theme-editor-size__surface';
     const text = document.createElement('span');
-    text.textContent = `${size}×${size}`;
-    const badge = document.createElement('span');
-    badge.className = 'theme-editor-size__badge';
-    badge.textContent = '使用中';
-    badge.hidden = true;
-    surface.append(text, badge);
+    // 按钮只显示阶数数字；完整“N×N”和是否使用中留给 aria-label。
+    text.textContent = String(size);
+    surface.append(text);
     label.append(input, surface);
 
     input.addEventListener(
@@ -178,7 +252,7 @@ export function createThemeEditorControls(
       { signal },
     );
 
-    return { size, input, label, badge };
+    return { size, input, label };
   }
 
   for (const size of PUZZLE_SIZES) {
@@ -232,25 +306,18 @@ export function createThemeEditorControls(
     styleError.hidden = message === null;
   }
 
+  /** 旧数据的 `transparent` 在编辑器里按 `#00000000` 展示和编辑。 */
   function currentBorderColor(): string {
-    const current = getTheme();
-    return current.innerBorder.color === 'transparent'
-      ? borderFallbackColor
-      : normalizeHex(current.innerBorder.color, borderFallbackColor);
+    return normalizeHex(getTheme().innerBorder.color, '#00000000');
   }
 
   function updateBorderControls(): void {
     const current = getTheme();
-    const transparent = current.innerBorder.color === 'transparent';
-    borderTransparent.checked = transparent;
     const color = currentBorderColor();
-    if (!transparent) {
-      borderFallbackColor = color;
-    }
-    borderColorInput.value = color;
-    borderColorInput.disabled = transparent;
-    borderHex.textContent = transparent ? '透明' : color.toUpperCase();
+    borderColorPicker.setColor(color);
+    borderHex.textContent = formatHexForDisplay(color);
     borderWidth.value = String(current.innerBorder.widthRatio);
+    syncRangeFill(borderWidth);
     const output = root.querySelector<HTMLElement>('[data-range-value="innerBorderWidth"]');
     if (output !== null) {
       output.textContent = formatPercent(current.innerBorder.widthRatio, 1);
@@ -267,6 +334,7 @@ export function createThemeEditorControls(
     for (const [key, input, digits] of entries) {
       const value = current.metrics[key];
       input.value = String(value);
+      syncRangeFill(input);
       const output = root.querySelector<HTMLElement>(`[data-range-value="${key}"]`);
       if (output !== null) {
         output.textContent = formatPercent(value, digits);
@@ -278,10 +346,10 @@ export function createThemeEditorControls(
     const background = normalizeHex(nextBrush.background, '#3498db');
     const fontColor = normalizeHex(nextBrush.fontColor, getReadableFontColor(background));
 
-    brushBackground.value = background;
-    brushBackgroundHex.textContent = background.toUpperCase();
-    brushFont.value = fontColor;
-    brushFontHex.textContent = fontColor.toUpperCase();
+    brushBackgroundPicker.setColor(background);
+    brushBackgroundHex.textContent = formatHexForDisplay(background);
+    brushFontPicker.setColor(fontColor);
+    brushFontHex.textContent = formatHexForDisplay(fontColor);
     brushPreview.style.backgroundColor = background;
     brushPreview.style.color = fontColor;
   }
@@ -324,21 +392,6 @@ export function createThemeEditorControls(
     );
   }
 
-  brushBackground.addEventListener(
-    'input',
-    () => {
-      setBrush({ background: brushBackground.value, fontColor: brush.fontColor });
-    },
-    { signal },
-  );
-  brushFont.addEventListener(
-    'input',
-    () => {
-      setBrush({ background: brush.background, fontColor: brushFont.value });
-    },
-    { signal },
-  );
-
   for (const button of toolButtons) {
     button.addEventListener(
       'click',
@@ -353,89 +406,6 @@ export function createThemeEditorControls(
     );
   }
 
-  blindColorInput.addEventListener(
-    'input',
-    () => {
-      const current = getTheme();
-      emitTheme(
-        { ...current, blindTileColor: blindColorInput.value },
-        {
-          mergeKey: 'blindTileColor',
-          final: false,
-        },
-      );
-      blindHex.textContent = blindColorInput.value.toUpperCase();
-    },
-    { signal },
-  );
-  blindColorInput.addEventListener(
-    'change',
-    () => {
-      const current = getTheme();
-      emitTheme(
-        { ...current, blindTileColor: blindColorInput.value },
-        {
-          mergeKey: 'blindTileColor',
-          final: true,
-        },
-      );
-      blindHex.textContent = blindColorInput.value.toUpperCase();
-    },
-    { signal },
-  );
-
-  borderTransparent.addEventListener(
-    'change',
-    () => {
-      const current = getTheme();
-      emitTheme(
-        {
-          ...current,
-          innerBorder: {
-            ...current.innerBorder,
-            color: borderTransparent.checked ? 'transparent' : currentBorderColor(),
-          },
-        },
-        { final: true },
-      );
-      updateBorderControls();
-    },
-    { signal },
-  );
-
-  borderColorInput.addEventListener(
-    'input',
-    () => {
-      const current = getTheme();
-      borderFallbackColor = borderColorInput.value;
-      emitTheme(
-        {
-          ...current,
-          innerBorder: { ...current.innerBorder, color: borderColorInput.value },
-        },
-        { mergeKey: 'innerBorderColor', final: false },
-      );
-      updateBorderControls();
-    },
-    { signal },
-  );
-  borderColorInput.addEventListener(
-    'change',
-    () => {
-      const current = getTheme();
-      borderFallbackColor = borderColorInput.value;
-      emitTheme(
-        {
-          ...current,
-          innerBorder: { ...current.innerBorder, color: borderColorInput.value },
-        },
-        { mergeKey: 'innerBorderColor', final: true },
-      );
-      updateBorderControls();
-    },
-    { signal },
-  );
-
   function bindRange(
     input: HTMLInputElement,
     mergeKey: string,
@@ -445,6 +415,7 @@ export function createThemeEditorControls(
       'input',
       () => {
         const value = Number(input.value);
+        syncRangeFill(input);
         emitTheme(apply(getTheme(), value), { mergeKey, final: false });
         const output = root.querySelector<HTMLElement>(`[data-range-value="${mergeKey}"]`);
         if (output !== null) {
@@ -457,6 +428,7 @@ export function createThemeEditorControls(
       'change',
       () => {
         const value = Number(input.value);
+        syncRangeFill(input);
         emitTheme(apply(getTheme(), value), { mergeKey, final: true });
         const output = root.querySelector<HTMLElement>(`[data-range-value="${mergeKey}"]`);
         if (output !== null) {
@@ -496,13 +468,12 @@ export function createThemeEditorControls(
         if (option === undefined) {
           continue;
         }
-        option.input.checked = supported.has(size);
-        option.badge.hidden = !used.has(size);
-        option.label.classList.toggle('is-used', used.has(size));
-        option.input.setAttribute(
-          'aria-label',
-          `${size}×${size}${used.has(size) ? '，使用中' : ''}`,
-        );
+        const checked = supported.has(size);
+        const inUse = used.has(size);
+        option.input.checked = checked;
+        // 使用中却被取消勾选的阶数保留红色标记；保存条会说明原因并禁用保存。
+        option.label.classList.toggle('is-blocked', inUse && !checked);
+        option.input.setAttribute('aria-label', `${size}×${size}${inUse ? '，使用中' : ''}`);
       }
 
       for (const button of modeButtons) {
@@ -513,8 +484,9 @@ export function createThemeEditorControls(
       renderTools(tool);
       updateBorderControls();
       updateMetricControls();
-      blindColorInput.value = normalizeHex(nextTheme.blindTileColor, '#3498db');
-      blindHex.textContent = blindColorInput.value.toUpperCase();
+      const blindColor = normalizeHex(nextTheme.blindTileColor, '#3498db');
+      blindColorPicker.setColor(blindColor);
+      blindHex.textContent = formatHexForDisplay(blindColor);
       styleError.textContent = '';
       styleError.hidden = true;
       sizesRoot.classList.remove('has-error');
@@ -544,6 +516,10 @@ export function createThemeEditorControls(
     },
 
     destroy(): void {
+      brushBackgroundPicker.destroy();
+      brushFontPicker.destroy();
+      blindColorPicker.destroy();
+      borderColorPicker.destroy();
       controller.abort();
     },
   };

@@ -169,16 +169,18 @@ interface ColorModeFields {
    * - layer：18，索引 0–17 对应层 1–18；
    * - row：10，索引 0–9 对应数字块原本所属的第 1–10 行；
    * - fixed：99，索引 0–98 对应数字 1–99。
+   *
+   * 每项为 #rrggbb 或 #rrggbbaa；省略 alpha 表示完全不透明。
    */
   readonly palette: readonly string[];
 
   /**
    * 方块字体色。与 palette 等长，索引一一对应。
-   * 每一项为 'auto' 或 '#rrggbb'；'auto' 根据该块背景自动选黑/白。
+   * 每一项为 'auto'、'#rrggbb' 或 '#rrggbbaa'；'auto' 根据该块背景自动选黑/白。
    */
   readonly fontPalette: readonly string[];
 
-  /** 空白格背景色；整盘统一。默认 transparent。 */
+  /** 空白格背景色；整盘统一。默认 transparent，也允许 #rrggbb / #rrggbbaa。 */
   readonly blankColor: string;
 }
 
@@ -212,7 +214,7 @@ export interface BoardMetrics {
 
 /** 方块内边框；整盘统一，不改变方块外尺寸。 */
 export interface ThemeInnerBorder {
-  /** 'transparent' 或 '#rrggbb'。 */
+  /** 'transparent'、#rrggbb 或 #rrggbbaa。 */
   readonly color: string;
   /** 单边宽度 = 格子边长 × widthRatio；0–0.1，0 表示无边框。 */
   readonly widthRatio: number;
@@ -230,7 +232,7 @@ export interface Theme {
   readonly innerBorder: ThemeInnerBorder;
   /**
    * 盲玩隐藏数字时，所有非空方块的背景色。
-   * 必须为 #rrggbb；默认 #3498db，用户可在自定义主题里调整。
+   * 必须为 #rrggbb 或 #rrggbbaa；默认 #3498db，用户可在自定义主题里调整。
    * 空白块仍使用 color.blankColor，不参与这个颜色。
    */
   readonly blindTileColor: string;

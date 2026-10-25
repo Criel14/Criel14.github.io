@@ -11,6 +11,7 @@ import {
 import {
   applyBrushToTheme,
   changeThemeColorMode,
+  formatSizeList,
   isThemeDirty,
   prepareThemeForEditor,
   readBrushFromTheme,
@@ -51,6 +52,7 @@ interface ThemeEditorElements {
   readonly undoButton: HTMLButtonElement;
   readonly redoButton: HTMLButtonElement;
   readonly savebar: HTMLElement;
+  readonly saveHint: HTMLElement;
   readonly saveError: HTMLElement;
   readonly resetButton: HTMLButtonElement;
   readonly saveButton: HTMLButtonElement;
@@ -77,6 +79,7 @@ function getElements(): ThemeEditorElements {
     undoButton: requireElement<HTMLButtonElement>('[data-editor-action="undo"]'),
     redoButton: requireElement<HTMLButtonElement>('[data-editor-action="redo"]'),
     savebar: requireElement<HTMLElement>('[data-savebar]'),
+    saveHint: requireElement<HTMLElement>('[data-save-hint]'),
     saveError: requireElement<HTMLElement>('[data-save-error]'),
     resetButton: requireElement<HTMLButtonElement>('[data-action="reset"]'),
     saveButton: requireElement<HTMLButtonElement>('[data-action="save"]'),
@@ -268,6 +271,8 @@ export function mountThemeEditor(): void {
       draft = next;
       history.commit(draft);
       renderAll();
+      // 切换会重置整块色板，明确提示可以撤销，避免用户误触后以为颜色丢失。
+      announce('已切换着色模式，颜色已重置；可按 Ctrl/Cmd+Z 撤销。');
     },
     onBrushChange(nextBrush) {
       brush = nextBrush;
@@ -318,14 +323,24 @@ export function mountThemeEditor(): void {
     elements.redoButton.disabled = saving || !history.canRedo();
   }
 
+  /** 使用中但已被取消勾选的阶数；这些阶数会阻止保存。 */
+  function getBlockedSizes(): readonly PuzzleSize[] {
+    return getUsedSizes().filter((size) => !draft.supportedSizes.includes(size));
+  }
+
   function refreshSavebar(): void {
     const dirty = isThemeDirty(baseline, draft);
+    const blockedSizes = getBlockedSizes();
+    const blocked = blockedSizes.length > 0;
     elements.savebar.hidden = !dirty;
     if (!dirty) {
       clearSaveError();
     }
+    elements.saveHint.textContent = blocked
+      ? `该主题正在用于 ${formatSizeList(blockedSizes)}，当前无法保存；请先在设置页为这些阶数选择其他主题。`
+      : '你有未保存的修改。';
     elements.resetButton.disabled = saving;
-    elements.saveButton.disabled = saving;
+    elements.saveButton.disabled = saving || blocked;
     refreshHistoryButtons();
   }
 
@@ -335,7 +350,8 @@ export function mountThemeEditor(): void {
       themeIdBySize: appearance.themeIdBySize,
       isNew: kind === 'new',
     });
-    const issue = issues.find((item) => item.field === 'supportedSizes' || item.field === 'usage');
+    // “使用中”不再显示内联错误，改由保存条说明原因并禁用保存按钮。
+    const issue = issues.find((item) => item.field === 'supportedSizes');
     controls.setSizesError(issue?.message ?? null);
   }
 
@@ -409,7 +425,11 @@ export function mountThemeEditor(): void {
         return;
       }
       brush = nextBrush;
+      // 取色完成后自动切回油漆桶，方便紧接着把颜色涂到目标方块。
+      tool = 'bucket';
       controls.renderBrush(brush);
+      controls.renderTool(tool);
+      announce('已取色，已切换到油漆桶。');
       return;
     }
 
@@ -437,9 +457,7 @@ export function mountThemeEditor(): void {
 
   function focusFirstIssue(issues: readonly ThemeValidationIssue[]): void {
     const nameIssue = issues.find((issue) => issue.field === 'name');
-    const sizeIssue = issues.find(
-      (issue) => issue.field === 'supportedSizes' || issue.field === 'usage',
-    );
+    const sizeIssue = issues.find((issue) => issue.field === 'supportedSizes');
     const otherIssue = issues.find(
       (issue) =>
         issue.field !== 'name' && issue.field !== 'supportedSizes' && issue.field !== 'usage',
@@ -472,7 +490,10 @@ export function mountThemeEditor(): void {
     });
     if (issues.length > 0) {
       focusFirstIssue(issues);
-      announce('请先修正标记的问题。');
+      // 使用中阶数只通过保存条说明，没有对应的内联错误元素。
+      const usageIssue = issues.find((issue) => issue.field === 'usage');
+      announce(usageIssue?.message ?? '请先修正标记的问题。');
+      refreshSavebar();
       return;
     }
 

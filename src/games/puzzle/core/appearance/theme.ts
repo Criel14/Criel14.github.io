@@ -63,21 +63,52 @@ function getSafeBlankColor(color: ColorMode): string {
   return isValidBlankColor(color.blankColor) ? color.blankColor : TRANSPARENT;
 }
 
-/** 判断是否为严格的 #rrggbb 颜色。 */
+/**
+ * 判断是否为 #rrggbb 或 #rrggbbaa 颜色。
+ *
+ * 8 位格式的最后两位是 alpha；省略 alpha 等价于完全不透明。
+ * 只接受这两种长度，不接受 #rgb、颜色名或 rgba()，保证存储和相等比较稳定。
+ */
 export function isValidHexColor(value: string): boolean {
-  return /^#[0-9a-fA-F]{6}$/.test(value);
+  return /^#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?$/.test(value);
 }
 
-/** 空白色和内边框颜色都允许透明或 #rrggbb。 */
+/** 把合法 hex 颜色规范化为小写；非法值返回 null。 */
+export function normalizeHexColor(value: string): string | null {
+  return isValidHexColor(value) ? value.toLowerCase() : null;
+}
+
+/**
+ * 把合法 hex 颜色补成 8 位（省略的 alpha 视为 `ff`）并转成大写，供 UI 展示。
+ *
+ * 编辑器统一显示 `#` + 8 位共 9 个字符，配合等宽字体保证不同透明度下
+ * hex 文本和色块宽度一致；这里只负责展示，存储仍保留 6 位 / 8 位原值。
+ * 非法值返回 null，由调用方决定回退文本。
+ */
+export function formatHexColorWithAlpha(value: string): string | null {
+  const normalized = normalizeHexColor(value);
+  if (normalized === null) {
+    return null;
+  }
+  return (normalized.length === 7 ? `${normalized}ff` : normalized).toUpperCase();
+}
+
+/** 空白色和内边框颜色都允许透明、#rrggbb 或 #rrggbbaa。 */
 export function isValidBlankColor(value: string): boolean {
   return value === TRANSPARENT || isValidHexColor(value);
 }
 
-/** 字体色允许 auto 或 #rrggbb。 */
+/** 字体色允许 auto、#rrggbb 或 #rrggbbaa。 */
 export function isValidFontColor(value: string): boolean {
   return value === AUTO_FONT_COLOR || isValidHexColor(value);
 }
 
+/**
+ * 提取 RGB 通道用于对比度计算。
+ *
+ * 8 位色只取前 6 位，alpha 不参与亮度；`auto` 只用于旧数据兼容，
+ * 主题编辑器会把 auto 解析成明确颜色。非法值返回 null。
+ */
 function parseHexColor(value: string): [number, number, number] | null {
   if (!isValidHexColor(value)) {
     return null;
@@ -95,7 +126,8 @@ function linearizeChannel(value: number): number {
 
 /**
  * 根据背景亮度选择黑色或白色字体。
- * 阈值使用 WCAG 常用的 0.179 相对亮度分界，非法背景回退白色字体。
+ * 阈值使用 WCAG 常用的 0.179 相对亮度分界，非法背景回退白色字体；
+ * 8 位背景色的 alpha 不参与计算，只按 RGB 通道判断。
  */
 export function getReadableFontColor(background: string): string {
   const rgb = parseHexColor(background);

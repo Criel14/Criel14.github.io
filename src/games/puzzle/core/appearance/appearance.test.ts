@@ -442,6 +442,24 @@ describe('isAppearanceEqual', () => {
     ).toBe(false);
   });
 
+  it('同一颜色的 alpha 不同返回 false', () => {
+    const custom = createCustomTheme();
+    const appearance = upsertCustomTheme(createDefaultAppearance(), custom);
+    const alphaCustom = createCustomTheme({
+      color: {
+        ...custom.color,
+        palette: custom.color.palette.map((color, index) => (index === 0 ? `${color}80` : color)),
+      },
+    });
+
+    expect(
+      isAppearanceEqual(appearance, {
+        ...appearance,
+        themes: [...appearance.themes.slice(0, 2), alphaCustom],
+      }),
+    ).toBe(false);
+  });
+
   it('内边框或 metrics 任一字段不同返回 false', () => {
     const custom = createCustomTheme();
     const appearance = upsertCustomTheme(createDefaultAppearance(), custom);

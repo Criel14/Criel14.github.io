@@ -27,7 +27,7 @@
 | P10  | 回放页                    | P5、P6、P7 | `[ ]` |
 | P11  | 文档、清理与验收          | P8–P10     | `[ ]` |
 
-**当前进度：P0–P7 已完成，P8-0 已确认，P8-1 / P8-2 / P8-3 / P8-4a-0 / P8-4a / P8-4b 已完成；分组模型已切换为事件级 90 组，分组弹框已接通，设置页骨架与网站偏好已实现，P8-4c-1 设置页主题列表已实现（待手动验收）；P8-4c-2a 主题模型升级与存储已实现并通过自动检查（2026-10-24），P8-4c-2b 设置页按阶数分配已实现并通过自动检查（2026-10-25，待手动验收）；P8-4c-2d 主题编辑器已实现（2026-10-25，左右 1:2 实时预览 + 油漆桶/吸管 + 50 步撤销/重做，见 `docs/PUZZLE_THEME.md` 第 6 节），自动检查通过，待手动验收；下一步实现 P8-4c-2c 游戏页回退提示。** P8 起进入页面组装，按顺序推进，不提前写页面；游戏页详细设计和布局实验见 `docs/PUZZLE_GAME_PAGE.md`，设置页设计见 `docs/SETTINGS_PAGE.md`，游戏主题与编辑器见 `docs/PUZZLE_THEME.md`，成绩页与分组管理见 `docs/PUZZLE_SCORE_PAGE.md`，游戏页后续以 `docs/PUZZLE_GAME_PAGE.md` 的“5.5 实现基线”为准。
+**当前进度：P0–P7 已完成，P8-0 已确认，P8-1 / P8-2 / P8-3 / P8-4a-0 / P8-4a / P8-4b 已完成；分组模型已切换为事件级 90 组，分组弹框已接通，设置页骨架与网站偏好已实现，P8-4c-1 设置页主题列表已实现（待手动验收）；P8-4c-2a 主题模型升级与存储已实现并通过自动检查（2026-10-24），P8-4c-2b 设置页按阶数分配已实现并通过自动检查（2026-10-25，待手动验收）；P8-4c-2d 主题编辑器已实现（2026-10-25，左右 1:2 实时预览 + 油漆桶/吸管 + 50 步撤销/重做 + `#rrggbbaa` alpha + Pickr Nano，见 `docs/PUZZLE_THEME.md` 第 6 节），自动检查通过，待手动验收；下一步实现 P8-4c-2c 游戏页回退提示。** P8 起进入页面组装，按顺序推进，不提前写页面；游戏页详细设计和布局实验见 `docs/PUZZLE_GAME_PAGE.md`，设置页设计见 `docs/SETTINGS_PAGE.md`，游戏主题与编辑器见 `docs/PUZZLE_THEME.md`，成绩页与分组管理见 `docs/PUZZLE_SCORE_PAGE.md`，游戏页后续以 `docs/PUZZLE_GAME_PAGE.md` 的“5.5 实现基线”为准。
 
 每个阶段结束都运行：
 
@@ -539,7 +539,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 > 详细设计、布局实验与 P8-0～P8-6 任务见 `docs/PUZZLE_GAME_PAGE.md`；设置页设计见 `docs/SETTINGS_PAGE.md`；游戏主题与编辑器见 `docs/PUZZLE_THEME.md`。
 >
-> 当前：P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b 设置页与网站偏好已实现（2026-10-24，待手动验收），P8-4c-1 设置页主题列表已实现（2026-10-24，待手动验收），P8-4c-2 设计确认（2026-10-24），P8-4c-2a 主题模型升级与存储已实现（2026-10-24，自动检查通过），P8-4c-2b 设置页按阶数分配已实现（2026-10-25，自动检查通过，待手动验收），P8-4c-2d 主题编辑器已实现（2026-10-25，自动检查通过，待手动验收）。后续游戏页实现以 `docs/PUZZLE_GAME_PAGE.md` 的“5.5 实现基线”为准，设置页以 `docs/SETTINGS_PAGE.md` 为准，游戏主题以 `docs/PUZZLE_THEME.md` 为准，`prototype/layout-lab.html` 保留到最终视觉验收。
+> 当前：P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b 设置页与网站偏好已实现（2026-10-24，待手动验收），P8-4c-1 设置页主题列表已实现（2026-10-24，待手动验收），P8-4c-2 设计确认（2026-10-24），P8-4c-2a 主题模型升级与存储已实现（2026-10-24，自动检查通过），P8-4c-2b 设置页按阶数分配已实现（2026-10-25，自动检查通过，待手动验收），P8-4c-2d 主题编辑器已实现并补充颜色 alpha + Pickr Nano（2026-10-25，自动检查通过，待手动验收）。后续游戏页实现以 `docs/PUZZLE_GAME_PAGE.md` 的“5.5 实现基线”为准，设置页以 `docs/SETTINGS_PAGE.md` 为准，游戏主题以 `docs/PUZZLE_THEME.md` 为准，`prototype/layout-lab.html` 保留到最终视觉验收。
 >
 > 分组管理和成绩页的交互见 `docs/PUZZLE_SCORE_PAGE.md`；P8-4a 只负责游戏页的分组切换，不负责重命名。
 >
@@ -558,14 +558,14 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 | P8-4c-2a | 主题模型升级与存储（外观 v4）    | `[x]` |
 | P8-4c-2b | 设置页按阶数分配与对话框          | `[x]` |
 | P8-4c-2c | 游戏页按阶数解析与回退提示        | `[ ]` |
-| P8-4c-2d | 主题编辑器（已实现 2026-10-25）   | `[x]` |
+| P8-4c-2d | 主题编辑器（已实现 2026-10-25，含 alpha + Pickr） | `[x]` |
 | P8-4c-2e | 测试、文档与手动验收              | `[ ]` |
 | P8-5 | 光标、极简 UI 与可访问性          | `[ ]` |
 | P8-6 | 游戏页 E2E                        | `[ ]` |
 
 > P8-4b 的详细任务、页面结构和验收以 `docs/SETTINGS_PAGE.md` 为准；P8-4c-1/P8-4c-2 以 `docs/PUZZLE_THEME.md` 为准。
 
-P8-4c-2d 实现备注（2026-10-25）：`theme-editor.html` 已替换占位页；新增 `core/appearance/editor.ts`、`core/appearance/name.ts`、`ui/theme-history.ts`、`ui/theme-editor-board.ts`、`ui/theme-editor-controls.ts`、`ui/theme-editor.ts`、`pages/theme-editor.ts` 和 `styles/theme-editor.css`。设置页接入 bfcache `pageshow` 重读外观；新增 `undo` / `redo` / `paint-bucket` / `pipette` 图标。视觉收敛（2026-10-25）：移除全部操作说明和“显示数字”，空白色固定透明，文字色不再使用 auto，预览棋盘缩到约 `34rem`。`npm test`（463 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 通过，手动验收待执行。
+P8-4c-2d 实现备注（2026-10-25）：`theme-editor.html` 已替换占位页；新增 `core/appearance/editor.ts`、`core/appearance/name.ts`、`ui/theme-history.ts`、`ui/color-picker-field.ts`、`ui/theme-editor-board.ts`、`ui/theme-editor-controls.ts`、`ui/theme-editor.ts`、`pages/theme-editor.ts` 和 `styles/theme-editor.css`。设置页接入 bfcache `pageshow` 重读外观；新增 `undo` / `redo` / `paint-bucket` / `pipette` 图标。视觉收敛（2026-10-25）：移除全部操作说明和“显示数字”，空白色固定透明，文字色不再使用 auto，预览棋盘缩到约 `34rem`。颜色增强（2026-10-25）：数据层与编辑器支持 `#rrggbbaa`，四个颜色字段改用 Pickr 1.10.2 Nano（透明度 + HEXA 输入，仅编辑器加载），内边框“透明”复选框同日移除，完全透明改用 alpha 0。`npm test`（476 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 通过，手动验收待执行。
 
 ---
 

@@ -90,8 +90,12 @@
             ></p>
           </div>
 
-          <fieldset class="theme-editor-group" aria-describedby="theme-sizes-error">
-            <legend class="theme-editor-label">支持阶数</legend>
+          <section
+            class="theme-editor-group"
+            aria-labelledby="theme-sizes-title"
+            aria-describedby="theme-sizes-error"
+          >
+            <h3 class="theme-editor-label" id="theme-sizes-title">支持阶数</h3>
             <div class="theme-editor-sizes" data-supported-sizes></div>
             <p
               class="theme-editor-error"
@@ -100,16 +104,16 @@
               role="alert"
               hidden
             ></p>
-          </fieldset>
+          </section>
 
-          <fieldset class="theme-editor-group">
-            <legend class="theme-editor-label">着色模式</legend>
+          <section class="theme-editor-group" aria-labelledby="theme-mode-title">
+            <h3 class="theme-editor-label" id="theme-mode-title">着色模式</h3>
             <div class="theme-editor-segmented" data-mode-group role="group" aria-label="着色模式">
-              <button type="button" data-mode="layer" aria-pressed="false">按层</button>
+              <button type="button" data-mode="layer" aria-pressed="false">按阶</button>
               <button type="button" data-mode="row" aria-pressed="false">按行</button>
               <button type="button" data-mode="fixed" aria-pressed="false">全自定义</button>
             </div>
-          </fieldset>
+          </section>
 
           <section class="theme-editor-group" aria-labelledby="theme-brush-title">
             <h3 class="theme-editor-label" id="theme-brush-title">样式刷</h3>
@@ -119,35 +123,20 @@
               >
               <div class="theme-editor-brush__fields">
                 <div class="theme-editor-color-field">
-                  <label
-                    class="theme-editor-label theme-editor-label--small"
-                    for="brush-background"
-                  >
-                    背景色
-                  </label>
+                  <span class="theme-editor-label theme-editor-label--small">背景色</span>
                   <div class="theme-editor-color-field__controls">
-                    <input
-                      class="theme-editor-color"
-                      id="brush-background"
-                      type="color"
-                      data-brush="background"
-                      aria-label="样式刷背景色"
-                    />
+                    <div class="theme-editor-pickr">
+                      <span data-brush="background"></span>
+                    </div>
                     <output class="theme-editor-hex" data-brush-background-hex></output>
                   </div>
                 </div>
                 <div class="theme-editor-color-field">
-                  <label class="theme-editor-label theme-editor-label--small" for="brush-font">
-                    文字色
-                  </label>
+                  <span class="theme-editor-label theme-editor-label--small">文字色</span>
                   <div class="theme-editor-color-field__controls">
-                    <input
-                      class="theme-editor-color"
-                      id="brush-font"
-                      type="color"
-                      data-brush="fontColor"
-                      aria-label="样式刷文字色"
-                    />
+                    <div class="theme-editor-pickr">
+                      <span data-brush="fontColor"></span>
+                    </div>
                     <output class="theme-editor-hex" data-brush-font-hex>#FFFFFF</output>
                   </div>
                 </div>
@@ -189,12 +178,9 @@
               <div class="theme-editor-color-field">
                 <span class="theme-editor-label theme-editor-label--small">盲玩色</span>
                 <div class="theme-editor-color-field__controls">
-                  <input
-                    class="theme-editor-color"
-                    type="color"
-                    data-color="blindTileColor"
-                    aria-label="盲玩色"
-                  />
+                  <div class="theme-editor-pickr">
+                    <span data-color="blindTileColor"></span>
+                  </div>
                   <output class="theme-editor-hex" data-hex="blindTileColor"></output>
                 </div>
               </div>
@@ -202,17 +188,10 @@
               <div class="theme-editor-color-field">
                 <span class="theme-editor-label theme-editor-label--small">内边框</span>
                 <div class="theme-editor-color-field__controls">
-                  <label class="theme-editor-check theme-editor-check--inline">
-                    <input type="checkbox" data-inner-border-transparent />
-                    透明
-                  </label>
-                  <input
-                    class="theme-editor-color"
-                    type="color"
-                    data-color="innerBorderColor"
-                    aria-label="内边框颜色"
-                  />
-                  <output class="theme-editor-hex" data-hex="innerBorderColor">透明</output>
+                  <div class="theme-editor-pickr">
+                    <span data-color="innerBorderColor"></span>
+                  </div>
+                  <output class="theme-editor-hex" data-hex="innerBorderColor">#00000000</output>
                 </div>
               </div>
 
@@ -302,7 +281,7 @@
 
     <div class="settings-savebar" data-savebar hidden>
       <div class="settings-savebar__info">
-        <p class="settings-savebar__text">你有未保存的修改。</p>
+        <p class="settings-savebar__text" data-save-hint>你有未保存的修改。</p>
         <p class="settings-savebar__error" data-save-error role="alert" hidden></p>
       </div>
       <div class="settings-savebar__actions">

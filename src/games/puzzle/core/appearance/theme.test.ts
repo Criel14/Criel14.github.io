@@ -3,6 +3,7 @@ import type { ColorMode, Theme } from '../../types';
 import { PUZZLE_SIZES } from '../board';
 import {
   cloneTheme,
+  formatHexColorWithAlpha,
   getReadableFontColor,
   getTileColor,
   getTileFontColor,
@@ -10,6 +11,7 @@ import {
   isValidBlankColor,
   isValidFontColor,
   isValidHexColor,
+  normalizeHexColor,
 } from './theme';
 
 const metrics = {
@@ -99,6 +101,24 @@ describe('getTileVisual', () => {
     });
     expect(getTileVisual(16, 4, layerTheme)).toEqual({
       background: 'transparent',
+      color: 'transparent',
+    });
+  });
+
+  it('保留色板、字体色和空白色的 alpha 通道', () => {
+    const alphaTheme = createTheme({
+      mode: 'fixed',
+      palette: ['#12345680'],
+      fontPalette: ['#ffffff40'],
+      blankColor: '#00000000',
+    });
+
+    expect(getTileVisual(1, 4, alphaTheme)).toEqual({
+      background: '#12345680',
+      color: '#ffffff40',
+    });
+    expect(getTileVisual(0, 4, alphaTheme)).toEqual({
+      background: '#00000000',
       color: 'transparent',
     });
   });
@@ -193,6 +213,13 @@ describe('getReadableFontColor', () => {
     expect(getReadableFontColor('#f1c40f')).toBe('#000000');
   });
 
+  it('8 位背景色只按 RGB 计算对比度，忽略 alpha', () => {
+    expect(getReadableFontColor('#00000000')).toBe('#ffffff');
+    expect(getReadableFontColor('#00000080')).toBe('#ffffff');
+    expect(getReadableFontColor('#ffffff00')).toBe('#000000');
+    expect(getReadableFontColor('#ffffff80')).toBe('#000000');
+  });
+
   it('非法背景回退白色字体', () => {
     expect(getReadableFontColor('transparent')).toBe('#ffffff');
     expect(getReadableFontColor('#fff')).toBe('#ffffff');
@@ -200,25 +227,49 @@ describe('getReadableFontColor', () => {
 });
 
 describe('颜色校验', () => {
-  it('只接受严格的 #rrggbb', () => {
+  it('接受 6 位或 8 位 hex，拒绝其他长度和写法', () => {
     expect(isValidHexColor('#ffffff')).toBe(true);
     expect(isValidHexColor('#ABCDEF')).toBe(true);
+    expect(isValidHexColor('#ffffff80')).toBe(true);
+    expect(isValidHexColor('#ABCDEF00')).toBe(true);
     expect(isValidHexColor('#fff')).toBe(false);
+    expect(isValidHexColor('#fffffff')).toBe(false);
+    expect(isValidHexColor('#fffffffff')).toBe(false);
     expect(isValidHexColor('ffffff')).toBe(false);
     expect(isValidHexColor('#gggggg')).toBe(false);
+    expect(isValidHexColor('rgba(255, 255, 255, 0.5)')).toBe(false);
     expect(isValidHexColor('transparent')).toBe(false);
   });
 
-  it('空白色和内边框颜色允许 transparent 或 #rrggbb', () => {
+  it('normalizeHexColor 统一小写并拒绝非法值', () => {
+    expect(normalizeHexColor('#ABCDEF')).toBe('#abcdef');
+    expect(normalizeHexColor('#ABCDEF80')).toBe('#abcdef80');
+    expect(normalizeHexColor('transparent')).toBeNull();
+    expect(normalizeHexColor('#fff')).toBeNull();
+  });
+
+  it('formatHexColorWithAlpha 补齐 8 位 alpha 并转大写', () => {
+    expect(formatHexColorWithAlpha('#3498db')).toBe('#3498DBFF');
+    expect(formatHexColorWithAlpha('#FFFFFFc4')).toBe('#FFFFFFC4');
+    expect(formatHexColorWithAlpha('#00000000')).toBe('#00000000');
+    // 6 位与对应的 8 位 ff 显示一致，避免主题里两种写法看起来不同。
+    expect(formatHexColorWithAlpha('#3498db')).toBe(formatHexColorWithAlpha('#3498dbff'));
+    expect(formatHexColorWithAlpha('transparent')).toBeNull();
+    expect(formatHexColorWithAlpha('#fff')).toBeNull();
+  });
+
+  it('空白色和内边框颜色允许 transparent、6 位或 8 位色', () => {
     expect(isValidBlankColor('transparent')).toBe(true);
     expect(isValidBlankColor('#000000')).toBe(true);
+    expect(isValidBlankColor('#00000080')).toBe(true);
     expect(isValidBlankColor('none')).toBe(false);
     expect(isValidBlankColor('#fff')).toBe(false);
   });
 
-  it('字体色允许 auto 或 #rrggbb', () => {
+  it('字体色允许 auto、6 位或 8 位色', () => {
     expect(isValidFontColor('auto')).toBe(true);
     expect(isValidFontColor('#abcdef')).toBe(true);
+    expect(isValidFontColor('#abcdef80')).toBe(true);
     expect(isValidFontColor('transparent')).toBe(false);
     expect(isValidFontColor('#fff')).toBe(false);
   });

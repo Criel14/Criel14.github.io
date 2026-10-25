@@ -95,6 +95,7 @@ function isSupportedSizes(value: unknown): value is readonly PuzzleSize[] {
   return true;
 }
 
+/** 字体色板：每项为 auto、#rrggbb 或 #rrggbbaa。 */
 function isFontPalette(value: unknown, length: number): value is readonly string[] {
   return (
     Array.isArray(value) &&
@@ -103,6 +104,7 @@ function isFontPalette(value: unknown, length: number): value is readonly string
   );
 }
 
+/** 内边框颜色：transparent、#rrggbb 或 #rrggbbaa。 */
 function isThemeInnerBorder(value: unknown): value is ThemeInnerBorder {
   return (
     isRecord(value) &&
@@ -126,6 +128,7 @@ function isColorMode(value: unknown): value is ColorMode {
   if (!Array.isArray(palette) || palette.length !== PALETTE_LENGTHS[mode]) {
     return false;
   }
+  // 背景色板支持 6 位不透明色和 8 位带 alpha 色。
   if (
     !palette.every((color): color is string => typeof color === 'string' && isValidHexColor(color))
   ) {
@@ -139,7 +142,10 @@ function isColorMode(value: unknown): value is ColorMode {
   );
 }
 
-/** 主题结构、色板、逐块字体色、内边框和 metrics 范围的严格校验；store 层可以在加载时修复。 */
+/**
+ * 主题结构、色板、逐块字体色、内边框和 metrics 范围的严格校验。
+ * 颜色接受 #rrggbb / #rrggbbaa；store 层可以在加载时修复其他字段。
+ */
 export function isTheme(value: unknown): value is Theme {
   if (!isRecord(value)) {
     return false;

@@ -30,7 +30,8 @@ export function normalizeMetrics(raw: unknown): BoardMetrics {
 /**
  * 归一化方块内边框。
  *
- * 颜色非法时回退透明；宽度非有限数时回退 0，有限但越界时夹取到 0–0.1。
+ * 颜色允许 transparent / #rrggbb / #rrggbbaa，非法时回退透明；
+ * 宽度非有限数时回退 0，有限但越界时夹取到 0–0.1。
  * 宽度是“格子边长的比例”，不是像素值。
  */
 export function normalizeInnerBorder(raw: unknown): ThemeInnerBorder {

@@ -1,6 +1,6 @@
 # 数字华容道重构架构
 
-> 状态：P0–P7 已实现；P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b 独立设置页与网站偏好已实现（2026-10-24，详见 `docs/SETTINGS_PAGE.md`，待手动验收），P8-4c-1 设置页主题列表已实现（待手动验收），P8-4c-2 设计确认（2026-10-24，详见 `docs/PUZZLE_THEME.md`），P8-4c-2a 主题模型升级与存储已实现（2026-10-24，自动检查通过），P8-4c-2b 设置页按阶数分配已实现（2026-10-25，自动检查通过，待手动验收），P8-4c-2d 主题编辑器已实现（2026-10-25，自动检查通过，待手动验收），P8-4c-2c、P8-4c-2e、P8-5～P8-6 待开始（P7-3 交互与视觉随 P8 手动验收）；回放、存储、设置页、游戏主题和成绩页的详细设计见独立文档
+> 状态：P0–P7 已实现；P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b 独立设置页与网站偏好已实现（2026-10-24，详见 `docs/SETTINGS_PAGE.md`，待手动验收），P8-4c-1 设置页主题列表已实现（待手动验收），P8-4c-2 设计确认（2026-10-24，详见 `docs/PUZZLE_THEME.md`），P8-4c-2a 主题模型升级与存储已实现（2026-10-24，自动检查通过），P8-4c-2b 设置页按阶数分配已实现（2026-10-25，自动检查通过，待手动验收），P8-4c-2d 主题编辑器已实现并补充颜色 alpha + Pickr Nano 取色器（2026-10-25，自动检查通过，待手动验收），P8-4c-2c、P8-4c-2e、P8-5～P8-6 待开始（P7-3 交互与视觉随 P8 手动验收）；回放、存储、设置页、游戏主题和成绩页的详细设计见独立文档
 >
 > 分支：`refactor/vite-ts`
 >
@@ -168,16 +168,17 @@ interface ColorModeFields {
    * - layer：18，索引 0–17 对应层 1–18；
    * - row：10，索引 0–9 对应数字块原本所属的第 1–10 行；
    * - fixed：99，索引 0–98 对应数字 1–99。
+   * 每项为 '#rrggbb' 或 '#rrggbbaa'；省略 alpha 表示完全不透明。
    */
   palette: readonly string[];
 
   /**
    * 方块字体色。与 palette 等长，索引一一对应。
-   * 每项为 'auto' 或 '#rrggbb'；'auto' 根据该块背景自动选黑/白。
+   * 每项为 'auto'、'#rrggbb' 或 '#rrggbbaa'；'auto' 根据该块背景自动选黑/白。
    */
   fontPalette: readonly string[];
 
-  /** 空白格背景色；整盘统一。默认 transparent。 */
+  /** 空白格背景色；整盘统一。默认 transparent，也允许 #rrggbb / #rrggbbaa。 */
   blankColor: string;
 }
 
@@ -210,7 +211,7 @@ export interface BoardMetrics {
 
 /** 方块内边框；整盘统一，不改变方块外尺寸。 */
 export interface ThemeInnerBorder {
-  /** 'transparent' 或 '#rrggbb'。 */
+  /** 'transparent'、'#rrggbb' 或 '#rrggbbaa'。 */
   color: string;
   /** 单边宽度 = 格子边长 × widthRatio；0–0.1，0 表示无边框。 */
   widthRatio: number;
@@ -228,7 +229,7 @@ export interface Theme {
   innerBorder: ThemeInnerBorder;
   /**
    * 盲玩隐藏数字时，所有非空方块的背景色。
-   * 必须为 #rrggbb；默认 #3498db，用户可在自定义主题里调整。
+   * 必须为 #rrggbb 或 #rrggbbaa；默认 #3498db，用户可在自定义主题里调整。
    */
   blindTileColor: string;
   metrics: BoardMetrics;
@@ -257,10 +258,10 @@ export interface AppearanceState {
 - `ScoreRecord.groupId`、`GameSettings.groupId`、`ScoreFilter.groupId` 必须是 1–5 的整数。分组身份由 `size + gameMode + groupId` 共同确定；分组固定存在，因此不需要处理“分组被删除”的引用失效。
 - 分组只允许改名，不允许改变所属事件或槽位；改名不影响已保存成绩。
 - `ScoreRecord.id` 全局唯一；新成绩用 `crypto.randomUUID()`，无该 API 时使用带随机后缀的回退实现。
-- `Theme.color.palette` / `fontPalette` 长度由 mode 决定：layer 18、row 10、fixed 99；`palette` 颜色统一为 `#rrggbb`，`fontPalette` 每项为 `auto` 或 `#rrggbb`，`blankColor` 允许 `transparent` 或 `#rrggbb`。
-- `Theme.innerBorder.color` 允许 `transparent` 或 `#rrggbb`；`widthRatio` 为 0–0.1；默认 `{ transparent, 0 }`。内边框不改变方块外尺寸，字号按“格子边长 − 2 × 内边框宽度”计算。
+- `Theme.color.palette` / `fontPalette` 长度由 mode 决定：layer 18、row 10、fixed 99；`palette` 颜色为 `#rrggbb` / `#rrggbbaa`，`fontPalette` 每项为 `auto` / `#rrggbb` / `#rrggbbaa`，`blankColor` 允许 `transparent` / `#rrggbb` / `#rrggbbaa`。
+- `Theme.innerBorder.color` 允许 `transparent` / `#rrggbb` / `#rrggbbaa`；`widthRatio` 为 0–0.1；默认 `{ transparent, 0 }`。内边框不改变方块外尺寸，字号按“格子边长 − 2 × 内边框宽度”计算。
 - `Theme.supportedSizes` 非空、升序、去重，每项为 2–10；默认全部。
-- `Theme.blindTileColor` 必须是 `#rrggbb`；默认 `#3498db`，只用于盲玩隐藏数字时的非空方块，空白块仍使用 `blankColor`。
+- `Theme.blindTileColor` 必须是 `#rrggbb` 或 `#rrggbbaa`；默认 `#3498db`，只用于盲玩隐藏数字时的非空方块，空白块仍使用 `blankColor`。
 - `Theme.metrics` 必须在约定范围内；非法值回退 `DEFAULT_METRICS`。
 - `AppearanceState.themeIdBySize` 必须有 2–10 共 9 个键；每个值要么是 `FALLBACK_THEME_ID`，要么能解析到 `themes` 中一个 `supportedSizes` 包含该阶数的主题。
 - `AppearanceState.themes` 至少包含两套内置主题；回退主题不在 `themes` 中。
@@ -764,7 +765,7 @@ function getTileLayer(tile: number, size: PuzzleSize): number {
   - 按行：`Math.floor((tile - 1) / size)` 取 `palette` / `fontPalette`，颜色跟随数字块原本所属行；
   - 固定色：`tile - 1` 取 `palette` / `fontPalette`，数字与颜色永久绑定；
   - 空白块使用 `theme.color.blankColor`，字体色为 `transparent`。
-- `fontPalette[index] === 'auto'` 时由该块背景亮度自动选择黑/白；否则使用配置的 `#rrggbb`。
+- `fontPalette[index] === 'auto'` 时由该块背景亮度自动选择黑/白；否则使用配置的 `#rrggbb` / `#rrggbbaa`。8 位背景色的 alpha 不参与对比度计算，`auto` 只作为旧数据兼容路径。
 - `ui/board-view.ts` 给每个 tile 设置 `--tile-bg` / `--tile-fg`；CSS 使用这两个变量，不关心当前是哪种模式。
 - `core/appearance/metrics.ts` 的 `toCssVariables(theme)` 从 `theme.metrics`、`color.blankColor`、`innerBorder` 和 `blindTileColor` 生成 `--tile-font-ratio`、`--tile-gap-ratio`、`--tile-radius-ratio`、`--blank-color`、`--blind-tile-bg`、`--tile-inner-border-color`、`--tile-inner-border-width-ratio`；页面通过 CSS 变量渲染，不逐项写死样式。
 - 内边框用 `inset box-shadow` 绘制；`.puzzle-board__tile` 用 `padding: var(--tile-inner-border-width)` 把文字限制在边框内，字号使用 `calc(var(--tile-inner-size) * var(--tile-font-ratio))`。边框宽度 0 时退化为原字号公式。
@@ -773,7 +774,7 @@ function getTileLayer(tile: number, size: PuzzleSize): number {
 - `ui/board-view.ts` 只渲染；点击、鼠标经过和触摸路径由 `ui/board-input.ts` 采集后交给页面。
 - 换主题或修改 metrics 只更新 CSS 变量和 tile 颜色，不重建 tile。
 - 游戏页按当前阶数调用 `getThemeForSize(appearance, size)`；不再启动时固定一个主题。
-- 颜色选择器使用原生 `<input type="color">`，不引入 jscolor。
+- 主题编辑器的颜色选择器使用 `@simonwep/pickr@1.10.2` 的 Nano 主题，启用透明度滑杆和 HEXA 输入；只在主题编辑器 chunk 加载，游戏页不加载。设置页和游戏页仍不依赖 Pickr。
 
 ### 10.4 设置交互
 
@@ -783,8 +784,8 @@ function getTileLayer(tile: number, size: PuzzleSize): number {
 - “应用到”对话框只列主题支持的阶数；当前已应用阶数锁定；确认只更新 draft，底部保存条负责最终保存。
 - 主题编辑器是独立页面 `/puzzle-game/theme-editor.html`，自己维护 draft，点击编辑器“保存”后才写存储；不能在每次选色时直接落库。
 - 编辑器布局为左侧控制、右侧最大支持阶数预览的 `1 : 2` 两栏；预览复用 `board-view`，滚动时 sticky。
-- 编辑器使用“样式刷 + 油漆桶”：点击棋盘按层/行/单块涂色；吸管从棋盘读回当前组样式。样式刷、吸管和工具切换不属于主题，不触发脏状态。
-- 编辑器文字色全部是显式 `#rrggbb`；旧数据里的 `auto` 在打开时由 `prepareThemeForEditor()` 转成明确黑/白。空白色固定为 `transparent`，编辑器不提供空白色编辑和“显示数字”开关，预览始终显示数字。
+- 编辑器使用“样式刷 + 油漆桶”：点击棋盘按阶/行/单块涂色；吸管从棋盘读回当前组样式后自动切回油漆桶。样式刷、吸管和工具切换不属于主题，不触发脏状态。
+- 编辑器颜色全部是显式 `#rrggbb` / `#rrggbbaa`；旧数据里的 `auto` 在打开时由 `prepareThemeForEditor()` 转成明确黑/白。空白色固定为 `transparent`，编辑器不提供空白色编辑和“显示数字”开关，预览始终显示数字。
 - 新建编辑器只在内存创建“新的主题 + 回退样式”draft，不写 `themes`；未修改退出不产生主题，保存后才写入。
 - 编辑器保存后停留在当前页；新建保存成功后用 `history.replaceState` 写入 `?theme=<id>`，刷新进入编辑模式。保存后不自动分配阶数。
 - 编辑器提供 50 步快照撤销/重做，页头按钮 + `Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z` / `Ctrl/Cmd+Y`；历史只保存 `Theme` 深拷贝，不保存 DOM、棋盘对象、样式刷或预览状态。
@@ -864,6 +865,7 @@ src/games/puzzle/
 │  ├─ theme-coverage.ts
 │  ├─ theme-preview.ts
 │  ├─ theme-history.ts         # 50 步快照历史与连续输入合并
+│  ├─ color-picker-field.ts    # Pickr Nano 适配与 alpha 颜色转换
 │  ├─ theme-editor-controls.ts # 左侧控件
 │  ├─ theme-editor-board.ts    # 棋盘涂色/吸管/悬停
 │  ├─ theme-editor.ts          # 编辑器 controller
@@ -987,13 +989,14 @@ types ← core ← ui   ← pages
 | 外观       | 每个 Theme 内含 ColorMode + innerBorder + blindTileColor + BoardMetrics | 颜色、字体色、边框和尺寸随主题切换，用户可自定义；避免全局状态分叉 |
 | 主题分配   | `supportedSizes` + `themeIdBySize`，覆盖范围派生 | 主题能力与当前分配分离；每个阶数独立选择；不存两份覆盖数据 |
 | 回退主题   | `FALLBACK_THEME`，不进入主题列表         | 主题损坏/版本不兼容时使用中性外观，不误报为彩虹主题被重置 |
-| 逐块字体色 | `fontPalette`，与 `palette` 等长，每项 `auto`/hex | 支持不同层/行/数字提高辨识度；`auto` 保留对比度逻辑      |
-| 内边框     | `ThemeInnerBorder`，整盘统一，inset shadow + padding | 不改变方块外尺寸；字号按边框内区域计算                  |
-| 盲玩颜色   | `Theme.blindTileColor`，默认 `#3498db`   | 隐藏数字时的方块颜色也属于外观主题，用户可调整          |
+| 逐块字体色 | `fontPalette`，与 `palette` 等长，每项 `auto`/hex(a) | 支持不同层/行/数字提高辨识度；`auto` 保留对比度逻辑      |
+| 内边框     | `ThemeInnerBorder`，整盘统一，inset shadow + padding | 不改变方块外尺寸；字号按边框内区域计算；颜色支持 alpha  |
+| 盲玩颜色   | `Theme.blindTileColor`，默认 `#3498db`，支持 alpha | 隐藏数字时的方块颜色也属于外观主题，用户可调整          |
 | 着色模式   | 降阶 / 按行 / 固定色                     | 覆盖分层、按行、逐数字三种需求；一个主题只用一种模式    |
 | 按行       | 按数字块原本所属行                       | 颜色跟随数字块，移动时不闪色                            |
 | 内置预设   | 先保留两套降阶                           | 复刻旧视觉；按行/固定色的默认预设后续再定               |
-| 颜色选择器 | 原生 `<input type="color">`              | 无额外依赖，旧数据已丢弃                                |
+| 颜色格式   | `#rrggbb` / `#rrggbbaa`，v4 内向后兼容     | 浏览器 CSS 原生支持；不升级存储版本，旧 6 位主题继续合法 |
+| 颜色选择器 | Pickr 1.10.2 Nano（仅主题编辑器）        | 原生 color input 不支持 alpha；打包进编辑器 chunk，游戏页不加载 |
 | 图表       | ECharts 懒加载                           | 统计页才加载；core 与渲染解耦                           |
 | 运行中设置 | 禁止                                     | 设置页是独立页面，进入会离开当前局；避免误丢成绩         |
 | 设置页路由 | 先放 `/puzzle-game/settings.html`        | 不占用全站根路径；偏好 key 已按全站设计，后续可迁移      |

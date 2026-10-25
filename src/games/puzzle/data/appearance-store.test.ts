@@ -60,6 +60,34 @@ describe('saveAppearance / loadAppearanceResult', () => {
     });
   });
 
+  it('保存并读取带 alpha 的自定义主题', () => {
+    const storage = createMemoryStorage();
+    const base = createCustomTheme();
+    const custom: Theme = {
+      ...base,
+      color: {
+        ...base.color,
+        palette: base.color.palette.map((color, index) => (index === 0 ? '#12345680' : color)),
+        fontPalette: base.color.fontPalette.map((color, index) =>
+          index === 0 ? '#ffffff40' : color,
+        ),
+        blankColor: '#00000080',
+      },
+      innerBorder: { color: '#ffffff40', widthRatio: 0.02 },
+      blindTileColor: '#3498db80',
+    };
+    const appearance: AppearanceState = {
+      themeIdBySize: createThemeIdBySize({ 10: custom.id }),
+      themes: [...createDefaultAppearance().themes, custom],
+    };
+
+    saveAppearance(appearance, storage);
+
+    const result = loadAppearanceResult(storage);
+    expect(result.status).toBe('ok');
+    expect(result.appearance.themes[2]).toEqual(custom);
+  });
+
   it('保存前归一化字体色和内边框', () => {
     const storage = createMemoryStorage();
     const custom = createCustomTheme();

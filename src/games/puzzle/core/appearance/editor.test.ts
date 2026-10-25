@@ -71,19 +71,24 @@ describe('changeThemeColorMode', () => {
     expect(changeThemeColorMode(theme, 'layer')).toBe(theme);
   });
 
-  it('降阶切按行时截断，保留重叠颜色', () => {
+  it('降阶切按行时整块重置为回退样式', () => {
     const theme = createTheme();
     const next = changeThemeColorMode(theme, 'row');
+    const fallbackFont = getReadableFontColor(DEFAULT_BLIND_TILE_COLOR);
 
     expect(next.color.mode).toBe('row');
-    expect(next.color.palette).toEqual(LAYER_COLORS.slice(0, 10));
-    expect(next.color.fontPalette).toEqual(LAYER_FONTS.slice(0, 10));
+    expect(next.color.palette).toEqual(Array.from({ length: 10 }, () => DEFAULT_BLIND_TILE_COLOR));
+    expect(next.color.fontPalette).toEqual(Array.from({ length: 10 }, () => fallbackFont));
     expect(next.color.blankColor).toBe('transparent');
+    // 模式以外的字段保持不变。
+    expect(next.blindTileColor).toBe(theme.blindTileColor);
+    expect(next.innerBorder).toEqual(theme.innerBorder);
+    // 原主题不被修改。
     expect(theme.color.mode).toBe('layer');
-    expect(theme.color.palette).toHaveLength(18);
+    expect(theme.color.palette).toEqual(LAYER_COLORS);
   });
 
-  it('按行切固定色时补齐到 99 项，背景补主题蓝、字体补白色', () => {
+  it('按行切固定色时重置为 99 项，不保留旧颜色', () => {
     const theme = createTheme({
       color: {
         mode: 'row',
@@ -93,17 +98,18 @@ describe('changeThemeColorMode', () => {
       },
     });
     const next = changeThemeColorMode(theme, 'fixed');
+    const fallbackFont = getReadableFontColor(DEFAULT_BLIND_TILE_COLOR);
 
     expect(next.color.mode).toBe('fixed');
     expect(next.color.palette).toHaveLength(99);
     expect(next.color.fontPalette).toHaveLength(99);
-    expect(next.color.palette.slice(0, 10)).toEqual(LAYER_COLORS.slice(0, 10));
-    expect(next.color.palette[10]).toBe(DEFAULT_BLIND_TILE_COLOR);
-    expect(next.color.fontPalette[10]).toBe(getReadableFontColor(DEFAULT_BLIND_TILE_COLOR));
+    expect(next.color.palette.every((color) => color === DEFAULT_BLIND_TILE_COLOR)).toBe(true);
+    expect(next.color.fontPalette.every((color) => color === fallbackFont)).toBe(true);
+    expect(next.color.palette[0]).not.toBe(LAYER_COLORS[0]);
     expect(next.color.blankColor).toBe('#ffffff');
   });
 
-  it('固定色切回降阶时截断到 18 项', () => {
+  it('固定色切回降阶时重置为 18 项', () => {
     const colors = Array.from(
       { length: 99 },
       (_, index) => `#${(index + 100).toString(16).padStart(6, '0')}`,
@@ -117,10 +123,12 @@ describe('changeThemeColorMode', () => {
       },
     });
     const next = changeThemeColorMode(theme, 'layer');
+    const fallbackFont = getReadableFontColor(DEFAULT_BLIND_TILE_COLOR);
 
-    expect(next.color.palette).toEqual(colors.slice(0, 18));
     expect(next.color.palette).toHaveLength(18);
     expect(next.color.fontPalette).toHaveLength(18);
+    expect(next.color.palette.every((color) => color === DEFAULT_BLIND_TILE_COLOR)).toBe(true);
+    expect(next.color.fontPalette.every((color) => color === fallbackFont)).toBe(true);
   });
 
   it('返回深拷贝，不共享 palette / fontPalette', () => {
@@ -192,6 +200,32 @@ describe('applyBrushToTheme', () => {
     expect(getAffectedTiles(2, 4, next.color)).toEqual(getAffectedTiles(2, 4, theme.color));
   });
 
+  it('样式刷写入 8 位色并保留 alpha，同时统一小写', () => {
+    const theme = createTheme();
+    const next = applyBrushToTheme(theme, 1, 4, {
+      background: '#12345680',
+      fontColor: '#FFFFFF40',
+    });
+
+    expect(next.color.palette[0]).toBe('#12345680');
+    expect(next.color.fontPalette[0]).toBe('#ffffff40');
+    expect(theme.color.palette[0]).toBe(LAYER_COLORS[0]);
+  });
+
+  it('大小写不同但颜色相同时仍视为 no-op', () => {
+    const theme = createTheme();
+    const painted = applyBrushToTheme(theme, 1, 4, {
+      background: '#abcdef80',
+      fontColor: '#ffffff40',
+    });
+    const same = applyBrushToTheme(painted, 1, 4, {
+      background: '#ABCDEF80',
+      fontColor: '#FFFFFF40',
+    });
+
+    expect(same).toBe(painted);
+  });
+
   it('按行模式改整行对应的同一个颜色项', () => {
     const theme = createTheme({
       color: {
@@ -240,6 +274,22 @@ describe('readBrushFromTheme', () => {
     });
   });
 
+  it('读取 8 位背景色和字体色时保留 alpha', () => {
+    const theme = createTheme({
+      color: {
+        mode: 'layer',
+        palette: ['#abcdef80', ...LAYER_COLORS.slice(1)],
+        fontPalette: ['#ffffff40', ...LAYER_FONTS.slice(1)],
+        blankColor: 'transparent',
+      },
+    });
+
+    expect(readBrushFromTheme(theme, 2, 4)).toEqual({
+      background: '#abcdef80',
+      fontColor: '#ffffff40',
+    });
+  });
+
   it('空白块返回 null', () => {
     expect(readBrushFromTheme(createTheme(), 0, 4)).toBeNull();
   });
@@ -278,6 +328,27 @@ describe('prepareThemeForEditor', () => {
     expect(prepared.color.fontPalette.every((color) => /^#[0-9a-f]{6}$/i.test(color))).toBe(true);
     expect(prepared.color.palette).toEqual(theme.color.palette);
     expect(prepared.color.mode).toBe(theme.color.mode);
+  });
+
+  it('保留 8 位色并统一小写，同时继续把空白色固定为透明', () => {
+    const theme = createTheme({
+      color: {
+        mode: 'layer',
+        palette: ['#AABBCC80', ...LAYER_COLORS.slice(1)],
+        fontPalette: ['#FFFFFF40', ...LAYER_FONTS.slice(1)],
+        blankColor: '#12345680',
+      },
+      innerBorder: { color: '#AABBCC40', widthRatio: 0.02 },
+      blindTileColor: '#AABBCC60',
+    });
+    const prepared = prepareThemeForEditor(theme);
+
+    expect(prepared.color.palette[0]).toBe('#aabbcc80');
+    expect(prepared.color.fontPalette[0]).toBe('#ffffff40');
+    expect(prepared.color.blankColor).toBe('transparent');
+    expect(prepared.innerBorder).toEqual({ color: '#aabbcc40', widthRatio: 0.02 });
+    expect(prepared.blindTileColor).toBe('#aabbcc60');
+    expect(theme.color.palette[0]).toBe('#AABBCC80');
   });
 
   it('返回深拷贝，不修改原主题', () => {
@@ -324,6 +395,21 @@ describe('isThemeDirty', () => {
 describe('validateTheme', () => {
   it('合法主题没有错误', () => {
     const theme = createTheme();
+    expect(validateTheme(theme, createContext(theme))).toEqual([]);
+  });
+
+  it('接受带 alpha 的背景色、字体色、空白色、盲玩色和内边框色', () => {
+    const theme = createTheme({
+      color: {
+        mode: 'layer',
+        palette: ['#12345680', ...LAYER_COLORS.slice(1)],
+        fontPalette: ['#ffffff40', ...LAYER_FONTS.slice(1)],
+        blankColor: '#00000000',
+      },
+      innerBorder: { color: '#FFFFFF40', widthRatio: 0.02 },
+      blindTileColor: '#3498db80',
+    });
+
     expect(validateTheme(theme, createContext(theme))).toEqual([]);
   });
 

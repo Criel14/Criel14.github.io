@@ -80,6 +80,13 @@ describe('normalizeInnerBorder', () => {
     });
   });
 
+  it('保留 8 位边框颜色的 alpha', () => {
+    expect(normalizeInnerBorder({ color: '#FFFFFF40', widthRatio: 0.02 })).toEqual({
+      color: '#FFFFFF40',
+      widthRatio: 0.02,
+    });
+  });
+
   it('颜色非法回退透明，宽度非有限数回退 0', () => {
     expect(normalizeInnerBorder({ color: 'red', widthRatio: 0.02 })).toEqual({
       color: 'transparent',
@@ -137,6 +144,21 @@ describe('toCssVariables', () => {
       '--tile-font-ratio': '1',
       '--tile-gap-ratio': '0',
       '--tile-radius-ratio': String(DEFAULT_METRICS.radiusRatio),
+    });
+  });
+
+  it('透传空白色、盲玩色和内边框色的 alpha', () => {
+    const alphaTheme: Theme = {
+      ...theme,
+      color: { ...theme.color, blankColor: '#00000080' },
+      innerBorder: { color: '#ffffff40', widthRatio: 0.02 },
+      blindTileColor: '#3498db80',
+    };
+
+    expect(toCssVariables(alphaTheme)).toMatchObject({
+      '--blank-color': '#00000080',
+      '--blind-tile-bg': '#3498db80',
+      '--tile-inner-border-color': '#ffffff40',
     });
   });
 

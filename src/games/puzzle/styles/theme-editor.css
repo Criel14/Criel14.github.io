@@ -99,14 +99,12 @@ body.theme-editor-page {
 
 .theme-editor-group {
   min-width: 0;
-  min-inline-size: 0;
   margin: 0;
   padding: 0;
   border: 0;
 }
 
-.theme-editor-group > .theme-editor-label,
-.theme-editor-group > legend.theme-editor-label {
+.theme-editor-group > .theme-editor-label {
   padding: 0;
 }
 
@@ -141,6 +139,13 @@ body.theme-editor-page {
   font-size: 0.75rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+/* 固定 `#` + 8 位 hex 的宽度，保证不同 alpha 和“透明”文本下色块左对齐。 */
+.theme-editor-hex {
+  display: inline-block;
+  min-width: 4.5rem;
+  text-align: left;
 }
 
 .theme-editor-counter.is-over-limit {
@@ -241,15 +246,10 @@ body.theme-editor-page {
   outline-offset: 2px;
 }
 
-.theme-editor-size__badge {
-  padding: 0.06rem 0.22rem;
-  border-radius: 999px;
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-  font-size: 0.52rem;
-  font-weight: 700;
-  line-height: 1.3;
-  white-space: nowrap;
+/* 使用中却被取消勾选的阶数：保留红色边框，和保存条的原因说明配合。 */
+.theme-editor-size.is-blocked .theme-editor-size__surface,
+.theme-editor-size.is-blocked:hover .theme-editor-size__surface {
+  border-color: rgb(207 34 46 / 0.45);
 }
 
 .theme-editor-segmented {
@@ -311,6 +311,8 @@ body.theme-editor-page {
 .theme-editor-brush__preview {
   display: grid;
   flex: 0 0 auto;
+  /* 两行颜色字段比预览块高，垂直居中避免预览贴顶。 */
+  align-self: center;
   place-items: center;
   width: 64px;
   height: 64px;
@@ -347,44 +349,50 @@ body.theme-editor-page {
   min-width: 0;
 }
 
-.theme-editor-color {
-  width: 2.75rem;
-  height: 2.1rem;
+/* Pickr 会替换挂载节点，因此尺寸和外观加在外层 wrapper 上。 */
+.theme-editor-pickr {
+  display: inline-flex;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.theme-editor-pickr .pickr .pcr-button {
+  /* 原尺寸 2.75 × 2.1rem，缩到 4/5，避免色块比 hex 文本抢眼。 */
+  width: 2.2rem;
+  height: 1.68rem;
   padding: 2px;
   border: 1px solid var(--settings-border);
-  border-radius: 8px;
-  background: var(--settings-surface);
-  cursor: pointer;
+  border-radius: 6px;
+  background-color: var(--settings-surface);
 }
 
-.theme-editor-color:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
+.theme-editor-pickr .pickr .pcr-button::before,
+.theme-editor-pickr .pickr .pcr-button::after {
+  border-radius: 5px;
 }
 
-.theme-editor-color:focus-visible {
+.theme-editor-pickr .pickr .pcr-button:focus-visible {
   outline: 2px solid #1f6f9f;
   outline-offset: 2px;
 }
 
-.theme-editor-check {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  color: var(--settings-text);
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
+/* 弹层继承站点字体；暂不配置 swatches，隐藏 Pickr 默认的空色板行。 */
+.pcr-app.theme-editor-pickr-app {
+  font-family: inherit;
 }
 
-.theme-editor-check input {
-  accent-color: var(--color-accent);
+.pcr-app.theme-editor-pickr-app .pcr-swatches:empty {
+  display: none;
 }
 
-.theme-editor-check--inline {
-  color: var(--settings-muted);
-  font-weight: 600;
+/* 弹层挂在 body 下；把主按钮颜色收敛到站点主题色。 */
+.pcr-app.theme-editor-pickr-app .pcr-interaction .pcr-save {
+  background: var(--color-accent);
+}
+
+.pcr-app.theme-editor-pickr-app .pcr-interaction .pcr-save:hover {
+  background: var(--color-accent-hover);
+  filter: none;
 }
 
 .theme-editor-tools {
@@ -461,14 +469,114 @@ body.theme-editor-page {
 .theme-editor-range__header output {
   color: var(--settings-muted);
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  /* 百分比是主要读数，比左侧标签稍大。 */
+  font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
 }
 
 .theme-editor-range input[type='range'] {
+  /* JS 把当前值写进这个变量，轨道用它画出左侧已填充部分。 */
+  --range-progress: 0%;
+
+  appearance: none;
   width: 100%;
-  accent-color: var(--color-accent);
+  height: 26px;
+  margin: 0.1rem 0 0;
+  padding: 0;
+  background: transparent;
   cursor: pointer;
+}
+
+.theme-editor-range input[type='range']:focus-visible {
+  outline: none;
+}
+
+/* WebKit/Blink 轨道：左侧主题蓝、右侧白色，带一圈浅描边。 */
+.theme-editor-range input[type='range']::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--color-accent) 0,
+    var(--color-accent) var(--range-progress),
+    var(--settings-surface-inset) var(--range-progress),
+    var(--settings-surface-inset) 100%
+  );
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
+}
+
+/* 滑块沿用设置按钮的浅色表面、细边框和轻微浮起，做成横向圆角矩形。 */
+.theme-editor-range input[type='range']::-webkit-slider-thumb {
+  appearance: none;
+  box-sizing: border-box;
+  width: 30px;
+  height: 18px;
+  /* 轨道 8px、滑块 18px，向上偏移一半保持垂直居中。 */
+  margin-top: -5px;
+  border: 1px solid var(--settings-border-strong);
+  border-radius: 6px;
+  background-color: var(--settings-surface);
+  /* 中间一条很浅的短竖线，上下留出间隔，强化拖动手感。 */
+  background-image: linear-gradient(rgb(0 0 0 / 0.12), rgb(0 0 0 / 0.12));
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 1px 8px;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.95),
+    0 1px 2px rgb(0 0 0 / 0.16);
+}
+
+.theme-editor-range input[type='range']:focus-visible::-webkit-slider-thumb {
+  box-shadow:
+    0 0 0 3px rgb(31 111 159 / 0.28),
+    inset 0 1px 0 rgb(255 255 255 / 0.95),
+    0 1px 2px rgb(0 0 0 / 0.16);
+}
+
+/* Firefox 用独立伪元素；进度伪元素设透明，让轨道渐变生效。 */
+.theme-editor-range input[type='range']::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--color-accent) 0,
+    var(--color-accent) var(--range-progress),
+    var(--settings-surface-inset) var(--range-progress),
+    var(--settings-surface-inset) 100%
+  );
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
+}
+
+.theme-editor-range input[type='range']::-moz-range-progress {
+  background: transparent;
+}
+
+.theme-editor-range input[type='range']::-moz-range-thumb {
+  box-sizing: border-box;
+  width: 30px;
+  height: 18px;
+  border: 1px solid var(--settings-border-strong);
+  border-radius: 6px;
+  background-color: var(--settings-surface);
+  /* 与 WebKit 一致的中间短竖线。 */
+  background-image: linear-gradient(rgb(0 0 0 / 0.12), rgb(0 0 0 / 0.12));
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 1px 8px;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.95),
+    0 1px 2px rgb(0 0 0 / 0.16);
+}
+
+.theme-editor-range input[type='range']:focus-visible::-moz-range-thumb {
+  box-shadow:
+    0 0 0 3px rgb(31 111 159 / 0.28),
+    inset 0 1px 0 rgb(255 255 255 / 0.95),
+    0 1px 2px rgb(0 0 0 / 0.16);
+}
+
+.theme-editor-range input[type='range']::-moz-focus-outer {
+  border: 0;
 }
 
 .theme-editor-preview__header {
@@ -489,7 +597,8 @@ body.theme-editor-page {
   padding: clamp(0.75rem, 2vw, 1.5rem);
   border: 1px solid var(--settings-border);
   border-radius: 12px;
-  background: #f3f3f3;
+  /* 与最外层页面底色一致，半透明主题色的混色结果更接近游戏页。 */
+  background: var(--settings-page-bg);
   box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.05);
 }
 
@@ -557,6 +666,8 @@ body.theme-editor-page {
   }
 
   .theme-editor-brush__preview {
+    /* 单列时恢复左对齐，避免 align-self 在纵向布局中把预览水平居中。 */
+    align-self: flex-start;
     width: 56px;
     height: 56px;
   }

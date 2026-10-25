@@ -41,6 +41,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 /**
  * 修复逐块字体色。
  * 缺失或长度不对时全部补 auto；长度正确时单项非法只回退该项。
+ * 合法项保留 #rrggbb / #rrggbbaa，包括其 alpha。
  */
 function normalizeFontPalette(value: unknown, length: number): string[] {
   if (!Array.isArray(value) || value.length !== length) {
@@ -76,6 +77,7 @@ function normalizeSupportedSizes(value: unknown): readonly PuzzleSize[] | null {
 /**
  * 修复主题颜色。
  * 结构和 palette 不可恢复时返回 null；空白色和 fontPalette 可回退到安全默认值。
+ * palette / fontPalette / blankColor 均接受 #rrggbb / #rrggbbaa。
  */
 function normalizeColorMode(value: unknown): ColorMode | null {
   if (!isRecord(value)) {
