@@ -1,6 +1,6 @@
 # 图标规范
 
-> 状态：2026-10-24 起使用本地 SVG sprite 统一管理图标。游戏页图标已全部迁移到 sprite；设置页图标已随 P8-4b 加入；P8-4c-1 新增 `plus` / `pencil` 和动态 `createIcon` 工具；占位页的 `←`、弹窗/提示的 `×`、首页卡片的 `→` 仍为文字字符，暂不处理。
+> 状态：2026-10-24 起使用本地 SVG sprite 统一管理图标。游戏页图标已全部迁移到 sprite；设置页图标已随 P8-4b 加入；P8-4c-1 新增 `plus` / `pencil` 和动态 `createIcon` 工具；P8-4c-2d 已新增 `undo` / `redo`、`paint-bucket` / `pipette`，用于主题编辑器页头撤销/重做和涂色工具。占位页的 `←`、弹窗/提示的 `×`、首页卡片的 `→` 仍为文字字符，暂不处理。
 
 ## 目标
 
@@ -28,6 +28,8 @@
   - `rotate-ccw` / `save` / `check` / `external-link` / `mail` ← 同名 Lucide 图标
   - `monitor` / `sun` / `moon` ← 同名 Lucide 图标
   - `plus` / `pencil` ← 同名 Lucide 图标（P8-4c-1 主题列表）
+  - `undo` / `redo` ← Lucide `undo-2` / `redo-2`（P8-4c-2d 主题编辑器）
+  - `paint-bucket` / `pipette` ← 同名 Lucide 图标（P8-4c-2d 涂色工具）
 - `palette` 的四个圆点使用 `fill="currentColor"`；它是 sprite 中唯一带填充的图标，其余图标保持只描边。
 - Lucide 使用 ISC License；部分图标派生自 Feather，另有 MIT 许可。
 - 新增图标时在下方“图标清单”登记来源和许可。
@@ -194,6 +196,19 @@ const icon = createIcon('pencil'); // <svg class="icon"><use href="#icon-pencil"
 | `pencil` | 编辑自定义主题   | Lucide `pencil` | 已加入（2026-10-24）  |
 
 `plus` 用于只有图标的加号卡，CSS 中放大到约 48px；`pencil` 用于主题卡右下角的编辑按钮，约 16px。两者都通过 `createIcon` 动态引用。
+
+### P8-4c-2d 主题编辑器图标
+
+| 名称           | 用途             | 来源                  | 状态                  |
+| -------------- | ---------------- | --------------------- | --------------------- |
+| `undo`         | 撤销编辑操作     | Lucide `undo-2`       | 已加入（2026-10-25）  |
+| `redo`         | 重做编辑操作     | Lucide `redo-2`       | 已加入（2026-10-25）  |
+| `paint-bucket` | 油漆桶工具       | Lucide `paint-bucket` | 已加入（2026-10-25）  |
+| `pipette`      | 吸管工具         | Lucide `pipette`      | 已加入（2026-10-25）  |
+
+- `undo` / `redo` 放在主题编辑器页头右侧，作为带 `aria-label` / `title` 的图标按钮；没有历史时禁用。
+- `title` 为“撤销 (Ctrl/Cmd+Z)”“重做 (Ctrl/Cmd+Shift+Z，也支持 Ctrl/Cmd+Y)”。
+- `paint-bucket` / `pipette` 用于左侧涂色工具按钮，按钮同时有文字，图标本身保持装饰性。
 
 ## 构建机制
 

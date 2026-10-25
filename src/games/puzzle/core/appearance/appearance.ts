@@ -152,7 +152,7 @@ export function getPreviewSize(theme: Theme): PuzzleSize {
  * 新建自定义主题的初始草稿：复制回退主题，换 ID、名称和 builtin 标记。
  * 返回值是深拷贝；编辑器可以自由修改，不会污染 FALLBACK_THEME。
  */
-export function createCustomThemeDraft(id: string, name = '新主题'): Theme {
+export function createCustomThemeDraft(id: string, name = '新的主题'): Theme {
   return {
     ...cloneTheme(FALLBACK_THEME),
     id,
@@ -248,8 +248,13 @@ function isColorModeEqual(a: ColorMode, b: ColorMode): boolean {
   return isSameArray(a.palette, b.palette) && isSameArray(a.fontPalette, b.fontPalette);
 }
 
-/** 比较主题的全部可持久化字段；id/name/builtin 也参与比较。 */
-function isThemeEqual(a: Theme, b: Theme): boolean {
+/**
+ * 比较主题的全部可持久化字段；id/name/builtin 也参与比较。
+ *
+ * 这是编辑器判断“是否有未保存修改”的底层比较函数。名称首尾空格由调用方
+ * 先 trim；这里保持严格逐字段比较，避免隐藏的归一化规则。
+ */
+export function isThemeEqual(a: Theme, b: Theme): boolean {
   return (
     a.id === b.id &&
     a.name === b.name &&

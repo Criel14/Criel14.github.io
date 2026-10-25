@@ -210,7 +210,7 @@ describe('createCustomThemeDraft', () => {
     const draft = createCustomThemeDraft('custom-new');
 
     expect(draft.id).toBe('custom-new');
-    expect(draft.name).toBe('新主题');
+    expect(draft.name).toBe('新的主题');
     expect(draft.builtin).toBe(false);
     expect(draft.supportedSizes).toEqual(ALL_SIZES);
     expect(draft.color).toEqual(FALLBACK_THEME.color);

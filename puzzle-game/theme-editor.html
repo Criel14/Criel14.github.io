@@ -4,13 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="编辑数字华容道的自定义棋盘主题。" />
-    <title>编辑主题</title>
+    <title>游戏主题设置</title>
     <link rel="stylesheet" href="../src/shared/styles/base.css" />
     <link rel="stylesheet" href="../src/games/puzzle/styles/settings.css" />
+    <link rel="stylesheet" href="../src/games/puzzle/styles/board.css" />
+    <link rel="stylesheet" href="../src/games/puzzle/styles/overlays.css" />
+    <link rel="stylesheet" href="../src/games/puzzle/styles/theme-editor.css" />
   </head>
-  <body class="settings-page">
+  <body class="settings-page theme-editor-page">
     <!-- icon-sprite -->
-    <header class="settings-header">
+    <header class="settings-header theme-editor-header">
       <a
         class="settings-back"
         href="/puzzle-game/settings.html#game-theme"
@@ -21,24 +24,305 @@
           <use href="#icon-exit-retry"></use>
         </svg>
       </a>
-      <h1 class="settings-title">编辑主题</h1>
+      <h1 class="settings-title">游戏主题设置</h1>
+
+      <div class="theme-editor-history" role="group" aria-label="编辑历史">
+        <button
+          class="theme-editor-icon-button"
+          type="button"
+          data-editor-action="undo"
+          aria-label="撤销 (Ctrl/Cmd+Z)"
+          title="撤销 (Ctrl/Cmd+Z)"
+          disabled
+        >
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <use href="#icon-undo"></use>
+          </svg>
+        </button>
+        <button
+          class="theme-editor-icon-button"
+          type="button"
+          data-editor-action="redo"
+          aria-label="重做 (Ctrl/Cmd+Shift+Z，也支持 Ctrl/Cmd+Y)"
+          title="重做 (Ctrl/Cmd+Shift+Z，也支持 Ctrl/Cmd+Y)"
+          disabled
+        >
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <use href="#icon-redo"></use>
+          </svg>
+        </button>
+      </div>
     </header>
 
-    <main class="settings-layout settings-layout--single">
-      <section class="settings-section" aria-labelledby="theme-editor-title">
-        <h2 class="settings-section__title" id="theme-editor-title">主题编辑器</h2>
-        <p class="settings-section__description">
-          主题编辑器正在开发中。你仍然可以在设置页选择已有主题。
-        </p>
+    <main class="theme-editor-shell">
+      <p class="settings-banner" data-load-banner role="status" hidden></p>
 
-        <div class="settings-empty">
-          <p class="settings-empty__title">编辑器开发中</p>
-          <p class="settings-empty__text">
-            后续将支持降阶、按行和固定色三种着色模式，并可分别调整色板、空白色、字体色、盲玩色、字号、间隙和圆角。
-          </p>
-          <a class="settings-button" href="/puzzle-game/settings.html#game-theme"> 返回游戏主题 </a>
-        </div>
+      <div class="theme-editor-layout" data-editor hidden>
+        <section
+          class="theme-editor-panel theme-editor-controls"
+          data-theme-editor-controls
+          aria-labelledby="theme-editor-controls-title"
+        >
+          <h2 class="visually-hidden" id="theme-editor-controls-title">主题设置</h2>
+
+          <div class="theme-editor-field">
+            <div class="theme-editor-field__header">
+              <label class="theme-editor-label" for="theme-name">名称</label>
+              <span class="theme-editor-counter" id="theme-name-counter" data-name-counter>
+                0 / 20
+              </span>
+            </div>
+            <input
+              class="theme-editor-input"
+              id="theme-name"
+              type="text"
+              data-field="name"
+              aria-describedby="theme-name-counter theme-name-error"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <p
+              class="theme-editor-error"
+              id="theme-name-error"
+              data-name-error
+              role="alert"
+              hidden
+            ></p>
+          </div>
+
+          <fieldset class="theme-editor-group" aria-describedby="theme-sizes-error">
+            <legend class="theme-editor-label">支持阶数</legend>
+            <div class="theme-editor-sizes" data-supported-sizes></div>
+            <p
+              class="theme-editor-error"
+              id="theme-sizes-error"
+              data-sizes-error
+              role="alert"
+              hidden
+            ></p>
+          </fieldset>
+
+          <fieldset class="theme-editor-group">
+            <legend class="theme-editor-label">着色模式</legend>
+            <div class="theme-editor-segmented" data-mode-group role="group" aria-label="着色模式">
+              <button type="button" data-mode="layer" aria-pressed="false">按层</button>
+              <button type="button" data-mode="row" aria-pressed="false">按行</button>
+              <button type="button" data-mode="fixed" aria-pressed="false">全自定义</button>
+            </div>
+          </fieldset>
+
+          <section class="theme-editor-group" aria-labelledby="theme-brush-title">
+            <h3 class="theme-editor-label" id="theme-brush-title">样式刷</h3>
+            <div class="theme-editor-brush">
+              <span class="theme-editor-brush__preview" data-brush-preview aria-hidden="true"
+                >12</span
+              >
+              <div class="theme-editor-brush__fields">
+                <div class="theme-editor-color-field">
+                  <label
+                    class="theme-editor-label theme-editor-label--small"
+                    for="brush-background"
+                  >
+                    背景色
+                  </label>
+                  <div class="theme-editor-color-field__controls">
+                    <input
+                      class="theme-editor-color"
+                      id="brush-background"
+                      type="color"
+                      data-brush="background"
+                      aria-label="样式刷背景色"
+                    />
+                    <output class="theme-editor-hex" data-brush-background-hex></output>
+                  </div>
+                </div>
+                <div class="theme-editor-color-field">
+                  <label class="theme-editor-label theme-editor-label--small" for="brush-font">
+                    文字色
+                  </label>
+                  <div class="theme-editor-color-field__controls">
+                    <input
+                      class="theme-editor-color"
+                      id="brush-font"
+                      type="color"
+                      data-brush="fontColor"
+                      aria-label="样式刷文字色"
+                    />
+                    <output class="theme-editor-hex" data-brush-font-hex>#FFFFFF</output>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="theme-editor-tools" role="group" aria-label="涂色工具">
+              <button
+                class="theme-editor-tool is-active"
+                type="button"
+                data-tool="bucket"
+                aria-pressed="true"
+                title="油漆桶"
+              >
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <use href="#icon-paint-bucket"></use>
+                </svg>
+                油漆桶
+              </button>
+              <button
+                class="theme-editor-tool"
+                type="button"
+                data-tool="eyedropper"
+                aria-pressed="false"
+                title="吸管"
+              >
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <use href="#icon-pipette"></use>
+                </svg>
+                吸管
+              </button>
+            </div>
+          </section>
+
+          <section class="theme-editor-group" aria-labelledby="theme-style-title">
+            <h3 class="theme-editor-label" id="theme-style-title">整盘样式</h3>
+
+            <div class="theme-editor-stack">
+              <div class="theme-editor-color-field">
+                <span class="theme-editor-label theme-editor-label--small">盲玩色</span>
+                <div class="theme-editor-color-field__controls">
+                  <input
+                    class="theme-editor-color"
+                    type="color"
+                    data-color="blindTileColor"
+                    aria-label="盲玩色"
+                  />
+                  <output class="theme-editor-hex" data-hex="blindTileColor"></output>
+                </div>
+              </div>
+
+              <div class="theme-editor-color-field">
+                <span class="theme-editor-label theme-editor-label--small">内边框</span>
+                <div class="theme-editor-color-field__controls">
+                  <label class="theme-editor-check theme-editor-check--inline">
+                    <input type="checkbox" data-inner-border-transparent />
+                    透明
+                  </label>
+                  <input
+                    class="theme-editor-color"
+                    type="color"
+                    data-color="innerBorderColor"
+                    aria-label="内边框颜色"
+                  />
+                  <output class="theme-editor-hex" data-hex="innerBorderColor">透明</output>
+                </div>
+              </div>
+
+              <label class="theme-editor-range" for="border-width">
+                <span class="theme-editor-range__header">
+                  <span>内边框宽度</span>
+                  <output data-range-value="innerBorderWidth">0%</output>
+                </span>
+                <input
+                  id="border-width"
+                  type="range"
+                  data-range="innerBorderWidth"
+                  min="0"
+                  max="0.1"
+                  step="0.005"
+                />
+              </label>
+
+              <label class="theme-editor-range" for="font-size">
+                <span class="theme-editor-range__header">
+                  <span>字号</span>
+                  <output data-range-value="fontSizeRatio">50%</output>
+                </span>
+                <input
+                  id="font-size"
+                  type="range"
+                  data-range="fontSizeRatio"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                />
+              </label>
+
+              <label class="theme-editor-range" for="tile-gap">
+                <span class="theme-editor-range__header">
+                  <span>间隙</span>
+                  <output data-range-value="gapRatio">6%</output>
+                </span>
+                <input
+                  id="tile-gap"
+                  type="range"
+                  data-range="gapRatio"
+                  min="0"
+                  max="0.1"
+                  step="0.005"
+                />
+              </label>
+
+              <label class="theme-editor-range" for="tile-radius">
+                <span class="theme-editor-range__header">
+                  <span>圆角</span>
+                  <output data-range-value="radiusRatio">0%</output>
+                </span>
+                <input
+                  id="tile-radius"
+                  type="range"
+                  data-range="radiusRatio"
+                  min="0"
+                  max="0.5"
+                  step="0.01"
+                />
+              </label>
+            </div>
+
+            <p class="theme-editor-error" data-style-error role="alert" hidden></p>
+          </section>
+        </section>
+
+        <section
+          class="theme-editor-panel theme-editor-preview"
+          aria-labelledby="theme-preview-title"
+        >
+          <div class="theme-editor-preview__header">
+            <h2 class="theme-editor-preview__title" id="theme-preview-title">预览</h2>
+          </div>
+
+          <div class="theme-editor-preview__board" data-preview-board></div>
+        </section>
+      </div>
+
+      <section class="settings-section theme-editor-fatal" data-fatal hidden>
+        <h2 class="settings-section__title">无法编辑主题</h2>
+        <p class="settings-section__description" data-fatal-message></p>
+        <a class="settings-button" href="/puzzle-game/settings.html#game-theme">返回游戏主题</a>
       </section>
     </main>
+
+    <div class="settings-savebar" data-savebar hidden>
+      <div class="settings-savebar__info">
+        <p class="settings-savebar__text">你有未保存的修改。</p>
+        <p class="settings-savebar__error" data-save-error role="alert" hidden></p>
+      </div>
+      <div class="settings-savebar__actions">
+        <button class="settings-button" type="button" data-action="reset">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <use href="#icon-rotate-ccw"></use>
+          </svg>
+          重置
+        </button>
+        <button class="settings-button settings-button--primary" type="button" data-action="save">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <use href="#icon-save"></use>
+          </svg>
+          <span data-save-label>保存</span>
+        </button>
+      </div>
+    </div>
+
+    <p class="visually-hidden" data-live-region aria-live="polite"></p>
+
+    <script type="module" src="/src/games/puzzle/pages/theme-editor.ts"></script>
   </body>
 </html>

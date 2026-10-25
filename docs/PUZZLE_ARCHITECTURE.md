@@ -1,6 +1,6 @@
 # 数字华容道重构架构
 
-> 状态：P0–P7 已实现；P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b 独立设置页与网站偏好已实现（2026-10-24，详见 `docs/SETTINGS_PAGE.md`，待手动验收），P8-4c-1 设置页主题列表已实现（待手动验收），P8-4c-2 设计确认（2026-10-24，详见 `docs/PUZZLE_THEME.md`），P8-4c-2a 主题模型升级与存储已实现（2026-10-24，自动检查通过），P8-4c-2b 设置页按阶数分配已实现（2026-10-25，自动检查通过，待手动验收），P8-4c-2c～e 待开始，P8-5～P8-6 待开始（P7-3 交互与视觉随 P8 手动验收）；回放、存储、设置页、游戏主题和成绩页的详细设计见独立文档
+> 状态：P0–P7 已实现；P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b 独立设置页与网站偏好已实现（2026-10-24，详见 `docs/SETTINGS_PAGE.md`，待手动验收），P8-4c-1 设置页主题列表已实现（待手动验收），P8-4c-2 设计确认（2026-10-24，详见 `docs/PUZZLE_THEME.md`），P8-4c-2a 主题模型升级与存储已实现（2026-10-24，自动检查通过），P8-4c-2b 设置页按阶数分配已实现（2026-10-25，自动检查通过，待手动验收），P8-4c-2d 主题编辑器已实现（2026-10-25，自动检查通过，待手动验收），P8-4c-2c、P8-4c-2e、P8-5～P8-6 待开始（P7-3 交互与视觉随 P8 手动验收）；回放、存储、设置页、游戏主题和成绩页的详细设计见独立文档
 >
 > 分支：`refactor/vite-ts`
 >
@@ -264,7 +264,7 @@ export interface AppearanceState {
 - `Theme.metrics` 必须在约定范围内；非法值回退 `DEFAULT_METRICS`。
 - `AppearanceState.themeIdBySize` 必须有 2–10 共 9 个键；每个值要么是 `FALLBACK_THEME_ID`，要么能解析到 `themes` 中一个 `supportedSizes` 包含该阶数的主题。
 - `AppearanceState.themes` 至少包含两套内置主题；回退主题不在 `themes` 中。
-- 内置主题不可修改、不可删除；自定义主题可以编辑逐块颜色/字体色、空白色、盲玩色、内边框和 metrics，上限 20 个（`CUSTOM_THEME_SLOT_COUNT = 20`）。
+- 内置主题不可修改、不可删除；自定义主题数据结构支持逐块颜色/字体色、空白色、盲玩色、内边框和 metrics，上限 20 个（`CUSTOM_THEME_SLOT_COUNT = 20`）。主题编辑器不提供空白色和文字色 `auto` 编辑：打开时固定空白色透明、把 `auto` 转成显式颜色。
 - **不存储** `tps`、`number`、`ao5`、`ao12`、`dateTime` 字符串、`device`。
 
 ## 5. 存储
@@ -749,7 +749,7 @@ function getTileLayer(tile: number, size: PuzzleSize): number {
   - `rainbow`：旧“预设1 / 彩虹”，高饱和，metrics 为 `0.5 / 0.03 / 0.04`。
   - `rainbow-soft`：旧“预设2 / 彩虹微调”，低饱和，metrics 为 `0.5 / 0 / 0.01`。
 - 按行、固定色当前只作为自定义主题可选的模式，不提供内置预设。
-- 两套内置主题的 `fontPalette` 都是 18 个 `#ffffff`，沿用旧版白色；回退主题和新建主题默认 18 个 `'auto'`，根据背景亮度自动选择黑/白。
+- 两套内置主题的 `fontPalette` 都是 18 个 `#ffffff`，沿用旧版白色；回退主题和 `createCustomThemeDraft()` 默认 18 个 `'auto'`，根据背景亮度自动选择黑/白。编辑器打开时会把这些 `auto` 转成显式黑/白，之后保存的主题不再包含 auto。
 - `blankColor` 默认 `transparent`，让棋盘背景透出。
 - `innerBorder` 默认 `{ transparent, 0 }`；内边框不改变方块外尺寸，字号按边框内区域计算。
 - `blindTileColor` 默认 `#3498db`，属于 `Theme`，用户可在自定义主题里调整；空白块不参与这个颜色。
@@ -782,13 +782,22 @@ function getTileLayer(tile: number, size: PuzzleSize): number {
 - 设置页主题分配先进入本地 draft，点击设置页“保存”后才写 `puzzle.v2.appearance`；不能点击卡片就落库。
 - “应用到”对话框只列主题支持的阶数；当前已应用阶数锁定；确认只更新 draft，底部保存条负责最终保存。
 - 主题编辑器是独立页面 `/puzzle-game/theme-editor.html`，自己维护 draft，点击编辑器“保存”后才写存储；不能在每次选色时直接落库。
+- 编辑器布局为左侧控制、右侧最大支持阶数预览的 `1 : 2` 两栏；预览复用 `board-view`，滚动时 sticky。
+- 编辑器使用“样式刷 + 油漆桶”：点击棋盘按层/行/单块涂色；吸管从棋盘读回当前组样式。样式刷、吸管和工具切换不属于主题，不触发脏状态。
+- 编辑器文字色全部是显式 `#rrggbb`；旧数据里的 `auto` 在打开时由 `prepareThemeForEditor()` 转成明确黑/白。空白色固定为 `transparent`，编辑器不提供空白色编辑和“显示数字”开关，预览始终显示数字。
+- 新建编辑器只在内存创建“新的主题 + 回退样式”draft，不写 `themes`；未修改退出不产生主题，保存后才写入。
+- 编辑器保存后停留在当前页；新建保存成功后用 `history.replaceState` 写入 `?theme=<id>`，刷新进入编辑模式。保存后不自动分配阶数。
+- 编辑器提供 50 步快照撤销/重做，页头按钮 + `Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z` / `Ctrl/Cmd+Y`；历史只保存 `Theme` 深拷贝，不保存 DOM、棋盘对象、样式刷或预览状态。
+- 编辑器名称限制 20 显示宽度（10 个汉字 / 20 个英文字母），允许重名；该限制只在编辑器执行，数据层保持宽松。
 - 设置页从 `observing` / `solved` 进入；运行中/重玩中/保存中禁用，避免当前局被卸载。
 - 游戏主题编辑只编辑自定义主题；内置主题只读，修改时先复制成自定义主题，再编辑副本。
 - 自定义主题上限 20 个；数据模型允许列表扩展，但存储和 UI 以 `CUSTOM_THEME_SLOT_COUNT` 为准。
 - 自定义主题的 `supportedSizes` 缩小到正在被使用的阶数之外时，编辑器阻止保存，要求先在设置页切换这些阶数。
 - 分组管理集中在成绩页；设置页不重复实现，后续如需要只放跳转链接。
 - 自定义光标、极简 UI 属于 `GameSettings`，不属于 `Theme`；P8-5 再决定是否接入设置页“游戏”分类。
-- 编辑器和设置页都按“显式保存”处理；返回/刷新丢弃 draft，确认弹框记录 TODO。详见 `docs/PUZZLE_THEME.md`。
+- 编辑器不升级 schema；`Theme` / `AppearanceState` 字段和 `APPEARANCE_SCHEMA_VERSION = 4` 不变。
+- 编辑器和设置页都按“显式保存”处理；返回/刷新直接丢弃 draft，不弹离开确认，底部保存条是唯一提醒。详见 `docs/PUZZLE_THEME.md`。
+- 实现状态（2026-10-25）：`theme-editor.html`、`styles/theme-editor.css`、`pages/theme-editor.ts` 和 `ui/theme-editor*.ts` 已落地；`ui/theme-history.ts` 是纯状态模块；`core/appearance/editor.ts` / `name.ts` 承载可测试的编辑纯函数（含 `prepareThemeForEditor()`）。`board-view` 增加 `data-tile` 钩子；设置页在 bfcache 恢复时重新读取外观，避免返回后显示旧主题列表。视觉收敛后编辑器不显示操作说明、无“显示数字”、无空白色编辑、无文字色“自动”。
 
 ### 10.5 页面主题 token
 
@@ -830,6 +839,8 @@ src/games/puzzle/
 │     ├─ metrics.ts
 │     ├─ presets.ts
 │     ├─ appearance.ts
+│     ├─ editor.ts        # 模式切换、涂色目标、样式刷应用、主题校验
+│     ├─ name.ts          # 名称显示宽度与 grapheme 计数
 │     └─ index.ts
 ├─ data/
 │  ├─ local-storage.ts
@@ -852,6 +863,10 @@ src/games/puzzle/
 │  ├─ theme-assignment-dialog.ts
 │  ├─ theme-coverage.ts
 │  ├─ theme-preview.ts
+│  ├─ theme-history.ts         # 50 步快照历史与连续输入合并
+│  ├─ theme-editor-controls.ts # 左侧控件
+│  ├─ theme-editor-board.ts    # 棋盘涂色/吸管/悬停
+│  ├─ theme-editor.ts          # 编辑器 controller
 │  ├─ dialog.ts
 │  ├─ notice.ts
 │  └─ lifecycle.ts
@@ -859,12 +874,14 @@ src/games/puzzle/
 │  ├─ game.ts
 │  ├─ settings.ts
 │  ├─ stats.ts
+│  ├─ theme-editor.ts          # 编辑器页面入口
 │  └─ replay.ts
 └─ styles/
    ├─ board.css
    ├─ overlays.css
    ├─ game.css
    ├─ settings.css
+   ├─ theme-editor.css        # 编辑器布局与控件
    ├─ stats.css
    └─ replay.css
 
@@ -909,7 +926,7 @@ types ← core ← ui   ← pages
 | -------- | --------------------------------------------------------- | ---------------------------------- |
 | 游戏页   | `/puzzle-game/puzzle.html`                                | 设置从 `puzzle.v2.settings` 读取   |
 | 设置页   | `/puzzle-game/settings.html`                              | 全站偏好 + 游戏主题分配；详见 `docs/SETTINGS_PAGE.md` |
-| 主题编辑器 | `/puzzle-game/theme-editor.html?theme=<themeId>`        | 新建省略 `theme`；编辑自定义主题；详见 `docs/PUZZLE_THEME.md` |
+| 主题编辑器 | `/puzzle-game/theme-editor.html?theme=<themeId>`        | 新建省略 `theme`；保存后 `replaceState` 为 `?theme=<id>`；编辑自定义主题；详见 `docs/PUZZLE_THEME.md` |
 | 重玩     | `/puzzle-game/puzzle.html?retry=<scoreId>`                | 使用该成绩的配置与打乱，不保存结果 |
 | 成绩页   | `/puzzle-game/score-list.html?size=4&mode=normal&group=1` | 事件 + 分组筛选；group 使用事件内槽位 1–5 |
 | 成绩详情 | 同上，追加 `&score=<id>`                                  | 原生 `<dialog>`，可刷新恢复        |

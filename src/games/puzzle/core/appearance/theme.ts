@@ -17,8 +17,13 @@ function isRenderableTile(tile: number, size: number): boolean {
   return isPuzzleSize(size) && Number.isInteger(tile) && tile > 0 && tile < size * size;
 }
 
-/** 按主题模式把方块映射到 palette / fontPalette 的 0-based 索引；空白/非法返回 null。 */
-function getPaletteIndex(tile: number, size: number, color: ColorMode): number | null {
+/**
+ * 按主题模式把方块映射到 palette / fontPalette 的 0-based 索引；空白/非法返回 null。
+ *
+ * 编辑器的油漆桶、吸管和悬停高亮都复用这个映射，避免在 UI 里重新实现
+ * 按层/按行/固定色的规则。
+ */
+export function getTilePaletteIndex(tile: number, size: number, color: ColorMode): number | null {
   if (!isRenderableTile(tile, size)) {
     return null;
   }
@@ -37,7 +42,7 @@ function getPaletteIndex(tile: number, size: number, color: ColorMode): number |
 
 /** 取方块对应的色板颜色；索引越界时回退白色。 */
 function getPaletteColor(tile: number, size: number, color: ColorMode): string | null {
-  const index = getPaletteIndex(tile, size, color);
+  const index = getTilePaletteIndex(tile, size, color);
   if (index === null) {
     return null;
   }
@@ -46,7 +51,7 @@ function getPaletteColor(tile: number, size: number, color: ColorMode): string |
 
 /** 取方块对应的字体色配置；索引越界时回退 auto。 */
 function getFontPaletteColor(tile: number, size: number, color: ColorMode): string {
-  const index = getPaletteIndex(tile, size, color);
+  const index = getTilePaletteIndex(tile, size, color);
   if (index === null) {
     return AUTO_FONT_COLOR;
   }

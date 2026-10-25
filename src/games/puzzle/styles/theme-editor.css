@@ -1,0 +1,582 @@
+/*
+ * 游戏主题编辑器。
+ *
+ * 复用 settings.css 的页面 token、浮起表面、按钮和保存条；这里只负责
+ * 左右 1 : 2 布局、左侧控件、右侧 sticky 预览和棋盘涂色高亮。
+ */
+
+body.theme-editor-page {
+  padding-bottom: 9rem;
+}
+
+.theme-editor-shell {
+  width: min(100%, 1200px);
+  margin: 0 auto;
+}
+
+.theme-editor-header .theme-editor-history {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.theme-editor-icon-button {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--settings-border);
+  border-radius: var(--settings-radius-sm);
+  background: var(--settings-surface);
+  color: var(--settings-text);
+  box-shadow: var(--settings-raised-shadow);
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    box-shadow 90ms ease,
+    transform 90ms ease;
+}
+
+.theme-editor-icon-button:hover:not(:disabled) {
+  background: var(--settings-surface-hover);
+}
+
+.theme-editor-icon-button:active:not(:disabled) {
+  transform: scale(0.96);
+  box-shadow: var(--settings-raised-shadow-active);
+}
+
+.theme-editor-icon-button:focus-visible {
+  outline: 2px solid #1f6f9f;
+  outline-offset: 2px;
+}
+
+.theme-editor-icon-button:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.theme-editor-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.theme-editor-layout[hidden],
+.theme-editor-fatal[hidden] {
+  display: none;
+}
+
+.theme-editor-panel {
+  min-width: 0;
+  border: 1px solid var(--settings-border);
+  border-radius: var(--settings-radius);
+  background: var(--settings-surface);
+  box-shadow: var(--settings-raised-shadow);
+}
+
+.theme-editor-controls {
+  padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.theme-editor-preview {
+  position: sticky;
+  top: 24px;
+  padding: 1.25rem;
+}
+
+.theme-editor-field + .theme-editor-group,
+.theme-editor-group + .theme-editor-group {
+  margin-top: 1.6rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--settings-border);
+}
+
+.theme-editor-group {
+  min-width: 0;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.theme-editor-group > .theme-editor-label,
+.theme-editor-group > legend.theme-editor-label {
+  padding: 0;
+}
+
+.theme-editor-field__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.45rem;
+}
+
+.theme-editor-label {
+  display: block;
+  margin: 0 0 0.55rem;
+  color: var(--settings-text);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.theme-editor-label--small {
+  margin-bottom: 0;
+  color: var(--settings-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.theme-editor-counter,
+.theme-editor-hex {
+  color: var(--settings-muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.theme-editor-counter.is-over-limit {
+  color: var(--color-danger);
+}
+
+.theme-editor-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 0.75rem;
+  border: 1px solid var(--settings-border);
+  border-radius: var(--settings-radius-sm);
+  background: var(--settings-surface-inset);
+  color: var(--settings-text);
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.04);
+  font: inherit;
+  font-size: 0.95rem;
+}
+
+.theme-editor-input:focus-visible {
+  outline: 2px solid #1f6f9f;
+  outline-offset: 2px;
+}
+
+.theme-editor-input[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+
+.theme-editor-error {
+  margin: 0.45rem 0 0;
+  color: var(--color-danger);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.theme-editor-sizes {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.2rem;
+}
+
+.theme-editor-sizes.has-error .theme-editor-size__surface {
+  border-color: rgb(207 34 46 / 0.45);
+}
+
+.theme-editor-size {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+
+.theme-editor-size__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.theme-editor-size__surface {
+  display: flex;
+  min-height: 46px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.12rem;
+  padding: 0.2rem;
+  border: 1px solid var(--settings-border);
+  border-radius: 9px;
+  background: var(--settings-surface);
+  color: var(--settings-text);
+  box-shadow: var(--settings-raised-shadow-active);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.2;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.theme-editor-size:hover .theme-editor-size__surface {
+  border-color: var(--settings-border-strong);
+  background: var(--settings-surface-hover);
+}
+
+.theme-editor-size__input:checked + .theme-editor-size__surface {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.theme-editor-size__input:focus-visible + .theme-editor-size__surface {
+  outline: 2px solid #1f6f9f;
+  outline-offset: 2px;
+}
+
+.theme-editor-size__badge {
+  padding: 0.06rem 0.22rem;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: 0.52rem;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.theme-editor-segmented {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--settings-border);
+  border-radius: var(--settings-radius-sm);
+  background: var(--settings-surface-inset);
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.04);
+}
+
+.theme-editor-segmented button {
+  appearance: none;
+  min-height: 38px;
+  padding: 0 0.4rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--settings-muted);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.theme-editor-segmented button:hover {
+  background: var(--settings-surface-hover);
+  color: var(--settings-text);
+}
+
+.theme-editor-segmented button[aria-pressed='true'] {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  box-shadow: 0 1px 2px rgb(52 152 219 / 0.24);
+}
+
+.theme-editor-segmented button:focus-visible {
+  outline: 2px solid #1f6f9f;
+  outline-offset: 2px;
+}
+
+.theme-editor-brush {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.9rem;
+  border: 1px solid var(--settings-border);
+  border-radius: var(--settings-radius-sm);
+  background: var(--settings-surface-inset);
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.04);
+}
+
+.theme-editor-brush__preview {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border: 1px solid var(--settings-border);
+  border-radius: 10px;
+  background: var(--color-accent);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.theme-editor-brush__fields {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.theme-editor-color-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.theme-editor-color-field__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.theme-editor-color {
+  width: 2.75rem;
+  height: 2.1rem;
+  padding: 2px;
+  border: 1px solid var(--settings-border);
+  border-radius: 8px;
+  background: var(--settings-surface);
+  cursor: pointer;
+}
+
+.theme-editor-color:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.theme-editor-color:focus-visible {
+  outline: 2px solid #1f6f9f;
+  outline-offset: 2px;
+}
+
+.theme-editor-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--settings-text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.theme-editor-check input {
+  accent-color: var(--color-accent);
+}
+
+.theme-editor-check--inline {
+  color: var(--settings-muted);
+  font-weight: 600;
+}
+
+.theme-editor-tools {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+
+.theme-editor-tool {
+  appearance: none;
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--settings-border);
+  border-radius: var(--settings-radius-sm);
+  background: var(--settings-surface);
+  color: var(--settings-text);
+  box-shadow: var(--settings-raised-shadow);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+.theme-editor-tool .icon {
+  width: 17px;
+  height: 17px;
+}
+
+.theme-editor-tool:hover {
+  background: var(--settings-surface-hover);
+}
+
+.theme-editor-tool.is-active {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.theme-editor-tool:focus-visible {
+  outline: 2px solid #1f6f9f;
+  outline-offset: 2px;
+}
+
+.theme-editor-stack {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 0.2rem;
+}
+
+.theme-editor-range {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.theme-editor-range__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--settings-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.theme-editor-range__header output {
+  color: var(--settings-muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.theme-editor-range input[type='range'] {
+  width: 100%;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.theme-editor-preview__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.theme-editor-preview__title {
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.3;
+}
+
+.theme-editor-preview__board {
+  padding: clamp(0.75rem, 2vw, 1.5rem);
+  border: 1px solid var(--settings-border);
+  border-radius: 12px;
+  background: #f3f3f3;
+  box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.05);
+}
+
+.theme-editor-board {
+  width: min(100%, 34rem);
+  margin: 0 auto;
+}
+
+.theme-editor-board--interactive .puzzle-board__tile:not(.puzzle-board__tile--blank) {
+  cursor: crosshair;
+}
+
+.theme-editor-board .puzzle-board__tile--affected {
+  outline: 3px solid var(--color-accent);
+  outline-offset: -3px;
+  z-index: 1;
+}
+
+.theme-editor-fatal {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  width: min(100%, 46rem);
+  min-height: 0;
+  margin: 0 auto;
+}
+
+.theme-editor-fatal .settings-section__description {
+  margin: 0;
+}
+
+@media (max-width: 899px) {
+  .theme-editor-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .theme-editor-preview {
+    position: static;
+    order: -1;
+  }
+}
+
+@media (max-width: 599px) {
+  .theme-editor-header .theme-editor-history {
+    gap: 0.35rem;
+  }
+
+  .theme-editor-icon-button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .theme-editor-controls,
+  .theme-editor-preview {
+    padding: 1.15rem;
+  }
+
+  .theme-editor-sizes {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .theme-editor-brush {
+    flex-direction: column;
+  }
+
+  .theme-editor-brush__preview {
+    width: 56px;
+    height: 56px;
+  }
+
+  .theme-editor-color-field {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .theme-editor-color-field__controls {
+    justify-content: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-editor-icon-button,
+  .theme-editor-size__surface,
+  .theme-editor-segmented button,
+  .theme-editor-tool {
+    transition: none;
+  }
+}

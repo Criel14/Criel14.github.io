@@ -104,6 +104,8 @@ export function createBoardView(options: BoardViewOptions): BoardView {
 
     const isBlank = tile === 0;
     node.element.classList.toggle('puzzle-board__tile--blank', isBlank);
+    // 稳定的数字钩子：编辑器和后续测试不需要依赖棋子位置或 textContent。
+    node.element.dataset.tile = String(tile);
     node.valueElement.textContent = isBlank ? '' : String(tile);
     updateTileLabel(node, tile);
 

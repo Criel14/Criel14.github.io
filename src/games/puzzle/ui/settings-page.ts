@@ -283,6 +283,11 @@ function createPreferencesController(
   };
 }
 
+interface AppearanceController extends SettingsController {
+  /** bfcache 恢复时重新读取存储，避免显示编辑前的旧主题列表。 */
+  reload(appearance: AppearanceState): void;
+}
+
 /**
  * 主题分配 controller。
  *
@@ -293,7 +298,7 @@ function createAppearanceController(
   initial: AppearanceState,
   elements: SettingsElements,
   onChange: () => void,
-): SettingsController {
+): AppearanceController {
   let saved = cloneAppearance(initial);
   let draft = cloneAppearance(initial);
 
@@ -323,6 +328,11 @@ function createAppearanceController(
       saveAppearance(normalized);
       saved = cloneAppearance(normalized);
       draft = cloneAppearance(normalized);
+      picker.render(saved);
+    },
+    reload(appearance: AppearanceState) {
+      saved = cloneAppearance(appearance);
+      draft = cloneAppearance(appearance);
       picker.render(saved);
     },
   };
@@ -418,6 +428,22 @@ export function mountSettingsPage(): void {
     handleFormChange,
   );
   controllers.push(appearanceController);
+
+  /*
+   * 从主题编辑器返回时页面可能来自 bfcache；此时 DOM 和 JS 状态都停留在离开前，
+   * 必须重新读取外观并重渲染主题列表，否则刚保存的主题不会出现。
+   * 主题分配草稿按“进入编辑器即丢弃”的约定一并刷新为已保存值。
+   */
+  window.addEventListener('pageshow', (event) => {
+    if (!event.persisted) {
+      return;
+    }
+    const latestAppearance = loadAppearanceResult();
+    appearanceController.reload(latestAppearance.appearance);
+    renderLoadStatus(elements.loadBanner, loadResult.status, latestAppearance);
+    clearError();
+    refreshSavebar();
+  });
 
   elements.resetButton.addEventListener('click', () => {
     if (saving) {
