@@ -18,13 +18,18 @@ export interface GameThemePickerOptions {
   readonly root: HTMLElement;
   /** “应用到”对话框确认后回调；只更新页面 draft，不直接写存储。 */
   readonly onAssign: (themeId: string, sizes: readonly PuzzleSize[]) => void;
+  /**
+   * 删除自定义主题；只更新页面 draft，不直接写存储。
+   * 调用方需要同步重渲染 picker，删除后的焦点会落到新建主题加号卡。
+   */
+  readonly onRemove: (themeId: string) => void;
 }
 
 /**
  * 设置页主题列表。
  *
- * 负责渲染“当前分配”总览、按阶数覆盖的主题卡、加号卡和回退警告；
- * 不读写存储、不判断脏状态。对话框确认结果交给设置页 controller。
+ * 负责渲染按阶数覆盖的主题卡、加号卡和回退警告；不读写存储、不判断脏状态。
+ * 分配和删除结果都交给设置页 controller 更新 draft。
  */
 export interface GameThemePicker {
   render(appearance: AppearanceState): void;
@@ -68,6 +73,7 @@ function createThemeCard(
   appearance: AppearanceState,
   previews: ThemePreview[],
   onOpen: () => void,
+  onRemove: () => void,
 ): HTMLElement {
   const coverage = getThemeCoverage(appearance, theme.id);
   const coverageSummary = formatCoverageSummary(coverage);
@@ -141,20 +147,33 @@ function createThemeCard(
   card.append(surface);
 
   if (!theme.builtin) {
+    const actions = document.createElement('div');
+    actions.className = 'theme-card__actions';
+
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'theme-card__delete';
+    remove.setAttribute('aria-label', `删除主题：${theme.name}`);
+    remove.title = '删除主题';
+    remove.append(createIcon('trash-2'));
+    remove.addEventListener('click', onRemove);
+
     const edit = document.createElement('a');
     edit.className = 'theme-card__edit';
     edit.href = `${GAME_THEME_EDITOR_URL}?theme=${encodeURIComponent(theme.id)}`;
     edit.setAttribute('aria-label', `编辑主题：${theme.name}`);
     edit.title = '编辑主题';
     edit.append(createIcon('pencil'));
-    card.append(edit);
+
+    actions.append(remove, edit);
+    card.append(actions);
   }
 
   return card;
 }
 
 export function createGameThemePicker(options: GameThemePickerOptions): GameThemePicker {
-  const { root, onAssign } = options;
+  const { root, onAssign, onRemove } = options;
   let previews: ThemePreview[] = [];
   let currentAppearance: AppearanceState | null = null;
 
@@ -193,6 +212,15 @@ export function createGameThemePicker(options: GameThemePickerOptions): GameThem
     });
   }
 
+  /**
+   * 删除后整张卡消失，原触发按钮也会被销毁；焦点改放到加号卡，
+   * 避免重新渲染后掉到 body。
+   */
+  function removeTheme(theme: Theme): void {
+    onRemove(theme.id);
+    root.querySelector<HTMLElement>('.theme-add-card')?.focus();
+  }
+
   function render(appearance: AppearanceState): void {
     destroyCurrent();
     currentAppearance = appearance;
@@ -204,9 +232,17 @@ export function createGameThemePicker(options: GameThemePickerOptions): GameThem
 
     for (const theme of appearance.themes) {
       grid.append(
-        createThemeCard(theme, appearance, previews, () => {
-          openAssignment(theme);
-        }),
+        createThemeCard(
+          theme,
+          appearance,
+          previews,
+          () => {
+            openAssignment(theme);
+          },
+          () => {
+            removeTheme(theme);
+          },
+        ),
       );
     }
 

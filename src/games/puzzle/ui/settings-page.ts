@@ -13,6 +13,7 @@ import {
   assignThemeToSizes,
   cloneAppearance,
   isAppearanceEqual,
+  removeCustomTheme,
 } from '../core/appearance/appearance';
 import {
   loadAppearanceResult,
@@ -292,12 +293,14 @@ interface AppearanceController extends SettingsController {
  * 主题分配 controller。
  *
  * 维护完整 AppearanceState 的 saved / draft；“应用到”对话框只修改其中的
- * themeIdBySize，保存时再一次性写入完整外观数据。
+ * themeIdBySize，删除主题只移除 themes 并把受影响阶数落到回退主题；
+ * 两者都只在保存时一次性写入完整外观数据。
  */
 function createAppearanceController(
   initial: AppearanceState,
   elements: SettingsElements,
   onChange: () => void,
+  announce: (message: string) => void,
 ): AppearanceController {
   let saved = cloneAppearance(initial);
   let draft = cloneAppearance(initial);
@@ -312,6 +315,19 @@ function createAppearanceController(
       draft = next;
       picker.render(draft);
       onChange();
+    },
+    onRemove(themeId) {
+      const target = draft.themes.find((theme) => theme.id === themeId && !theme.builtin);
+      const next = removeCustomTheme(draft, themeId);
+      if (next === draft) {
+        return;
+      }
+      draft = next;
+      picker.render(draft);
+      onChange();
+      if (target !== undefined) {
+        announce(`已删除自定义主题“${target.name}”，保存后生效。`);
+      }
     },
   });
   picker.render(saved);
@@ -426,6 +442,7 @@ export function mountSettingsPage(): void {
     appearanceResult.appearance,
     elements,
     handleFormChange,
+    announce,
   );
   controllers.push(appearanceController);
 

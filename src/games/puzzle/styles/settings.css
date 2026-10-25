@@ -496,9 +496,9 @@ body.settings-page {
   min-height: 30px;
 }
 
-/* 自定义主题右下角有编辑按钮，标题让出按钮宽度。 */
+/* 自定义主题右下角有删除 + 编辑两个按钮，标题让出按钮宽度。 */
 .theme-card--game.theme-card--custom .theme-card__footer {
-  padding-right: 2.25rem;
+  padding-right: 4.25rem;
 }
 
 .theme-card__title {
@@ -529,21 +529,33 @@ body.settings-page {
   outline-offset: 3px;
 }
 
-.theme-card__edit {
+/* 右下角操作组：删除在左，编辑保持最右，避免改变原有编辑入口位置。 */
+.theme-card__actions {
   position: absolute;
   right: 0.75rem;
   bottom: 0.75rem;
   z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.theme-card__edit,
+.theme-card__delete {
+  appearance: none;
   display: grid;
   place-items: center;
   width: 30px;
   height: 30px;
+  padding: 0;
   border: 1px solid var(--settings-border);
   border-radius: 8px;
   background: var(--settings-surface);
   color: var(--settings-text);
   box-shadow: var(--settings-raised-shadow-active);
+  font: inherit;
   text-decoration: none;
+  cursor: pointer;
   transition:
     background-color 120ms ease,
     border-color 120ms ease,
@@ -556,12 +568,20 @@ body.settings-page {
   color: var(--color-accent);
 }
 
-.theme-card__edit:focus-visible {
+.theme-card__delete:hover {
+  border-color: var(--color-danger);
+  background: rgb(207 34 46 / 0.1);
+  color: var(--color-danger);
+}
+
+.theme-card__edit:focus-visible,
+.theme-card__delete:focus-visible {
   outline: 2px solid #1f6f9f;
   outline-offset: 2px;
 }
 
-.theme-card__edit .icon {
+.theme-card__edit .icon,
+.theme-card__delete .icon {
   width: 16px;
   height: 16px;
 }
@@ -1235,6 +1255,8 @@ body.settings-page {
 
 @media (prefers-reduced-motion: reduce) {
   .settings-savebar,
+  .theme-card__edit,
+  .theme-card__delete,
   .puzzle-dialog.theme-assignment-dialog,
   .puzzle-dialog.theme-assignment-dialog::backdrop {
     transition: none;
