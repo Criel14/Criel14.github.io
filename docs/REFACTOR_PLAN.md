@@ -138,6 +138,7 @@
 
 ## 9. 待讨论
 
+- 字体：正文自托管阿里巴巴普惠体 2.0；等宽与计时器默认 JetBrains Mono（可变字体）；游戏页 NxN 阶数使用 Saira Condensed；已预置 VT323 / Press Start 2P / DSEG7 Classic / Audiowide 供后续计时器字体设置。后续讨论把字体与游戏主题关联，需要决定主题数据结构是否扩展，以及 `--font-sans` / `--font-mono` / `--font-timer` / `--font-dimension` 的覆盖粒度。
 - 图标：游戏页已全部迁移到本地 sprite；待定线宽是否从 `1.8` 统一为 `2`，以及 `←` / `×` / `→` 是否也纳入 sprite。详见 `docs/ICONS.md`。
 - 国际化：自研 typed module / i18next / intl-messageformat；默认语言和切换入口；默认分组名 `分组N` / `GroupN` 的生成时机。
 - 设置页：是否迁移到全站 `/settings.html`、首页入口、分类扩展（游戏主题/维护/导入导出）与深色模式落地顺序，详见 `docs/SETTINGS_PAGE.md`。

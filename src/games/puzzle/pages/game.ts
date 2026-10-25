@@ -149,7 +149,8 @@ function setPressed(
 /** 把当前设置反映到左栏和分组入口。 */
 function renderSettings(settings: GameSettings, elements: GameElements): void {
   const sizeLabel = `${settings.size}×${settings.size}`;
-  elements.sizeDisplay.textContent = sizeLabel;
+  // 左栏主显示在乘号两侧留空格；标题和 aria-label 继续使用紧凑写法。
+  elements.sizeDisplay.textContent = `${settings.size} × ${settings.size}`;
   elements.sizeButton.title = `切换阶数（当前 ${sizeLabel}）`;
   elements.sizeButton.setAttribute('aria-label', elements.sizeButton.title);
   setPressed(elements.sizeOptions, 'sizeOption', String(settings.size));

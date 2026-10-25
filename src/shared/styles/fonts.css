@@ -1,0 +1,140 @@
+/*
+ * 自托管字体资源。
+ *
+ * 正文使用阿里巴巴普惠体 2.0（完整字符集）；等宽与计时器默认使用
+ * JetBrains Mono（Latin 子集），中文会回退到 --font-sans。
+ * Saira Condensed 用于 NxN 阶数显示；VT323、Press Start 2P、DSEG7 Classic、
+ * Audiowide 已入库，留给后续计时器字体设置。
+ * 字体文件均由项目自托管，不依赖外部 CDN。
+ */
+
+@font-face {
+  font-family: 'Alibaba PuHuiTi 2.0';
+  src: url('../fonts/alibaba-puhuiti-2-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 计时器与等宽文本默认字体。可变字体覆盖 100–800，700 使用真实粗体。 */
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('../fonts/jetbrains-mono-variable.woff2') format('woff2');
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Saira Condensed 用于 NxN 阶数显示；VT323、Press Start 2P、DSEG7 Classic、
+ * Audiowide 留给后续计时器字体设置。 */
+@font-face {
+  font-family: 'VT323';
+  src: url('../fonts/vt323-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Saira Condensed';
+  src: url('../fonts/saira-condensed-thin.woff2') format('woff2');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Saira Condensed';
+  src: url('../fonts/saira-condensed-extralight.woff2') format('woff2');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Saira Condensed';
+  src: url('../fonts/saira-condensed-light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Saira Condensed';
+  src: url('../fonts/saira-condensed-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Saira Condensed';
+  src: url('../fonts/saira-condensed-medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Saira Condensed';
+  src: url('../fonts/saira-condensed-semibold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Saira Condensed';
+  src: url('../fonts/saira-condensed-bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Saira Condensed';
+  src: url('../fonts/saira-condensed-extrabold.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Saira Condensed';
+  src: url('../fonts/saira-condensed-black.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Press Start 2P';
+  src: url('../fonts/press-start-2p-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG7 Classic';
+  src: url('../fonts/dseg7-classic-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG7 Classic';
+  src: url('../fonts/dseg7-classic-bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Audiowide';
+  src: url('../fonts/audiowide-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}

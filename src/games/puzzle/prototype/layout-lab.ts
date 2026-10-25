@@ -75,7 +75,7 @@ function syncPressedByString(
 
 function updateSizeDisplay(): void {
   const label = `${size}×${size}`;
-  sizeDisplay.textContent = label;
+  sizeDisplay.textContent = `${size} × ${size}`;
   sizeButton.title = `切换阶数（当前 ${label}）`;
   sizeButton.setAttribute('aria-label', sizeButton.title);
 }

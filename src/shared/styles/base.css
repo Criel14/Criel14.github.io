@@ -1,6 +1,7 @@
+@import './fonts.css';
+
 :root {
   color-scheme: light;
-  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
   font-size: 16px;
   line-height: 1.6;
 
@@ -26,8 +27,25 @@
   --color-danger: #cf222e;
   --color-overlay: rgb(0 0 0 / 0.45);
 
-  --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  /*
+   * 字体栈：正文使用自托管的阿里巴巴普惠体；等宽与计时器默认使用
+   * JetBrains Mono。等宽栈里的中文会继续向后回退到普惠体。
+   */
+  --font-sans:
+    'Alibaba PuHuiTi 2.0', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC',
+    sans-serif;
+  --font-mono:
+    'JetBrains Mono', 'Alibaba PuHuiTi 2.0', 'SFMono-Regular', Consolas, 'Liberation Mono',
+    monospace;
+  /*
+   * 计时器独立字体 token：目前固定 JetBrains Mono，后续设置页切换字体时
+   * 只需要覆盖这个变量，不影响其他等宽文本。
+   */
+  --font-timer: 'JetBrains Mono', 'Alibaba PuHuiTi 2.0', monospace;
+  /* NxN 大阶数显示：Saira Condensed 更紧凑，适合做大号数字。 */
+  --font-dimension: 'Saira Condensed', 'JetBrains Mono', 'Alibaba PuHuiTi 2.0', monospace;
 
+  font-family: var(--font-sans);
   color: var(--color-text);
   background-color: var(--color-bg);
   -webkit-font-smoothing: antialiased;
