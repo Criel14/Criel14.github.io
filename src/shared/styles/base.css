@@ -38,10 +38,22 @@
     'JetBrains Mono', 'Alibaba PuHuiTi 2.0', 'SFMono-Regular', Consolas, 'Liberation Mono',
     monospace;
   /*
-   * 计时器独立字体 token：目前固定 JetBrains Mono，后续设置页切换字体时
-   * 只需要覆盖这个变量，不影响其他等宽文本。
+   * 计时器字体栈与排版参数。设置页把 site.v1.preferences.timerFont 写到
+   * <html data-timer-font>，下面按字体 ID 覆盖 --font-timer；设置页预览卡
+   * 通过 data-timer-font-preview 复用同一组 token，保证示例和游戏页一致。
+   * JetBrains Mono 的负字距和大字号是按原计时器调过的，其他字体需要独立
+   * 调整字重/字距/缩放，避免像素字体过宽或数码管数字粘连。
    */
-  --font-timer: 'JetBrains Mono', 'Alibaba PuHuiTi 2.0', monospace;
+  --font-timer-jetbrains-mono: 'JetBrains Mono', 'Alibaba PuHuiTi 2.0', monospace;
+  --font-timer-press-start-2p: 'Press Start 2P', 'JetBrains Mono', 'Alibaba PuHuiTi 2.0', monospace;
+  --font-timer-dseg7-classic: 'DSEG7 Classic', 'JetBrains Mono', 'Alibaba PuHuiTi 2.0', monospace;
+  --font-timer-audiowide: 'Audiowide', 'JetBrains Mono', 'Alibaba PuHuiTi 2.0', monospace;
+
+  --font-timer: var(--font-timer-jetbrains-mono);
+  --timer-font-weight: 700;
+  --timer-letter-spacing: -0.08em;
+  --timer-font-scale: 1;
+
   /* NxN 大阶数显示：Saira Condensed 更紧凑，适合做大号数字。 */
   --font-dimension: 'Saira Condensed', 'JetBrains Mono', 'Alibaba PuHuiTi 2.0', monospace;
 
@@ -50,6 +62,42 @@
   background-color: var(--color-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/*
+ * 计时器字体选择器同时覆盖根节点（游戏页实际计时）和设置页预览卡。
+ * 预览卡上重复写一遍默认字体参数，避免预览依赖根节点当前选择。
+ */
+:root[data-timer-font='jetbrains-mono'],
+[data-timer-font-preview='jetbrains-mono'] {
+  --font-timer: var(--font-timer-jetbrains-mono);
+  --timer-font-weight: 700;
+  --timer-letter-spacing: -0.08em;
+  --timer-font-scale: 1;
+}
+
+:root[data-timer-font='press-start-2p'],
+[data-timer-font-preview='press-start-2p'] {
+  --font-timer: var(--font-timer-press-start-2p);
+  --timer-font-weight: 400;
+  --timer-letter-spacing: 0;
+  --timer-font-scale: 0.6;
+}
+
+:root[data-timer-font='dseg7-classic'],
+[data-timer-font-preview='dseg7-classic'] {
+  --font-timer: var(--font-timer-dseg7-classic);
+  --timer-font-weight: 700;
+  --timer-letter-spacing: 0.01em;
+  --timer-font-scale: 0.9;
+}
+
+:root[data-timer-font='audiowide'],
+[data-timer-font-preview='audiowide'] {
+  --font-timer: var(--font-timer-audiowide);
+  --timer-font-weight: 400;
+  --timer-letter-spacing: 0.01em;
+  --timer-font-scale: 0.9;
 }
 
 *,

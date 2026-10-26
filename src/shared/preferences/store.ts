@@ -4,6 +4,7 @@ import {
   SITE_PREFERENCES_VERSION,
   isSiteLanguage,
   isThemeMode,
+  isTimerFontId,
   type SitePreferences,
 } from './types';
 
@@ -76,6 +77,7 @@ function toPreferencesStoreError(error: unknown): PreferencesStoreError {
  * 归一化偏好。
  *
  * - 只接受约定的枚举值，非法或缺失字段回退默认值；
+ * - timerFont 缺失时回退默认字体，兼容新增字段前的 version 1 数据；
  * - 未知字段直接忽略，避免旧版本或未来字段污染当前数据；
  * - 返回新对象，调用方不能通过共享引用改动默认值。
  */
@@ -87,6 +89,9 @@ export function normalizePreferences(raw: unknown): SitePreferences {
       ? record.themeMode
       : DEFAULT_SITE_PREFERENCES.themeMode,
     language: isSiteLanguage(record.language) ? record.language : DEFAULT_SITE_PREFERENCES.language,
+    timerFont: isTimerFontId(record.timerFont)
+      ? record.timerFont
+      : DEFAULT_SITE_PREFERENCES.timerFont,
   };
 }
 
@@ -109,7 +114,7 @@ export function createBrowserPreferencesStorage(): PreferencesStorage {
  * - missing：没有写过偏好，静默使用默认值；
  * - corrupt：JSON、信封或字段损坏，使用归一化结果并让页面提示；
  * - unavailable：浏览器存储不可用，使用默认值并提示；
- * - ok：信封和两个字段都合法。
+ * - ok：信封和三个字段都合法；旧数据缺少 timerFont 也视为合法。
  *
  * 字段级损坏时仍保留合法字段，避免一个错误值丢掉另一项可恢复的偏好。
  */
@@ -144,7 +149,15 @@ export function loadPreferences(
 
   const data = parsed.data;
   const preferences = normalizePreferences(data);
-  const valid = isThemeMode(data.themeMode) && isSiteLanguage(data.language);
+  /*
+   * timerFont 是 version 1 内新增的向后兼容字段：旧数据没有这个键时
+   * 按默认字体处理，不应把整份偏好标记为损坏；字段存在但非法时才报
+   * corrupt，并保留同一条数据里合法的 themeMode / language。
+   * VT323 已从可选字体中移除，历史值 'vt323' 同样按默认字体静默回退。
+   */
+  const timerFontValid =
+    data.timerFont === undefined || data.timerFont === 'vt323' || isTimerFontId(data.timerFont);
+  const valid = isThemeMode(data.themeMode) && isSiteLanguage(data.language) && timerFontValid;
 
   return {
     status: valid ? 'ok' : 'corrupt',

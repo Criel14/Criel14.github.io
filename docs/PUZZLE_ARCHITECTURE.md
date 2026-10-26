@@ -278,7 +278,7 @@ export interface AppearanceState {
 | --- | --- | --- |
 | 游戏设置 | localStorage | `puzzle.v2.settings`，`{ version: 3, data: GameSettings }` |
 | 外观主题 | localStorage | `puzzle.v2.appearance`，`{ version: 4, data: AppearanceState }` |
-| 全站偏好 | localStorage | `site.v1.preferences`，`{ version: 1, data: SitePreferences }` |
+| 全站偏好 | localStorage | `site.v1.preferences`，`{ version: 1, data: SitePreferences }`（颜色主题、计时器字体、语言） |
 | 成绩摘要 | IndexedDB | DB `puzzle.v2` → store `scores`，主键 `id` |
 | 录像 | IndexedDB | DB `puzzle.v2` → store `replays`，主键 `scoreId` |
 
@@ -293,12 +293,12 @@ IndexedDB 索引：
 ### 5.2 读写规则
 
 - 拼图设置、外观：同步读写；设置缺失/损坏回退默认值，外观缺失回退默认彩虹、损坏时尽量恢复且无法解析的阶数回退系统回退主题、不可用/版本不兼容整体回退系统回退主题；写入失败显示非阻塞提示。
-- 全站偏好：由设置页独立读写，不参与游戏页 settings/appearance 的启动加载；缺失、损坏或不可用的处理见 `docs/SETTINGS_PAGE.md`。
+- 全站偏好：设置页负责写入；游戏页在启动、bfcache 恢复和跨标签页 `storage` 变更时读取并应用计时器字体，不参与拼图 settings/appearance 的启动加载；缺失、损坏或不可用的处理见 `docs/SETTINGS_PAGE.md`。
 - 成绩、录像：异步 repository；新增、删除、按桶/按事件清空都在**同一个 IndexedDB 事务**中完成，不再需要写入顺序和回滚逻辑。
 - 统计页只调用 `listScoresByBucket(filter)`，不加载录像；回放页只加载一条成绩和一条录像。
 - 所有读取都经过 schema 校验；非法成绩跳过，非法/缺失录像返回 `null`，不让整页崩溃。
 - 写入失败（配额不足、IndexedDB 不可用、blocked）返回明确的 `DataStoreError`；游戏页保留待保存队列，并通过提示上的“重试保存”再次写入，已成功写入的数据不受影响。
-- 不做多标签页实时同步；IndexedDB 事务本身安全，页面刷新后可见其他标签页的修改。
+- 成绩/录像不做多标签页实时同步；IndexedDB 事务本身安全，页面刷新后可见其他标签页的修改。全站偏好在 `storage` 事件中即时重新应用。
 
 ### 5.3 录像编码
 
@@ -333,7 +333,7 @@ clearLegacyData(): void;
 
 ### 5.5 存储选型
 
-- 设置、外观和全站偏好继续使用同步 `localStorage`：数据小、启动即用；全站偏好由设置页独立读写。
+- 设置、外观和全站偏好继续使用同步 `localStorage`：数据小、启动即用；全站偏好由设置页写入，游戏页启动时读取计时器字体。
 - 成绩、录像使用 IndexedDB：配额更大、支持索引查询和跨 store 原子事务。
 - IndexedDB 通过 `idb` 轻量封装；单元测试使用 `fake-indexeddb`。
 - 页面只依赖 repository 接口，不直接操作 localStorage / IndexedDB。
@@ -973,7 +973,7 @@ types ← core ← ui   ← pages
 | ---------- | ---------------------------------------- | ------------------------------------------------------- |
 | 旧数据     | 不迁移、不兼容                           | 站点已无用户；减少历史特例和迁移代码                    |
 | 存储分层   | localStorage（设置/外观/全站偏好）+ IndexedDB（成绩/录像） | 小数据同步读写；大数据支持索引、配额和原子事务 |
-| 全站偏好   | `site.v1.preferences`，version 1         | 外观/语言与拼图私有数据分开；迁移全站设置页不迁移数据    |
+| 全站偏好   | `site.v1.preferences`，version 1         | 颜色主题/计时器字体/语言与拼图私有数据分开；迁移全站设置页不迁移数据 |
 | 设置页     | 独立页面 + 草稿/保存条                   | 分类可扩展；避免模态框拥挤；重置/丢弃语义清晰            |
 | 主题色     | `#3498DB` + 白字                         | 统一设置页和游戏页选中态；接受小字号对比度取舍          |
 | 成绩模型   | 只存事实，派生值读时算                   | 消除 time/tps/ao/number 不一致                          |

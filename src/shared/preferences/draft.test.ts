@@ -25,6 +25,15 @@ describe('isPreferencesDirty', () => {
     ).toBe(true);
   });
 
+  it('timerFont 不同返回 true', () => {
+    expect(
+      isPreferencesDirty(DEFAULT_SITE_PREFERENCES, {
+        ...DEFAULT_SITE_PREFERENCES,
+        timerFont: 'audiowide',
+      }),
+    ).toBe(true);
+  });
+
   it('归一化后比较，未知字段不会造成假脏状态', () => {
     const saved = { ...DEFAULT_SITE_PREFERENCES } as SitePreferences;
     const draft = {
@@ -38,7 +47,11 @@ describe('isPreferencesDirty', () => {
 
 describe('resetPreferencesDraft', () => {
   it('恢复上次保存值，并返回新对象', () => {
-    const saved: SitePreferences = { themeMode: 'dark', language: 'en' };
+    const saved: SitePreferences = {
+      themeMode: 'dark',
+      language: 'en',
+      timerFont: 'audiowide',
+    };
 
     const draft = resetPreferencesDraft(saved);
 

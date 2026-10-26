@@ -98,7 +98,7 @@
 - **拼图旧数据不迁移、不兼容**。旧键 `config`、`scores`、`currentScore`、`currentScoreList` 不再读取。
 - 旧键只提供显式清理入口（`src/games/puzzle/data/legacy.ts`），不自动删除；GitHub Pages 与 Netlify 需分别清理。
 - **存储分层**：拼图设置、外观存 localStorage；成绩列表和录像存 IndexedDB（DB `puzzle.v2`，stores `scores` / `replays`，索引 `by-bucket` / `by-event`）。
-- **全站偏好**：主题模式/语言存 localStorage `site.v1.preferences`（version 1），与拼图设置/外观分开；P8-4b 设置页读取和保存，详见 `docs/SETTINGS_PAGE.md`。
+- **全站偏好**：颜色主题/计时器字体/语言存 localStorage `site.v1.preferences`（version 1），与拼图设置/外观分开；P8-4b 设置页读取和保存，详见 `docs/SETTINGS_PAGE.md`。
 - **游戏主题**：存 localStorage `puzzle.v2.appearance`（version 4）；内置主题 canonical，自定义主题上限 20 个；主题有 `supportedSizes`，按阶数分配存 `themeIdBySize`；异常/不兼容时使用系统回退主题；详见 `docs/PUZZLE_THEME.md`。
 - **主题逐块外观**：`palette` / `fontPalette` 逐块；空白色、盲玩色、内边框、metrics 整盘统一；内边框用 inset shadow + padding，字号按边框内区域计算。
 - **主题编辑器**：不升级 `puzzle.v2.appearance` schema；新建主题只在内存创建 draft，保存后才写入；名称 20 显示宽度只在编辑器执行；50 步撤销/重做只存内存快照，不落存储。
@@ -138,7 +138,7 @@
 
 ## 9. 待讨论
 
-- 字体：正文自托管阿里巴巴普惠体 2.0；等宽与计时器默认 JetBrains Mono（可变字体）；游戏页 NxN 阶数使用 Saira Condensed；已预置 VT323 / Press Start 2P / DSEG7 Classic / Audiowide 供后续计时器字体设置。后续讨论把字体与游戏主题关联，需要决定主题数据结构是否扩展，以及 `--font-sans` / `--font-mono` / `--font-timer` / `--font-dimension` 的覆盖粒度。
+- 字体：正文自托管阿里巴巴普惠体 2.0；等宽与计时器默认 JetBrains Mono（可变字体）；游戏页 NxN 阶数使用 Saira Condensed；设置页“外观 → 计时器字体”已接入 DSEG7 Classic / Audiowide / Press Start 2P，偏好存入 `site.v1.preferences.timerFont`，只影响游戏页计时数字。后续讨论把字体与游戏主题关联，需要决定主题数据结构是否扩展，以及 `--font-sans` / `--font-mono` / `--font-timer` / `--font-dimension` 的覆盖粒度。
 - 图标：游戏页已全部迁移到本地 sprite；待定线宽是否从 `1.8` 统一为 `2`，以及 `←` / `×` / `→` 是否也纳入 sprite。详见 `docs/ICONS.md`。
 - 国际化：自研 typed module / i18next / intl-messageformat；默认语言和切换入口；默认分组名 `分组N` / `GroupN` 的生成时机。
 - 设置页：是否迁移到全站 `/settings.html`、首页入口、分类扩展（游戏主题/维护/导入导出）与深色模式落地顺序，详见 `docs/SETTINGS_PAGE.md`。

@@ -46,6 +46,9 @@ import {
   saveSettings,
   type SettingsLoadResult,
 } from '../data/settings-store';
+import { applyPreferences } from '../../../shared/preferences/apply';
+import { loadPreferences } from '../../../shared/preferences/store';
+import { SITE_PREFERENCES_STORAGE_KEY } from '../../../shared/preferences/types';
 import { attachBoardInput } from '../ui/board-input';
 import { createBoardView, type BoardView } from '../ui/board-view';
 import { formatDuration, formatTps } from '../ui/format';
@@ -1209,6 +1212,20 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
     exitRetry();
   });
   lifecycle.listen(document, 'keydown', handleKeydown);
+  /*
+   * 设置页可能在另一个标签页保存（游戏页保留当前局），也可能由 bfcache
+   * 恢复；这两种情况都不会重新执行 boot，需要重新读取偏好并切换字体 token。
+   */
+  lifecycle.listen(window, 'pageshow', (event) => {
+    if (event instanceof PageTransitionEvent && event.persisted) {
+      applyStoredPreferences();
+    }
+  });
+  lifecycle.listen(window, 'storage', (event) => {
+    if (event instanceof StorageEvent && event.key === SITE_PREFERENCES_STORAGE_KEY) {
+      applyStoredPreferences();
+    }
+  });
   bindPopovers();
   updateControlState();
 
@@ -1224,11 +1241,18 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
   });
 }
 
+/** 读取并应用全站偏好；启动、bfcache 恢复和跨标签页保存后共用。 */
+function applyStoredPreferences(): void {
+  applyPreferences(loadPreferences().preferences);
+}
+
 function boot(): void {
   const lifecycle = createLifecycle();
   const notifier = createNotifier({ signal: lifecycle.signal });
 
   try {
+    // 计时器字体必须在首帧前应用，避免从默认 JetBrains Mono 闪切到用户字体。
+    applyStoredPreferences();
     renderPage(lifecycle, notifier);
   } catch (error) {
     console.error('数字华容道游戏页初始化失败', error);

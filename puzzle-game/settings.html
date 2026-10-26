@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="设置网站外观、语言和游戏主题。" />
+    <meta name="description" content="设置网站颜色主题、计时器字体、语言和游戏主题。" />
     <title>设置</title>
     <link rel="stylesheet" href="../src/shared/styles/base.css" />
     <link rel="stylesheet" href="../src/games/puzzle/styles/settings.css" />
@@ -39,10 +39,10 @@
           hidden
         >
           <h2 class="settings-section__title" id="settings-appearance-title" tabindex="-1">
-            网站外观
+            颜色主题
           </h2>
           <p class="settings-section__description">
-            选择网站的显示主题。深色主题将在后续版本提供。
+            选择网站的颜色主题。深色主题将在后续版本提供。
           </p>
 
           <div class="theme-options" role="radiogroup" aria-labelledby="settings-appearance-title">
@@ -140,6 +140,126 @@
           <p class="settings-note" data-theme-note hidden>
             当前版本暂不支持该主题；选择“浅色”后可以保存。
           </p>
+
+          <h3 class="settings-subtitle" id="settings-timer-font-title">计时器字体</h3>
+          <p class="settings-section__description">
+            选择游戏页计时器使用的字体。仅影响计时数字，不影响步数、TPS 等其他数据。
+          </p>
+
+          <div
+            class="timer-font-options"
+            role="radiogroup"
+            aria-labelledby="settings-timer-font-title"
+          >
+            <label class="theme-card timer-font-card">
+              <input
+                class="theme-card__input"
+                type="radio"
+                name="timerFont"
+                value="jetbrains-mono"
+                data-setting="timerFont"
+                checked
+              />
+              <span class="theme-card__surface">
+                <span
+                  class="timer-font-preview"
+                  data-timer-font-preview="jetbrains-mono"
+                  aria-hidden="true"
+                >
+                  <span class="timer-font-preview__sample">23.06</span>
+                </span>
+                <span class="theme-card__footer">
+                  <span class="theme-card__name">JetBrains Mono</span>
+                </span>
+                <span class="settings-check" aria-hidden="true">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <use href="#icon-check"></use>
+                  </svg>
+                </span>
+              </span>
+            </label>
+
+            <label class="theme-card timer-font-card">
+              <input
+                class="theme-card__input"
+                type="radio"
+                name="timerFont"
+                value="dseg7-classic"
+                data-setting="timerFont"
+              />
+              <span class="theme-card__surface">
+                <span
+                  class="timer-font-preview"
+                  data-timer-font-preview="dseg7-classic"
+                  aria-hidden="true"
+                >
+                  <span class="timer-font-preview__sample">23.06</span>
+                </span>
+                <span class="theme-card__footer">
+                  <span class="theme-card__name">DSEG7 Classic</span>
+                </span>
+                <span class="settings-check" aria-hidden="true">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <use href="#icon-check"></use>
+                  </svg>
+                </span>
+              </span>
+            </label>
+
+            <label class="theme-card timer-font-card">
+              <input
+                class="theme-card__input"
+                type="radio"
+                name="timerFont"
+                value="audiowide"
+                data-setting="timerFont"
+              />
+              <span class="theme-card__surface">
+                <span
+                  class="timer-font-preview"
+                  data-timer-font-preview="audiowide"
+                  aria-hidden="true"
+                >
+                  <span class="timer-font-preview__sample">23.06</span>
+                </span>
+                <span class="theme-card__footer">
+                  <span class="theme-card__name">Audiowide</span>
+                </span>
+                <span class="settings-check" aria-hidden="true">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <use href="#icon-check"></use>
+                  </svg>
+                </span>
+              </span>
+            </label>
+
+            <label class="theme-card timer-font-card">
+              <input
+                class="theme-card__input"
+                type="radio"
+                name="timerFont"
+                value="press-start-2p"
+                data-setting="timerFont"
+              />
+              <span class="theme-card__surface">
+                <span
+                  class="timer-font-preview"
+                  data-timer-font-preview="press-start-2p"
+                  aria-hidden="true"
+                >
+                  <span class="timer-font-preview__sample">23.06</span>
+                </span>
+                <span class="theme-card__footer">
+                  <span class="theme-card__name">Press Start 2P</span>
+                </span>
+                <span class="settings-check" aria-hidden="true">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <use href="#icon-check"></use>
+                  </svg>
+                </span>
+              </span>
+            </label>
+          </div>
         </section>
 
         <section

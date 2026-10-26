@@ -13,7 +13,7 @@
 - **设置和外观继续用 localStorage**：数据小、同步读写、页面启动即可用。
 - **游戏主题仍存 `puzzle.v2.appearance`**：内置主题 canonical、自定义主题最多 20 个；v4 数据包含 `themeIdBySize`、`supportedSizes`、`fontPalette`、`innerBorder`，颜色支持 `#rrggbb` / `#rrggbbaa`，自定义主题全按最重估算约 48KB，不需要 IndexedDB。详见 `docs/PUZZLE_THEME.md`。
 - **外观版本独立**：`puzzle.v2.settings` 保持 version 3，`puzzle.v2.appearance` 升到 version 4；不做 v3 → v4 迁移，升级时清一次 `puzzle.v2.appearance`，自定义主题会丢失。
-- **全站偏好独立存储**：外观模式/语言存 localStorage `site.v1.preferences`（version 1），与拼图设置/外观分开；详见 `docs/SETTINGS_PAGE.md`。
+- **全站偏好独立存储**：颜色主题/计时器字体/语言存 localStorage `site.v1.preferences`（version 1），与拼图设置/外观分开；`timerFont` 是 version 1 内新增的向后兼容字段，旧数据缺字段时按默认值处理。详见 `docs/SETTINGS_PAGE.md`。
 - **成绩列表和录像改用 IndexedDB**：数据大、需要按桶查询、需要原子事务。
 - **不使用 `puzzle.v2.meta`**：localStorage 的 envelope 自带 `version`，IndexedDB 用 `DB_VERSION`。
 - **分组按事件划分**：事件 = 阶数 + 游戏模式，共 18 个；每个事件固定 5 个分组，共 90 个。`GroupId` 为事件内槽位 1–5，只允许改名。详见 `docs/PUZZLE_SCORE_PAGE.md`。
@@ -125,12 +125,14 @@ v2 没有正式上线，不提供从这些键迁移到 IndexedDB 的逻辑。若
 | --- | --- |
 | key | `site.v1.preferences` |
 | envelope | `{ version: 1, data: SitePreferences }` |
-| 默认值 | `{ themeMode: 'light', language: 'zh-CN' }` |
+| 默认值 | `{ themeMode: 'light', language: 'zh-CN', timerFont: 'jetbrains-mono' }` |
 | 代码 | `src/shared/preferences/` |
 | 设计 | `docs/SETTINGS_PAGE.md` |
 
 - `themeMode` 接受 `system` / `light` / `dark`，本轮 UI 只开放 `light`。
 - `language` 接受 `zh-CN` / `en`，本轮可保存但界面暂不翻译。
+- `timerFont` 接受 `jetbrains-mono` / `dseg7-classic` / `audiowide` / `press-start-2p`，只影响游戏页计时数字；历史值 `vt323` 按默认字体静默回退。
+- 旧 version 1 数据缺少 `timerFont` 时按默认值处理，不标记为损坏。
 - 缺失键不自动写入；用户在设置页点击“保存”才创建 key。
 - 读取状态为 `ok` / `missing` / `corrupt` / `unavailable`，页面按状态提示。
 - 字段级损坏时保留可恢复字段并返回 `corrupt`；保存时再一次性归一化并覆盖原数据。

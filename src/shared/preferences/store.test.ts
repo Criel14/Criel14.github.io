@@ -47,25 +47,29 @@ describe('normalizePreferences', () => {
     expect(normalizePreferences({})).toEqual(DEFAULT_SITE_PREFERENCES);
   });
 
-  it('只保留 themeMode 和 language，忽略未知字段', () => {
+  it('只保留已知字段，忽略未知字段', () => {
     expect(
       normalizePreferences({
         themeMode: 'dark',
         language: 'en',
+        timerFont: 'audiowide',
         extra: 'ignored',
       }),
-    ).toEqual({ themeMode: 'dark', language: 'en' });
+    ).toEqual({ themeMode: 'dark', language: 'en', timerFont: 'audiowide' });
   });
 
   it('非法枚举逐字段回退默认值', () => {
     expect(normalizePreferences({ themeMode: 'sepia', language: 'en' })).toEqual({
       themeMode: 'light',
       language: 'en',
+      timerFont: 'jetbrains-mono',
     });
     expect(normalizePreferences({ themeMode: 'dark', language: 'fr' })).toEqual({
       themeMode: 'dark',
       language: 'zh-CN',
+      timerFont: 'jetbrains-mono',
     });
+    expect(normalizePreferences({ timerFont: 'comic-sans' })).toEqual(DEFAULT_SITE_PREFERENCES);
   });
 });
 
@@ -80,7 +84,20 @@ describe('loadPreferences', () => {
     expect(storage.has(SITE_PREFERENCES_STORAGE_KEY)).toBe(false);
   });
 
-  it('合法信封和字段返回 ok', () => {
+  it('合法信封和三个字段返回 ok', () => {
+    const storage = createMemoryStorage();
+    writeRaw(storage, {
+      version: SITE_PREFERENCES_VERSION,
+      data: { themeMode: 'dark', language: 'en', timerFont: 'dseg7-classic' },
+    });
+
+    expect(loadPreferences(storage)).toEqual({
+      status: 'ok',
+      preferences: { themeMode: 'dark', language: 'en', timerFont: 'dseg7-classic' },
+    });
+  });
+
+  it('旧 version 1 数据缺少 timerFont 时仍为 ok，并使用默认字体', () => {
     const storage = createMemoryStorage();
     writeRaw(storage, {
       version: SITE_PREFERENCES_VERSION,
@@ -89,7 +106,20 @@ describe('loadPreferences', () => {
 
     expect(loadPreferences(storage)).toEqual({
       status: 'ok',
-      preferences: { themeMode: 'dark', language: 'en' },
+      preferences: { themeMode: 'dark', language: 'en', timerFont: 'jetbrains-mono' },
+    });
+  });
+
+  it('已移除的 vt323 回退默认字体，不标记损坏', () => {
+    const storage = createMemoryStorage();
+    writeRaw(storage, {
+      version: SITE_PREFERENCES_VERSION,
+      data: { themeMode: 'dark', language: 'en', timerFont: 'vt323' },
+    });
+
+    expect(loadPreferences(storage)).toEqual({
+      status: 'ok',
+      preferences: { themeMode: 'dark', language: 'en', timerFont: 'jetbrains-mono' },
     });
   });
 
@@ -135,7 +165,20 @@ describe('loadPreferences', () => {
 
     expect(loadPreferences(storage)).toEqual({
       status: 'corrupt',
-      preferences: { themeMode: 'light', language: 'en' },
+      preferences: { themeMode: 'light', language: 'en', timerFont: 'jetbrains-mono' },
+    });
+  });
+
+  it('timerFont 非法时返回 corrupt，并保留其他合法字段', () => {
+    const storage = createMemoryStorage();
+    writeRaw(storage, {
+      version: SITE_PREFERENCES_VERSION,
+      data: { themeMode: 'dark', language: 'en', timerFont: 'comic-sans' },
+    });
+
+    expect(loadPreferences(storage)).toEqual({
+      status: 'corrupt',
+      preferences: { themeMode: 'dark', language: 'en', timerFont: 'jetbrains-mono' },
     });
   });
 
@@ -172,7 +215,11 @@ describe('loadPreferences', () => {
 describe('savePreferences', () => {
   it('写入 version 1 信封，并可往返读取', () => {
     const storage = createMemoryStorage();
-    const preferences = { themeMode: 'dark', language: 'en' } as const;
+    const preferences = {
+      themeMode: 'dark',
+      language: 'en',
+      timerFont: 'press-start-2p',
+    } as const;
 
     savePreferences(preferences, storage);
 

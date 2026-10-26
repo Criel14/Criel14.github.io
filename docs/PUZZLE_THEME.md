@@ -8,7 +8,7 @@
 
 ## 0. 背景与目标
 
-游戏主题只控制棋盘上方块的外观，不控制网站深浅色、页面背景、按钮、弹框或棋盘外的边框。网站外观使用 `site.v1.preferences`，游戏主题使用 `puzzle.v2.appearance`，两者互不影响。
+游戏主题只控制棋盘上方块的外观，不控制网站深浅色、页面背景、按钮、弹框或棋盘外的边框。网站颜色主题、语言与计时器字体使用 `site.v1.preferences`，游戏主题使用 `puzzle.v2.appearance`，两者互不影响。
 
 P8-4c-1 已经完成“一个主题对应一个当前选择”的列表：内置主题 + 自定义主题 + 加号卡，卡片用 radio 选中，10×10 预览。P8-4c-2 在此基础上做一次模型升级：
 
@@ -420,7 +420,7 @@ const FALLBACK_THEME: Theme = {
 
 ### 2.12 不属于 Theme 的数据
 
-- 网站深浅色、语言：`site.v1.preferences`。
+- 网站颜色主题、计时器字体、语言：`site.v1.preferences`。
 - 拼图阶数、游戏模式、操作模式、当前分组、自定义光标、极简 UI：`puzzle.v2.settings`。
 - 成绩、录像：IndexedDB `puzzle.v2`。
 - 主题只影响方块本身；页面背景、文字、按钮、边框和弹框使用 `src/shared/styles/base.css` 的语义 token。

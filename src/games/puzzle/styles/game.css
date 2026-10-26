@@ -269,10 +269,11 @@ body.game-page {
 
 .stats-time {
   font-family: var(--font-timer);
-  font-size: clamp(3.9rem, 6vw, 6.25rem);
-  font-weight: 700;
+  /* 计时器字体 token 由 base.css 按 data-timer-font 切换；缩放保证宽字体不挤出左栏。 */
+  font-size: calc(clamp(3.9rem, 6vw, 6.25rem) * var(--timer-font-scale, 1));
+  font-weight: var(--timer-font-weight, 700);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.08em;
+  letter-spacing: var(--timer-letter-spacing, -0.08em);
   line-height: 0.95;
 }
 
@@ -557,7 +558,7 @@ body.game-page {
   }
 
   .stats-time {
-    font-size: clamp(3.4rem, 6vw, 5rem);
+    font-size: calc(clamp(3.4rem, 6vw, 5rem) * var(--timer-font-scale, 1));
   }
 }
 

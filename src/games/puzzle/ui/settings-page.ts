@@ -42,6 +42,7 @@ interface SettingsElements {
   readonly saveLabel: HTMLElement;
   readonly liveRegion: HTMLElement;
   readonly themeInputs: readonly HTMLInputElement[];
+  readonly timerFontInputs: readonly HTMLInputElement[];
   readonly languageInputs: readonly HTMLInputElement[];
   readonly themeNote: HTMLElement;
   readonly gameThemeRoot: HTMLElement;
@@ -69,6 +70,7 @@ function getElements(): SettingsElements {
     saveLabel: requireElement<HTMLElement>('[data-save-label]'),
     liveRegion: requireElement<HTMLElement>('[data-live-region]'),
     themeInputs: [...document.querySelectorAll<HTMLInputElement>('[data-setting="themeMode"]')],
+    timerFontInputs: [...document.querySelectorAll<HTMLInputElement>('[data-setting="timerFont"]')],
     languageInputs: [...document.querySelectorAll<HTMLInputElement>('[data-setting="language"]')],
     themeNote: requireElement<HTMLElement>('[data-theme-note]'),
     gameThemeRoot: requireElement<HTMLElement>('[data-game-theme-picker]'),
@@ -226,10 +228,10 @@ function renderLoadStatus(
 }
 
 /**
- * 外观 + 语言共用一个 controller。
+ * 颜色主题、计时器字体和语言共用一个 controller。
  *
- * 两项都属于 `site.v1.preferences`，拆成两个 controller 会导致保存时
- * 写两次存储，无法保证一次保存的一致性。
+ * 三项都属于 `site.v1.preferences`，拆成多个 controller 会导致保存时
+ * 写多次存储，无法保证一次保存的一致性。
  */
 function createPreferencesController(
   initial: SitePreferences,
@@ -243,6 +245,9 @@ function createPreferencesController(
     for (const input of elements.themeInputs) {
       input.checked = input.value === draft.themeMode;
     }
+    for (const input of elements.timerFontInputs) {
+      input.checked = input.value === draft.timerFont;
+    }
     for (const input of elements.languageInputs) {
       input.checked = input.value === draft.language;
     }
@@ -251,17 +256,23 @@ function createPreferencesController(
 
   function handleChange(): void {
     const themeMode = elements.themeInputs.find((input) => input.checked)?.value;
+    const timerFont = elements.timerFontInputs.find((input) => input.checked)?.value;
     const language = elements.languageInputs.find((input) => input.checked)?.value;
 
     draft = normalizePreferences({
       themeMode: themeMode ?? draft.themeMode,
+      timerFont: timerFont ?? draft.timerFont,
       language: language ?? draft.language,
     });
     syncForm();
     onChange();
   }
 
-  for (const input of [...elements.themeInputs, ...elements.languageInputs]) {
+  for (const input of [
+    ...elements.themeInputs,
+    ...elements.timerFontInputs,
+    ...elements.languageInputs,
+  ]) {
     input.addEventListener('change', handleChange);
   }
 

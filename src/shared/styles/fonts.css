@@ -3,8 +3,8 @@
  *
  * 正文使用阿里巴巴普惠体 2.0（完整字符集）；等宽与计时器默认使用
  * JetBrains Mono（Latin 子集），中文会回退到 --font-sans。
- * Saira Condensed 用于 NxN 阶数显示；VT323、Press Start 2P、DSEG7 Classic、
- * Audiowide 已入库，留给后续计时器字体设置。
+ * Saira Condensed 用于 NxN 阶数显示；DSEG7 Classic、Audiowide、
+ * Press Start 2P 用于设置页计时器字体预览与游戏计时器切换。
  * 字体文件均由项目自托管，不依赖外部 CDN。
  */
 
@@ -25,16 +25,7 @@
   font-display: swap;
 }
 
-/* Saira Condensed 用于 NxN 阶数显示；VT323、Press Start 2P、DSEG7 Classic、
- * Audiowide 留给后续计时器字体设置。 */
-@font-face {
-  font-family: 'VT323';
-  src: url('../fonts/vt323-regular.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
+/* Saira Condensed 用于 NxN 阶数显示。 */
 @font-face {
   font-family: 'Saira Condensed';
   src: url('../fonts/saira-condensed-thin.woff2') format('woff2');

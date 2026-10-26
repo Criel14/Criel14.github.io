@@ -206,11 +206,71 @@ body.settings-page {
   font-size: 0.95rem;
 }
 
+/* “颜色主题”和“计时器字体”同属外观分类；用分隔线保持两个设置组的层次。 */
+.settings-subtitle {
+  margin: 2rem 0 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--settings-border);
+  font-size: 1.15rem;
+  line-height: 1.3;
+}
+
 .theme-options {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
   margin-top: 1.5rem;
+}
+
+/*
+ * 计时器字体卡比颜色主题卡更紧凑：宽屏一行四张，中等宽度两列，窄屏单列。
+ * 卡片变窄后同步缩小预览字号和内边距，保持数字占卡片宽度的比例不变。
+ */
+.timer-font-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+/* 字体卡内边距略小于颜色主题卡，给四列布局留出更多数字宽度。 */
+.timer-font-card .theme-card__surface {
+  padding: 0.625rem;
+}
+
+/* 字体预览框和游戏计时器共用 base.css 里的字体 token。 */
+.timer-font-preview {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: 0;
+  height: 76px;
+  padding: 0.5rem;
+  overflow: hidden;
+  border-color: transparent;
+  border-radius: 8px;
+  background: transparent;
+}
+
+.timer-font-preview__sample {
+  color: var(--settings-text);
+  font-family: var(--font-timer);
+  font-size: calc(clamp(2.5rem, 4vw, 2.8rem) * var(--timer-font-scale, 1));
+  font-weight: var(--timer-font-weight, 700);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--timer-letter-spacing, -0.08em);
+  /*
+   * 字体的块级盒包含 ascender/descender，直接居中会让数字整体偏上或偏下。
+   * 裁到“大写高度 → 基线”后再居中，视觉上才真正落在预览框中心。
+   */
+  text-box: trim-both cap alphabetic;
+  /*
+   * letter-spacing 也会加在最后一个字符后面；负字距会让数字看起来偏右。
+   * 用反方向的外边距抵消尾部字距，保证水平光学居中。
+   */
+  margin-right: calc(var(--timer-letter-spacing, 0) * -1);
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .theme-card,
@@ -371,6 +431,12 @@ body.settings-page {
 .theme-card__name .icon {
   width: 16px;
   height: 16px;
+}
+
+/* 字体名称保持常规字重，与卡片内其他说明文字一致；紧凑卡片用更小的上间距。 */
+.timer-font-card .theme-card__footer {
+  margin-top: 0.5rem;
+  font-weight: 400;
 }
 
 .settings-badge {
@@ -1146,6 +1212,13 @@ body.settings-page {
   border: 0;
 }
 
+@media (max-width: 1150px) {
+  /* 四列在中等宽度下会把预览数字挤到裁切，提前降为两列。 */
+  .timer-font-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 899px) {
   .settings-layout {
     grid-template-columns: minmax(0, 1fr);
@@ -1249,6 +1322,10 @@ body.settings-page {
 
 @media (max-width: 420px) {
   .theme-options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .timer-font-options {
     grid-template-columns: minmax(0, 1fr);
   }
 }

@@ -161,8 +161,8 @@ P8-1 的按钮使用真实 `<button>` / `<a>` 元素，带 `data-action`、`aria
 ### 4.2 字体与数字
 
 - 页面文字使用 `base.css` 的 `--font-sans`（自托管阿里巴巴普惠体 2.0，回退系统字体栈）。
-- 时间使用 `--font-timer`（默认自托管 JetBrains Mono）；阶数使用 `--font-dimension`（自托管 Saira Condensed 500）；步数、TPS、ao5、ao12、阶数选项使用 `--font-mono`（JetBrains Mono），保持数字等宽。
-- 计时器字体还预置了 VT323、Press Start 2P、DSEG7 Classic、Audiowide，后续设置页再接入切换。
+- 时间使用 `--font-timer`（默认自托管 JetBrains Mono），可在“设置 → 外观 → 计时器字体”切换到 DSEG7 Classic、Audiowide 或 Press Start 2P；阶数使用 `--font-dimension`（自托管 Saira Condensed 500）；步数、TPS、ao5、ao12、阶数选项使用 `--font-mono`（JetBrains Mono），保持数字等宽。
+- 计时器字体只影响 `.stats-time`；字体栈、字重、字距和缩放由 `base.css` 按 `<html data-timer-font>` 统一切换，设置页预览卡复用同一组 token。
 - 左栏 NxN 主显示在乘号两侧留普通空格（`4 × 4`）；标题和 aria-label 继续使用紧凑写法 `4×4`。
 - 右栏时间字号最大；左栏阶数字号至少与时间同级，保持显眼。
 - 右栏统计数据标签约 1.15rem、数值约 1.5rem，明显大于早期版本。

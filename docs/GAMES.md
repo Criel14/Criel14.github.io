@@ -42,7 +42,7 @@ src/games/<game-id>/
 
 - localStorage：`<game-id>.v1.<name>`，例如 `minesweeper.v1.settings`。
 - IndexedDB：使用独立数据库 `<game-id>.v1`，不要复用拼图的 `puzzle.v2`。
-- 全站偏好继续使用 `site.v1.preferences`；游戏不要另存一份语言/主题。
+- 全站偏好继续使用 `site.v1.preferences`；游戏不要另存一份语言/颜色主题/计时器字体。
 - 旧数据默认不迁移；需要兼容时先写明来源、版本和失败降级策略。删除数据必须提供显式入口，不自动清理用户数据。
 
 ## 5. 测试与验收

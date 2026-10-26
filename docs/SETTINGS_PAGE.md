@@ -1,6 +1,6 @@
 # 设置页设计与 P8-4b/P8-4c 任务
 
-> 状态：P8-4b 设置页骨架与网站偏好已实现（2026-10-24），待手动验收；P8-4c-1 主题列表已实现（2026-10-24），待手动验收；P8-4c-2 设计确认（2026-10-24），P8-4c-2a 领域模型与存储已实现（2026-10-24），P8-4c-2b 设置页按阶数分配已实现（2026-10-25），待手动验收；P8-4c-2d 主题编辑器已实现（2026-10-25），自动检查通过，待手动验收；P8-4c-2e 自定义主题删除已实现（2026-10-25），自动检查通过，待手动验收。游戏主题的完整模型以 `docs/PUZZLE_THEME.md` 为准。
+> 状态：P8-4b 设置页骨架与网站偏好已实现（2026-10-24），待手动验收；P8-4c-1 主题列表已实现（2026-10-24），待手动验收；P8-4c-2 设计确认（2026-10-24），P8-4c-2a 领域模型与存储已实现（2026-10-24），P8-4c-2b 设置页按阶数分配已实现（2026-10-25），待手动验收；P8-4c-2d 主题编辑器已实现（2026-10-25），自动检查通过，待手动验收；P8-4c-2e 自定义主题删除已实现（2026-10-25），自动检查通过，待手动验收；计时器字体设置已实现（2026-10-26），自动检查通过，待手动验收。游戏主题的完整模型以 `docs/PUZZLE_THEME.md` 为准。
 >
 > 分支：`refactor/vite-ts`
 >
@@ -24,7 +24,8 @@ P8-4b 的目标是把设置页的骨架、网站偏好和保存流程做扎实�
 
 - 新增独立设置页 `/puzzle-game/settings.html`。
 - 分类导航：显示设置（外观、语言）、游戏（游戏主题）、更多（关于）。
-- 网站外观：浅色可选；跟随系统、深色置灰并标记“开发中”。
+- 颜色主题：浅色可选；跟随系统、深色置灰并标记“开发中”。
+- 计时器字体：JetBrains Mono、DSEG7 Classic、Audiowide、Press Start 2P 可选，默认 JetBrains Mono。
 - 语言：中文、English 均可选；保存语言偏好，但本轮不实现界面翻译。
 - 游戏主题：只做分类和占位内容，不读写现有外观数据。
 - 关于：仓库、GitHub、邮箱、存储说明。
@@ -163,16 +164,14 @@ function canOpenSettings(): boolean {
 │ [←]  设置                                                    │
 │                                                              │
 │ ┌──────────────────┐  ┌────────────────────────────────────┐ │
-│ │ 显示设置          │  │ 网站外观                            │ │
-│ │   外观            │  │ 选择网站的显示主题。                │ │
+│ │ 显示设置          │  │ 颜色主题                            │ │
+│ │   外观            │  │ 选择网站的颜色主题。                │ │
 │ │   语言            │  │ ┌────────┐ ┌────────┐ ┌────────┐  │ │
 │ │ 游戏              │  │ │跟随系统│ │ 浅色   │ │ 深色   │  │ │
 │ │   游戏主题        │  │ └────────┘ └────────┘ └────────┘  │ │
 │ │ 更多              │  │                                    │ │
-│ │   关于            │  │ 语言                                │ │
-│ │                   │  │ ┌────────────┐ ┌────────────┐      │ │
-│ │                   │  │ │ 中文       │ │ English    │      │ │
-│ │                   │  │ └────────────┘ └────────────┘      │ │
+│ │   关于            │  │ 计时器字体                         │ │
+│ │                   │  │ 4 张字体卡，预览文本 23.06         │ │
 │ └──────────────────┘  └────────────────────────────────────┘ │
 │                                                              │
 │              [你有未保存的修改。]  [重置]  [保存]             │
@@ -196,7 +195,7 @@ function canOpenSettings(): boolean {
 
 - 浅灰浮起卡片、浅灰页面背景、细边框、顶部白色高光和双层阴影。
 - 不使用渐变、玻璃模糊、大面积重阴影。
-- 字体使用 `base.css` 的 `--font-sans`（自托管阿里巴巴普惠体 2.0），不引入外部 CDN；等宽部分使用 `--font-mono`（JetBrains Mono），游戏页 NxN 阶数使用 `--font-dimension`（Saira Condensed）；计时器字体选项已入库，设置 UI 待后续加入。
+- 字体使用 `base.css` 的 `--font-sans`（自托管阿里巴巴普惠体 2.0），不引入外部 CDN；等宽部分使用 `--font-mono`（JetBrains Mono），游戏页 NxN 阶数使用 `--font-dimension`（Saira Condensed）；计时器字体可在“外观 → 计时器字体”中选择 JetBrains Mono、DSEG7 Classic、Audiowide 或 Press Start 2P。
 - 小标题、分类标签可以使用 `--font-mono` 和字距，增加工具感。
 - 按钮、导航卡、内容卡、主题/语言卡、空状态和保存条共用同一套浮起表面；主按钮使用主题蓝。
 - 警告条保留黄色语义，但圆角、边框和阴影沿用同一套规则。
@@ -270,13 +269,15 @@ function canOpenSettings(): boolean {
 
 ## 4. 分类内容
 
-### 4.1 外观（网站外观）
+### 4.1 外观（颜色主题与计时器字体）
 
-导航短标签：`外观`；内容标题：`网站外观`。
+导航短标签：`外观`；内容大标题：`颜色主题`。
+
+#### 颜色主题
 
 说明文案：
 
-> 选择网站的显示主题。深色主题将在后续版本提供。
+> 选择网站的颜色主题。深色主题将在后续版本提供。
 
 三张主题卡：
 
@@ -291,6 +292,30 @@ function canOpenSettings(): boolean {
 - 禁用卡仍然展示深色/跟随系统的视觉预期，但不允许选择。
 - 本轮不写 `prefers-color-scheme` 监听，也不切换页面 CSS。
 - `themeMode` 字段仍然接受 `system` / `light` / `dark`，为后续深色主题保留；如果从存储中读到非 `light` 值，页面不崩溃，对应禁用卡仍显示为已选，并提示“当前版本暂不生效”，用户可以选择浅色并保存。
+
+#### 计时器字体
+
+同一分类下用 `h3` “计时器字体”分隔，说明文案：
+
+> 选择游戏页计时器使用的字体。仅影响计时数字，不影响步数、TPS 等其他数据。
+
+四张字体卡：
+
+| 选项            | 值                | 说明                               |
+| --------------- | ----------------- | ---------------------------------- |
+| JetBrains Mono  | `jetbrains-mono`  | 默认；与旧版计时器排版一致         |
+| DSEG7 Classic   | `dseg7-classic`   | 数码管风格                         |
+| Audiowide       | `audiowide`       | 科技风                             |
+| Press Start 2P  | `press-start-2p`  | 像素风；字面宽，使用更小缩放       |
+
+- 宽屏一行四张；中等宽度自动降为两列，窄屏单列，卡片宽度与预览字号同步收缩，避免数字被裁切。
+- 卡片上方是透明预览区，居中显示大号 `23.06`；下方只显示字体名，不显示“默认”徽标；字体名使用常规字重，并与卡片内容左对齐。
+- 预览数字用 `text-box: trim-both cap alphabetic` 按大写高度/基线做光学居中，并抵消尾部字距；字号在 `2.5–2.8rem` 之间随视口调整。
+- 预览文字加 `aria-hidden="true"`，避免读屏把示例数字当成选项名。
+- 选中态、悬停、键盘焦点和勾选标记复用颜色主题卡。
+- 字体只影响游戏页 `.stats-time`；步数、TPS、ao5、ao12、成绩页和回放页不变。
+- 字体选择进入 `site.v1.preferences` 草稿，随底部保存条保存；重置恢复上次保存值。
+- 每种字体的字体栈、字重、字距和缩放定义在 `src/shared/styles/base.css`；设置页预览卡和游戏页计时器共用同一组 token，避免示例与实际效果漂移。
 
 ### 4.2 语言
 
@@ -365,7 +390,7 @@ interface SettingsPageState {
 
 - 初始：`saved = draft = loadPreferencesResult().preferences`。
 - 用户修改控件：只更新 `draft`，不写 localStorage，不应用到页面。
-- `isDirty = saved.themeMode !== draft.themeMode || saved.language !== draft.language`。
+- `isDirty` 在归一化后比较 `themeMode`、`language`、`timerFont`；任一不同即显示保存条。
 - 修改回原值：`isDirty` 变回 false，保存条自动消失。
 - 保存成功：`saved = draft = normalize(draft)`，保存条消失。
 - 重置：`draft = saved`，保存条消失。
@@ -457,7 +482,7 @@ interface SettingsController {
 }
 ```
 
-- 本轮只有一个 `site-preferences` controller，同时负责外观和语言。
+- `site-preferences` controller 同时负责颜色主题、计时器字体和语言。
 - 关于页没有 controller，不参与脏状态。
 - P8-4c-2 的主题列表作为第二个 controller（`puzzle-theme`）接入，负责 `themeIdBySize` 的 draft/保存/重置和回退警告。
 - “应用到”对话框确认只更新 `puzzle-theme` controller 的 draft；底部保存条统一保存。
@@ -482,7 +507,8 @@ site.v1.preferences
   "version": 1,
   "data": {
     "themeMode": "light",
-    "language": "zh-CN"
+    "language": "zh-CN",
+    "timerFont": "jetbrains-mono"
   }
 }
 ```
@@ -503,20 +529,28 @@ site.v1.preferences
 ```ts
 export type ThemeMode = 'system' | 'light' | 'dark';
 export type SiteLanguage = 'zh-CN' | 'en';
+export type TimerFontId =
+  | 'jetbrains-mono'
+  | 'dseg7-classic'
+  | 'audiowide'
+  | 'press-start-2p';
 
 export interface SitePreferences {
   readonly themeMode: ThemeMode;
   readonly language: SiteLanguage;
+  readonly timerFont: TimerFontId;
 }
 
 export const DEFAULT_SITE_PREFERENCES: SitePreferences = {
   themeMode: 'light',
   language: 'zh-CN',
+  timerFont: 'jetbrains-mono',
 };
 ```
 
 - 默认使用 `light` 而不是 `system`，因为本轮没有深色主题，跟随系统也不会产生可见效果。
 - 语言默认 `zh-CN`。
+- 计时器默认 `jetbrains-mono`，与旧版游戏页保持一致。
 - 类型放在 `src/shared/preferences/`，不依赖拼图模块。
 
 ### 6.3 归一化
@@ -525,9 +559,12 @@ export const DEFAULT_SITE_PREFERENCES: SitePreferences = {
 
 - `themeMode` 只接受 `system` / `light` / `dark`，非法值回退 `light`。
 - `language` 只接受 `zh-CN` / `en`，非法值回退 `zh-CN`。
+- `timerFont` 只接受四个约定 ID，非法值回退 `jetbrains-mono`。
 - 忽略未知字段。
 - 非对象、缺字段、类型错误不抛异常，回退默认值。
 - 本轮 UI 只允许选择 `light`，但归一化接受三种主题值，避免未来版本写入的数据被当前版本破坏。
+- 旧 version 1 数据缺少 `timerFont` 时按默认字体处理，不标记为损坏。
+- 已移除的 VT323 历史值 `vt323` 也按默认字体静默回退，不提示数据损坏。
 
 ### 6.4 读取状态
 
@@ -550,7 +587,7 @@ interface PreferencesLoadResult {
 - 读取失败不阻塞页面渲染。
 - 读取时不在缺失状态下自动写入默认值；只有用户点击保存才创建 key。
 - `corrupt` 时不自动覆盖原数据；用户保存时才覆盖。
-- 字段级损坏只回退出问题的字段，另一个合法字段继续保留。
+- 字段级损坏只回退出问题的字段，其余合法字段继续保留。
 - 保存成功后清除读取警告 banner，因为此时存储里已经是归一化后的有效数据。
 - 警告条使用页面内 banner，不使用模态框。
 
@@ -569,9 +606,10 @@ interface PreferencesLoadResult {
 
 - 设置 `document.documentElement.dataset.theme`；`system` 暂按 `light` 处理，存储中的 `dark` 会写入 dataset，但本轮没有对应 CSS，不产生可见效果。
 - 设置 `document.documentElement.dataset.language`（供后续调试/i18n 使用）。
+- 设置 `document.documentElement.dataset.timerFont`；`base.css` 根据该属性切换 `--font-timer`、字重、字距和缩放。
 - 不修改 `<html lang>`。
 - 不设置 `color-scheme: dark`，因为深色 CSS 尚未实现。
-- 不重新加载页面；本轮两个偏好都没有可见的即时效果。
+- 不重新加载页面；设置页保存后更新根节点 dataset，字体预览卡本身始终展示各自的字体。游戏页在启动、bfcache 恢复或收到跨标签页 `storage` 事件时重新读取并应用偏好，因此返回游戏页后计时器会使用新字体。
 - 后续深色模式接入时，在这里解析 `system` 并设置 `color-scheme` 和 `data-theme`。
 
 保存失败：
@@ -583,6 +621,7 @@ interface PreferencesLoadResult {
 ### 6.6 版本与迁移
 
 - 新 key 从 `version: 1` 开始。
+- `timerFont` 是在 version 1 内新增的向后兼容字段：旧数据缺字段时按默认值处理，不升版本、不丢已有主题/语言偏好；字段存在但非法时才报 `corrupt`。
 - 本轮不做旧数据迁移，也不读取旧 `config` 等键。
 - 版本不匹配视为 `corrupt`，回退默认值并提示。
 - 未来需要迁移时，在 `src/shared/preferences/` 内增加版本分支，不把迁移逻辑散落到页面。
@@ -680,7 +719,7 @@ interface SettingsController {
 - 保存失败时保留草稿并显示错误；
 - 保存成功后统一宣布结果。
 
-本轮 `site-preferences` controller 负责外观和语言；关于页没有 controller。
+`site-preferences` controller 负责颜色主题、计时器字体和语言；关于页没有 controller。
 
 ### 8.3 未来分类接入
 
@@ -939,7 +978,7 @@ npm run build
 
 保存流程：
 
-- [ ] 初始为浅色 + 中文，底部没有保存条。
+- [ ] 初始为浅色 + 中文 + JetBrains Mono，底部没有保存条。
 - [ ] 选择 English 后出现保存条。
 - [ ] 改回中文后保存条自动消失。
 - [ ] 再次选择 English，点击“重置”恢复中文，保存条消失。
@@ -955,6 +994,9 @@ npm run build
 各分类：
 
 - [ ] 浅色卡默认选中；跟随系统/深色禁用并显示“开发中”和 tooltip。
+- [ ] “计时器字体”显示 4 张字体卡，预览文本为 `23.06`，下方只显示字体名且不加粗。
+- [ ] JetBrains Mono 默认选中；切换字体后出现保存条，保存后刷新仍保持。
+- [ ] 每种字体预览都使用对应字体，且在大、小屏都不溢出预览框。
 - [ ] 语言卡显示“英文界面翻译将在后续版本提供”的说明。
 - [ ] 游戏主题显示内置/自定义主题卡片，预览按支持的最大阶数渲染。
 - [ ] 卡片右上角覆盖徽标正确；未使用主题无徽标；多张卡片可同时使用中。
@@ -974,6 +1016,10 @@ npm run build
 - [ ] 保存失败且待保存队列未清空时，设置入口保持禁用；重试保存成功后恢复。
 - [ ] 阶数、模式、操作、分组弹框选中项为主题蓝。
 - [ ] 设置页返回后游戏页正常开始新局。
+- [ ] 切换计时器字体并保存后，游戏页计时数字使用新字体；步数、TPS、ao5、ao12 不受影响。
+- [ ] 在新标签页保存字体后切回原游戏页，计时器字体即时更新（storage）。
+- [ ] 从设置页浏览器后退回游戏页（bfcache），计时器字体也更新。
+- [ ] `1:02.34` 等较长时间格式在各字体下不溢出、不粘连。
 
 响应式与可访问性：
 
@@ -999,7 +1045,8 @@ localStorage['site.v1.preferences']
   "version": 1,
   "data": {
     "themeMode": "light",
-    "language": "en"
+    "language": "en",
+    "timerFont": "jetbrains-mono"
   }
 }
 ```
@@ -1022,6 +1069,9 @@ localStorage['site.v1.preferences']
 - 版本不匹配返回 `corrupt` + 默认值。
 - 非法 `themeMode` 回退 `light`。
 - 非法 `language` 回退 `zh-CN`。
+- 非法 `timerFont` 回退 `jetbrains-mono`。
+- 旧 version 1 数据缺少 `timerFont` 时为 `ok`，并使用默认字体。
+- 已移除的 VT323 历史值 `vt323` 为 `ok`，并回退默认字体。
 - 未知字段被忽略。
 - 保存写入 `{ version: 1, data }`。
 - 保存后读取可往返。
@@ -1033,6 +1083,7 @@ localStorage['site.v1.preferences']
 - 相同偏好返回 `false`。
 - `themeMode` 不同返回 `true`。
 - `language` 不同返回 `true`。
+- `timerFont` 不同返回 `true`。
 - 重置后返回 `false`。
 - 归一化后比较不受未知字段影响。
 

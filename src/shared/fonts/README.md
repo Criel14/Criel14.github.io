@@ -8,12 +8,11 @@
 | --------------------------------- | ------------------------- | ---------------------------------------- |
 | `alibaba-puhuiti-2-regular.woff2` | Alibaba PuHuiTi 2.0 / 400 | 全站正文、标题、按钮、棋盘数字           |
 | `jetbrains-mono-variable.woff2`   | JetBrains Mono / 100–800  | **等宽文本与计时器默认字体**（可变字体） |
-| `vt323-regular.woff2`             | VT323 / 400               | 计时器可选字体                           |
 | `saira-condensed-*.woff2`         | Saira Condensed / 100–900 | **NxN 阶数显示**，共 9 个字重            |
-| `press-start-2p-regular.woff2`    | Press Start 2P / 400      | 计时器可选字体                           |
-| `dseg7-classic-regular.woff2`     | DSEG7 Classic / 400       | 计时器可选字体（数码管）                 |
-| `dseg7-classic-bold.woff2`        | DSEG7 Classic / 700       | 计时器可选字体（数码管）                 |
-| `audiowide-regular.woff2`         | Audiowide / 400           | 计时器可选字体                           |
+| `press-start-2p-regular.woff2`    | Press Start 2P / 400      | 计时器可选字体（设置页已接入）           |
+| `dseg7-classic-regular.woff2`     | DSEG7 Classic / 400       | 计时器可选字体（数码管，设置页已接入）   |
+| `dseg7-classic-bold.woff2`        | DSEG7 Classic / 700       | 计时器可选字体（数码管，设置页已接入）   |
+| `audiowide-regular.woff2`         | Audiowide / 400           | 计时器可选字体（设置页已接入）           |
 
 除阿里巴巴普惠体外，其余字体都只保留 Basic Latin、Latin-1、常用标点与箭头；中文字符由 `--font-sans` 回退，避免把完整 CJK 字体放进仓库。
 
@@ -30,11 +29,6 @@
 
 - 来源：JetBrains Mono 2.304，使用 `JetBrainsMono[wght].ttf` 可变字体。
 - 版权与许可：SIL Open Font License 1.1，完整文本见 `OFL-JetBrainsMono.txt`。
-
-### VT323
-
-- 来源：VT323 Regular。
-- 许可：SIL Open Font License 1.1，完整文本见 `OFL-VT323.txt`。
 
 ### Saira Condensed
 
