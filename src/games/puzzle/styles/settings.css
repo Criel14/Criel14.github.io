@@ -206,13 +206,13 @@ body.settings-page {
   font-size: 0.95rem;
 }
 
-/* “颜色主题”和“计时器字体”同属外观分类；用分隔线保持两个设置组的层次。 */
+/* “颜色主题”和“计时器字体”视觉同级；用分隔线和更大的上间距区分设置组。 */
 .settings-subtitle {
   margin: 2rem 0 0;
   padding-top: 1.5rem;
   border-top: 1px solid var(--settings-border);
-  font-size: 1.15rem;
-  line-height: 1.3;
+  font-size: 1.5rem;
+  line-height: 1.25;
 }
 
 .theme-options {
