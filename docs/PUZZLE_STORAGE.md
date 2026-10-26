@@ -131,7 +131,7 @@ v2 没有正式上线，不提供从这些键迁移到 IndexedDB 的逻辑。若
 
 - `themeMode` 接受 `system` / `light` / `dark`，本轮 UI 只开放 `light`。
 - `language` 接受 `zh-CN` / `en`，本轮可保存但界面暂不翻译。
-- `timerFont` 接受 `jetbrains-mono` / `dseg7-classic` / `audiowide` / `press-start-2p`，只影响游戏页计时数字；历史值 `vt323` 按默认字体静默回退。
+- `timerFont` 接受 `jetbrains-mono` / `alibaba-puhuiti` / `arial` / `dseg7-classic` / `audiowide` / `press-start-2p`，只影响游戏页计时数字；历史值 `vt323` / `verdana` / `trebuchet-ms` 按默认字体静默回退。
 - 旧 version 1 数据缺少 `timerFont` 时按默认值处理，不标记为损坏。
 - 缺失键不自动写入；用户在设置页点击“保存”才创建 key。
 - 读取状态为 `ok` / `missing` / `corrupt` / `unavailable`，页面按状态提示。

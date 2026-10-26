@@ -97,6 +97,21 @@ describe('loadPreferences', () => {
     });
   });
 
+  it('接受阿里巴巴普惠体和 Arial 字体 ID', () => {
+    for (const timerFont of ['alibaba-puhuiti', 'arial'] as const) {
+      const storage = createMemoryStorage();
+      writeRaw(storage, {
+        version: SITE_PREFERENCES_VERSION,
+        data: { themeMode: 'light', language: 'zh-CN', timerFont },
+      });
+
+      expect(loadPreferences(storage)).toEqual({
+        status: 'ok',
+        preferences: { themeMode: 'light', language: 'zh-CN', timerFont },
+      });
+    }
+  });
+
   it('旧 version 1 数据缺少 timerFont 时仍为 ok，并使用默认字体', () => {
     const storage = createMemoryStorage();
     writeRaw(storage, {
@@ -110,17 +125,19 @@ describe('loadPreferences', () => {
     });
   });
 
-  it('已移除的 vt323 回退默认字体，不标记损坏', () => {
-    const storage = createMemoryStorage();
-    writeRaw(storage, {
-      version: SITE_PREFERENCES_VERSION,
-      data: { themeMode: 'dark', language: 'en', timerFont: 'vt323' },
-    });
+  it('已移除的 vt323 / verdana / trebuchet-ms 回退默认字体，不标记损坏', () => {
+    for (const timerFont of ['vt323', 'verdana', 'trebuchet-ms'] as const) {
+      const storage = createMemoryStorage();
+      writeRaw(storage, {
+        version: SITE_PREFERENCES_VERSION,
+        data: { themeMode: 'dark', language: 'en', timerFont },
+      });
 
-    expect(loadPreferences(storage)).toEqual({
-      status: 'ok',
-      preferences: { themeMode: 'dark', language: 'en', timerFont: 'jetbrains-mono' },
-    });
+      expect(loadPreferences(storage)).toEqual({
+        status: 'ok',
+        preferences: { themeMode: 'dark', language: 'en', timerFont: 'jetbrains-mono' },
+      });
+    }
   });
 
   it('JSON 损坏返回 corrupt 和默认值', () => {

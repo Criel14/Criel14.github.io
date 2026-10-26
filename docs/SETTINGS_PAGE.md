@@ -25,7 +25,7 @@ P8-4b 的目标是把设置页的骨架、网站偏好和保存流程做扎实�
 - 新增独立设置页 `/puzzle-game/settings.html`。
 - 分类导航：显示设置（外观、语言）、游戏（游戏主题）、更多（关于）。
 - 颜色主题：浅色可选；跟随系统、深色置灰并标记“开发中”。
-- 计时器字体：JetBrains Mono、DSEG7 Classic、Audiowide、Press Start 2P 可选，默认 JetBrains Mono。
+- 计时器字体：JetBrains Mono、阿里巴巴普惠体 2.0、Arial、DSEG7 Classic、Audiowide、Press Start 2P 可选，默认 JetBrains Mono。
 - 语言：中文、English 均可选；保存语言偏好，但本轮不实现界面翻译。
 - 游戏主题：只做分类和占位内容，不读写现有外观数据。
 - 关于：仓库、GitHub、邮箱、存储说明。
@@ -171,7 +171,7 @@ function canOpenSettings(): boolean {
 │ │   游戏主题        │  │ └────────┘ └────────┘ └────────┘  │ │
 │ │ 更多              │  │                                    │ │
 │ │   关于            │  │ 计时器字体                         │ │
-│ │                   │  │ 4 张字体卡，预览文本 23.06         │ │
+│ │                   │  │ 6 张字体卡，预览文本 23.06         │ │
 │ └──────────────────┘  └────────────────────────────────────┘ │
 │                                                              │
 │              [你有未保存的修改。]  [重置]  [保存]             │
@@ -195,7 +195,7 @@ function canOpenSettings(): boolean {
 
 - 浅灰浮起卡片、浅灰页面背景、细边框、顶部白色高光和双层阴影。
 - 不使用渐变、玻璃模糊、大面积重阴影。
-- 字体使用 `base.css` 的 `--font-sans`（自托管阿里巴巴普惠体 2.0），不引入外部 CDN；等宽部分使用 `--font-mono`（JetBrains Mono），游戏页 NxN 阶数使用 `--font-dimension`（Saira Condensed）；计时器字体可在“外观 → 计时器字体”中选择 JetBrains Mono、DSEG7 Classic、Audiowide 或 Press Start 2P。
+- 字体使用 `base.css` 的 `--font-sans`（自托管阿里巴巴普惠体 2.0），不引入外部 CDN；等宽部分使用 `--font-mono`（JetBrains Mono），游戏页 NxN 阶数使用 `--font-dimension`（Saira Condensed）；计时器字体可在“外观 → 计时器字体”中选择 JetBrains Mono、阿里巴巴普惠体 2.0、Arial、DSEG7 Classic、Audiowide 或 Press Start 2P。
 - 小标题、分类标签可以使用 `--font-mono` 和字距，增加工具感。
 - 按钮、导航卡、内容卡、主题/语言卡、空状态和保存条共用同一套浮起表面；主按钮使用主题蓝。
 - 警告条保留黄色语义，但圆角、边框和阴影沿用同一套规则。
@@ -299,23 +299,27 @@ function canOpenSettings(): boolean {
 
 > 选择游戏页计时器使用的字体。仅影响计时数字，不影响步数、TPS 等其他数据。
 
-四张字体卡：
+六张字体卡：
 
-| 选项            | 值                | 说明                               |
-| --------------- | ----------------- | ---------------------------------- |
-| JetBrains Mono  | `jetbrains-mono`  | 默认；与旧版计时器排版一致         |
-| DSEG7 Classic   | `dseg7-classic`   | 数码管风格                         |
-| Audiowide       | `audiowide`       | 科技风                             |
-| Press Start 2P  | `press-start-2p`  | 像素风；字面宽，使用更小缩放       |
+| 选项                | 值                  | 说明                               |
+| ------------------- | ------------------- | ---------------------------------- |
+| JetBrains Mono      | `jetbrains-mono`    | 默认；与旧版计时器排版一致         |
+| 阿里巴巴普惠体 2.0  | `alibaba-puhuiti`   | 站点正文同款；常规字重             |
+| Arial               | `arial`             | 经典无衬线；使用系统字体           |
+| DSEG7 Classic       | `dseg7-classic`     | 数码管风格                         |
+| Audiowide           | `audiowide`         | 科技风                             |
+| Press Start 2P      | `press-start-2p`    | 像素风；字面宽，使用更小缩放       |
 
-- 宽屏一行四张；中等宽度自动降为两列，窄屏单列，卡片宽度与预览字号同步收缩，避免数字被裁切。
+- 宽屏一行四张，剩余卡片自动换行；中等宽度自动降为两列，窄屏单列，卡片宽度与预览字号同步收缩，避免数字被裁切。
 - 卡片上方是透明预览区，居中显示大号 `23.06`；下方只显示字体名，不显示“默认”徽标；字体名使用常规字重，并与卡片内容左对齐。
 - 预览数字用 `text-box: trim-both cap alphabetic` 按大写高度/基线做光学居中，并抵消尾部字距；字号在 `2.5–2.8rem` 之间随视口调整。
+- 计时数字关闭字偶距（`font-kerning: none`），避免部分字体在数字变化时宽度跳动。
 - 预览文字加 `aria-hidden="true"`，避免读屏把示例数字当成选项名。
 - 选中态、悬停、键盘焦点和勾选标记复用颜色主题卡。
 - 字体只影响游戏页 `.stats-time`；步数、TPS、ao5、ao12、成绩页和回放页不变。
 - 字体选择进入 `site.v1.preferences` 草稿，随底部保存条保存；重置恢复上次保存值。
 - 每种字体的字体栈、字重、字距和缩放定义在 `src/shared/styles/base.css`；设置页预览卡和游戏页计时器共用同一组 token，避免示例与实际效果漂移。
+- Arial 直接引用系统字体，不打包字体文件；缺少时回退到相近的无衬线字体，不同系统的实际外观可能略有差异。
 
 ### 4.2 语言
 
@@ -531,6 +535,8 @@ export type ThemeMode = 'system' | 'light' | 'dark';
 export type SiteLanguage = 'zh-CN' | 'en';
 export type TimerFontId =
   | 'jetbrains-mono'
+  | 'alibaba-puhuiti'
+  | 'arial'
   | 'dseg7-classic'
   | 'audiowide'
   | 'press-start-2p';
@@ -559,12 +565,12 @@ export const DEFAULT_SITE_PREFERENCES: SitePreferences = {
 
 - `themeMode` 只接受 `system` / `light` / `dark`，非法值回退 `light`。
 - `language` 只接受 `zh-CN` / `en`，非法值回退 `zh-CN`。
-- `timerFont` 只接受四个约定 ID，非法值回退 `jetbrains-mono`。
+- `timerFont` 只接受六个约定 ID，非法值回退 `jetbrains-mono`。
 - 忽略未知字段。
 - 非对象、缺字段、类型错误不抛异常，回退默认值。
 - 本轮 UI 只允许选择 `light`，但归一化接受三种主题值，避免未来版本写入的数据被当前版本破坏。
 - 旧 version 1 数据缺少 `timerFont` 时按默认字体处理，不标记为损坏。
-- 已移除的 VT323 历史值 `vt323` 也按默认字体静默回退，不提示数据损坏。
+- 已移除的 VT323、Verdana、Trebuchet MS 历史值也按默认字体静默回退，不提示数据损坏。
 
 ### 6.4 读取状态
 
@@ -994,7 +1000,7 @@ npm run build
 各分类：
 
 - [ ] 浅色卡默认选中；跟随系统/深色禁用并显示“开发中”和 tooltip。
-- [ ] “计时器字体”显示 4 张字体卡，预览文本为 `23.06`，下方只显示字体名且不加粗。
+- [ ] “计时器字体”显示 6 张字体卡，预览文本为 `23.06`，下方只显示字体名且不加粗。
 - [ ] JetBrains Mono 默认选中；切换字体后出现保存条，保存后刷新仍保持。
 - [ ] 每种字体预览都使用对应字体，且在大、小屏都不溢出预览框。
 - [ ] 语言卡显示“英文界面翻译将在后续版本提供”的说明。
@@ -1070,8 +1076,9 @@ localStorage['site.v1.preferences']
 - 非法 `themeMode` 回退 `light`。
 - 非法 `language` 回退 `zh-CN`。
 - 非法 `timerFont` 回退 `jetbrains-mono`。
+- 新增的阿里巴巴普惠体和 Arial 字体 ID 可正常读取。
 - 旧 version 1 数据缺少 `timerFont` 时为 `ok`，并使用默认字体。
-- 已移除的 VT323 历史值 `vt323` 为 `ok`，并回退默认字体。
+- 已移除的 VT323、Verdana、Trebuchet MS 历史值为 `ok`，并回退默认字体。
 - 未知字段被忽略。
 - 保存写入 `{ version: 1, data }`。
 - 保存后读取可往返。

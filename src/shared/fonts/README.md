@@ -4,17 +4,19 @@
 
 ## 文件清单
 
-| 文件                              | 字体家族 / 字重           | 用途                                     |
-| --------------------------------- | ------------------------- | ---------------------------------------- |
-| `alibaba-puhuiti-2-regular.woff2` | Alibaba PuHuiTi 2.0 / 400 | 全站正文、标题、按钮、棋盘数字           |
-| `jetbrains-mono-variable.woff2`   | JetBrains Mono / 100–800  | **等宽文本与计时器默认字体**（可变字体） |
-| `saira-condensed-*.woff2`         | Saira Condensed / 100–900 | **NxN 阶数显示**，共 9 个字重            |
-| `press-start-2p-regular.woff2`    | Press Start 2P / 400      | 计时器可选字体（设置页已接入）           |
-| `dseg7-classic-regular.woff2`     | DSEG7 Classic / 400       | 计时器可选字体（数码管，设置页已接入）   |
-| `dseg7-classic-bold.woff2`        | DSEG7 Classic / 700       | 计时器可选字体（数码管，设置页已接入）   |
-| `audiowide-regular.woff2`         | Audiowide / 400           | 计时器可选字体（设置页已接入）           |
+| 文件                              | 字体家族 / 字重           | 用途                                       |
+| --------------------------------- | ------------------------- | ------------------------------------------ |
+| `alibaba-puhuiti-2-regular.woff2` | Alibaba PuHuiTi 2.0 / 400 | 全站正文、标题、按钮、棋盘数字；计时器可选 |
+| `jetbrains-mono-variable.woff2`   | JetBrains Mono / 100–800  | **等宽文本与计时器默认字体**（可变字体）   |
+| `saira-condensed-*.woff2`         | Saira Condensed / 100–900 | **NxN 阶数显示**，共 9 个字重              |
+| `press-start-2p-regular.woff2`    | Press Start 2P / 400      | 计时器可选字体（设置页已接入）             |
+| `dseg7-classic-regular.woff2`     | DSEG7 Classic / 400       | 计时器可选字体（数码管，设置页已接入）     |
+| `dseg7-classic-bold.woff2`        | DSEG7 Classic / 700       | 计时器可选字体（数码管，设置页已接入）     |
+| `audiowide-regular.woff2`         | Audiowide / 400           | 计时器可选字体（设置页已接入）             |
 
 除阿里巴巴普惠体外，其余字体都只保留 Basic Latin、Latin-1、常用标点与箭头；中文字符由 `--font-sans` 回退，避免把完整 CJK 字体放进仓库。
+
+计时器可选的 Arial 是系统字体，不在本目录中打包，由 `base.css` 的字体栈直接引用；缺少 Arial 时会回退到相近的无衬线字体。
 
 ## 字体来源与许可
 

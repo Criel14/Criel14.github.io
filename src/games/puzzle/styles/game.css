@@ -271,8 +271,10 @@ body.game-page {
   font-family: var(--font-timer);
   /* 计时器字体 token 由 base.css 按 data-timer-font 切换；缩放保证宽字体不挤出左栏。 */
   font-size: calc(clamp(3.9rem, 6vw, 6.25rem) * var(--timer-font-scale, 1));
-  font-weight: var(--timer-font-weight, 700);
+  font-weight: var(--timer-font-weight, 500);
   font-variant-numeric: tabular-nums;
+  /* 部分字体会给重复数字加字距，关闭字偶距避免计时刷新时宽度跳动。 */
+  font-kerning: none;
   letter-spacing: var(--timer-letter-spacing, -0.08em);
   line-height: 0.95;
 }

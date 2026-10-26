@@ -3,8 +3,9 @@
  *
  * 正文使用阿里巴巴普惠体 2.0（完整字符集）；等宽与计时器默认使用
  * JetBrains Mono（Latin 子集），中文会回退到 --font-sans。
- * Saira Condensed 用于 NxN 阶数显示；DSEG7 Classic、Audiowide、
- * Press Start 2P 用于设置页计时器字体预览与游戏计时器切换。
+ * Saira Condensed 用于 NxN 阶数显示；阿里巴巴普惠体、Arial、DSEG7 Classic、
+ * Audiowide、Press Start 2P 用于设置页计时器字体预览与游戏计时器切换。
+ * Arial 是系统字体，不打包文件，由 base.css 引用。
  * 字体文件均由项目自托管，不依赖外部 CDN。
  */
 

@@ -153,10 +153,15 @@ export function loadPreferences(
    * timerFont 是 version 1 内新增的向后兼容字段：旧数据没有这个键时
    * 按默认字体处理，不应把整份偏好标记为损坏；字段存在但非法时才报
    * corrupt，并保留同一条数据里合法的 themeMode / language。
-   * VT323 已从可选字体中移除，历史值 'vt323' 同样按默认字体静默回退。
+   * VT323、Verdana、Trebuchet MS 曾进入开发版本，但已从可选字体中移除；
+   * 这些历史值同样按默认字体静默回退，不把整份偏好标记为损坏。
    */
   const timerFontValid =
-    data.timerFont === undefined || data.timerFont === 'vt323' || isTimerFontId(data.timerFont);
+    data.timerFont === undefined ||
+    data.timerFont === 'vt323' ||
+    data.timerFont === 'verdana' ||
+    data.timerFont === 'trebuchet-ms' ||
+    isTimerFontId(data.timerFont);
   const valid = isThemeMode(data.themeMode) && isSiteLanguage(data.language) && timerFontValid;
 
   return {

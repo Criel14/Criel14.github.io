@@ -18,6 +18,8 @@ export type SiteLanguage = 'zh-CN' | 'en';
  */
 export const TIMER_FONT_IDS = [
   'jetbrains-mono',
+  'alibaba-puhuiti',
+  'arial',
   'dseg7-classic',
   'audiowide',
   'press-start-2p',

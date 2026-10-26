@@ -45,12 +45,19 @@
    * 调整字重/字距/缩放，避免像素字体过宽或数码管数字粘连。
    */
   --font-timer-jetbrains-mono: 'JetBrains Mono', 'Alibaba PuHuiTi 2.0', monospace;
+  --font-timer-alibaba-puhuiti: 'Alibaba PuHuiTi 2.0', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --font-timer-press-start-2p: 'Press Start 2P', 'JetBrains Mono', 'Alibaba PuHuiTi 2.0', monospace;
   --font-timer-dseg7-classic: 'DSEG7 Classic', 'JetBrains Mono', 'Alibaba PuHuiTi 2.0', monospace;
   --font-timer-audiowide: 'Audiowide', 'JetBrains Mono', 'Alibaba PuHuiTi 2.0', monospace;
+  /*
+   * Arial 是系统字体，不打包文件，只声明字体栈；不同系统可能回退到相近字体，
+   * 因此优先保证“干净、普通”的观感，不追求跨平台逐像素一致。
+   */
+  --font-timer-arial:
+    Arial, 'Helvetica Neue', Helvetica, 'Liberation Sans', 'Nimbus Sans', sans-serif;
 
   --font-timer: var(--font-timer-jetbrains-mono);
-  --timer-font-weight: 700;
+  --timer-font-weight: 500;
   --timer-letter-spacing: -0.08em;
   --timer-font-scale: 1;
 
@@ -71,9 +78,18 @@
 :root[data-timer-font='jetbrains-mono'],
 [data-timer-font-preview='jetbrains-mono'] {
   --font-timer: var(--font-timer-jetbrains-mono);
-  --timer-font-weight: 700;
+  --timer-font-weight: 500;
   --timer-letter-spacing: -0.08em;
   --timer-font-scale: 1;
+}
+
+/* 站点正文同款字体，只有 400 字重；缩放与字距按计时器数字单独调校。 */
+:root[data-timer-font='alibaba-puhuiti'],
+[data-timer-font-preview='alibaba-puhuiti'] {
+  --font-timer: var(--font-timer-alibaba-puhuiti);
+  --timer-font-weight: 400;
+  --timer-letter-spacing: -0.01em;
+  --timer-font-scale: 1.02;
 }
 
 :root[data-timer-font='press-start-2p'],
@@ -98,6 +114,15 @@
   --timer-font-weight: 400;
   --timer-letter-spacing: 0.01em;
   --timer-font-scale: 0.9;
+}
+
+/* 普通系统字体：常规字重，缩放用于和 JetBrains Mono 的视觉宽度对齐。 */
+:root[data-timer-font='arial'],
+[data-timer-font-preview='arial'] {
+  --font-timer: var(--font-timer-arial);
+  --timer-font-weight: 400;
+  --timer-letter-spacing: -0.01em;
+  --timer-font-scale: 1.05;
 }
 
 *,

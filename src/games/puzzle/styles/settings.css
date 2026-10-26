@@ -256,8 +256,10 @@ body.settings-page {
   color: var(--settings-text);
   font-family: var(--font-timer);
   font-size: calc(clamp(2.5rem, 4vw, 2.8rem) * var(--timer-font-scale, 1));
-  font-weight: var(--timer-font-weight, 700);
+  font-weight: var(--timer-font-weight, 500);
   font-variant-numeric: tabular-nums;
+  /* 部分字体会给重复数字加字距，关闭字偶距避免预览和计时宽度跳动。 */
+  font-kerning: none;
   letter-spacing: var(--timer-letter-spacing, -0.08em);
   /*
    * 字体的块级盒包含 ascender/descender，直接居中会让数字整体偏上或偏下。
@@ -433,9 +435,10 @@ body.settings-page {
   height: 16px;
 }
 
-/* 字体名称保持常规字重，与卡片内其他说明文字一致；紧凑卡片用更小的上间距。 */
+/* 字体名称保持常规字重；左缩进略大于预览区内边距，避免贴住卡片边缘。 */
 .timer-font-card .theme-card__footer {
   margin-top: 0.5rem;
+  padding-inline-start: 0.75rem;
   font-weight: 400;
 }
 
