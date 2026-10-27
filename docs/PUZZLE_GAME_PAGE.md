@@ -600,15 +600,15 @@ P8-1 以当前实验室为视觉基线。正式实现时先复用结构和样式
 
 - [~] 文件：`src/shared/preferences/types.ts`、`store.ts`、`apply.ts`、`src/games/puzzle/ui/settings-page.ts`、`puzzle-game/settings.html`、`src/games/puzzle/pages/game.ts`、`src/games/puzzle/styles/game.css`
 - 内容：
-  - 设置页“外观 → 鼠标指针”卡片下方追加一张同款勾选卡片“开始移动时只显示计时器”，不新增分组标题。
+  - 设置页“外观”新增 `h3`“UI 显示”，其下方放同款勾选卡片“开始移动时只显示计时器”。
   - 偏好存入 `site.v1.preferences.timerOnlyOnMove`，默认 `false`；旧 version 1 数据缺字段时按 `false` 处理，不升版本；通过 `<html data-timer-only-on-move>` 下发给游戏页。
-  - 游戏页在每局第一次有效移动（`observing → running`）后读取偏好；开启时隐藏左栏菜单、步数/TPS/ao、成绩列表/分组入口、刷新按钮和重玩状态栏，只保留棋盘与计时数字。
+  - 游戏页在每局第一次有效移动（`observing → running`）后读取偏好；开启时隐藏左栏菜单、步数/TPS/ao、成绩列表/分组入口和重玩状态栏，保留棋盘、计时数字和刷新按钮。
   - 不改变棋盘位置和尺寸，避免第一步时页面跳动。
   - 完成复原时恢复完整 UI；开新局回到观察阶段时也恢复。重玩中不保留退出按钮；不提供中途退出极简视图的入口。
   - 不读写 `puzzle.v2.settings.minimalUi`；该字段保留为历史预留值。
-- 验收：设置项保存/重置/刷新正确；观察阶段完整 UI；第一次有效移动后只剩棋盘和计时；完成/开新局恢复；关闭设置后行为不变。
+- 验收：设置项保存/重置/刷新正确；观察阶段完整 UI；第一次有效移动后只保留棋盘、计时和刷新按钮；完成/开新局恢复；关闭设置后行为不变。
 - 依赖：P8-2、P8-3、P8-4b。
-- 实现备注（2026-10-27）：偏好字段已加入 `site.v1.preferences`，设置页共用现有保存条；`applyPreferences` 写 `<html data-timer-only-on-move>`；游戏页在 `observing → running` 时读取并添加 `body.game-page--timer-only`，完成复原、开新局和退出重玩时移除。CSS 使用 `visibility: hidden` 保留三栏网格和计时器位置，隐藏元素不进入 Tab 顺序；重玩状态栏一并隐藏。`npm test`（488 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 均通过，待手动验收。
+- 实现备注（2026-10-27）：偏好字段已加入 `site.v1.preferences`，设置页共用现有保存条；设置页新增 `h3`“UI 显示”小标题；`applyPreferences` 写 `<html data-timer-only-on-move>`；游戏页在 `observing → running` 时读取并添加 `body.game-page--timer-only`，完成复原、开新局和退出重玩时移除。CSS 使用 `visibility: hidden` 保留三栏网格和计时器位置，隐藏元素不进入 Tab 顺序；重玩状态栏一并隐藏，刷新按钮保持可见。`npm test`（488 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 均通过，待手动验收。
 
 ### P8-5b 移动端横屏（TODO，暂缓）
 

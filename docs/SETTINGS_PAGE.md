@@ -338,17 +338,17 @@ function canOpenSettings(): boolean {
 
 #### 极简计时
 
-在“鼠标指针”卡片下方追加一张同款勾选卡片，不新增 `h3` 分组；说明文案：
+同一分类下用 `h3` “UI 显示”分隔；说明文案：
 
-> 开启后，数字华容道每局第一次有效移动时会隐藏菜单、统计明细和入口，只保留计时器；完成复原或开始新局后恢复完整界面。只影响游戏页。
+> 控制数字华容道游戏页运行期间的界面显示。开启后，每局第一次有效移动时会隐藏菜单、统计明细和入口，只保留棋盘、计时器和刷新按钮；完成复原或开始新局后恢复完整界面。只影响游戏页。
 
-一个整行可点的勾选卡片：
+“UI 显示”下方放一个整行可点的勾选卡片：
 
 - 标题“开始移动时只显示计时器”，使用原生 `<input type="checkbox">`，默认不勾选。
 - 存储字段为 `site.v1.preferences.timerOnlyOnMove`，默认 `false`；与颜色主题、计时器字体、鼠标指针、语言共用同一个保存条和 controller。
 - 偏好通过 `<html data-timer-only-on-move="true|false">` 下发；游戏页在第一次有效移动时读取该 dataset，不把偏好写进 `puzzle.v2.settings`。
 - 游戏页在 `observing → running` 的第一次有效移动后读取该偏好；只在每局运行期间隐藏其他 UI，不改变棋盘位置、不重开当前局。
-- 隐藏范围：左栏菜单、步数/TPS/ao5/ao12、成绩列表和分组入口、棋盘刷新按钮、重玩状态栏；保留棋盘和计时数字。
+- 隐藏范围：左栏菜单、步数/TPS/ao5/ao12、成绩列表和分组入口、重玩状态栏；保留棋盘、计时数字和棋盘下方的刷新按钮。
 - 完成复原时恢复完整 UI；开始新局回到观察阶段时也恢复。重玩中不保留退出按钮；中途没有额外退出极简视图的入口。
 - 不新增 `puzzle.v2.settings.minimalUi` 的读写；该字段保留为历史预留值。
 
@@ -997,7 +997,7 @@ elements.settingsLink.title = canOpen
 
 实现备注（2026-10-25）：P8-4c-2b 用 `theme-coverage.ts` 统一覆盖摘要与完整阶数文案；卡片按钮打开原生 `<dialog>`，确认后只更新 `puzzle-theme` 的 draft。`loadAppearanceResult()` 的 `issue` 用于区分版本不兼容和普通损坏提示；`puzzle-game/settings.html` 已加载 `overlays.css`。根据视觉反馈，已移除“当前分配”9 格总览，保留卡片网格上方的回退警告，并增加卡片高度与预览顶部留白。P8-4c-2d 的编辑器已实现并替代占位页；设置页新增 bfcache 重读逻辑，主题分配 controller 暴露 `reload()`。自动检查已通过；用户已于 2026-10-27 手动验收。
 
-实现备注（2026-10-27，极简计时）：`site.v1.preferences` 新增 `timerOnlyOnMove`（默认 `false`，旧 version 1 数据缺字段仍为 `ok`），`applyPreferences` 写入 `<html data-timer-only-on-move>`。设置页在“鼠标指针”卡片下方追加同款勾选卡片，共用 `site-preferences` controller 和底部保存条，不新增分组标题。游戏页在每局第一次有效移动时读取该 dataset，只隐藏游戏页 UI；设置页与保存逻辑不受影响。`npm test`（488 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 均通过，待手动验收。
+实现备注（2026-10-27，极简计时）：`site.v1.preferences` 新增 `timerOnlyOnMove`（默认 `false`，旧 version 1 数据缺字段仍为 `ok`），`applyPreferences` 写入 `<html data-timer-only-on-move>`。设置页在“鼠标指针”卡片下方新增 `h3`“UI 显示”和同款勾选卡片，共用 `site-preferences` controller 和底部保存条。游戏页在每局第一次有效移动时读取该 dataset，只隐藏游戏页 UI；设置页与保存逻辑不受影响。`npm test`（488 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 均通过，待手动验收。
 
 ## 12. 验收
 
@@ -1059,9 +1059,9 @@ npm run build
 - [ ] 游戏页默认显示大鼠标箭头；按钮、链接和可点击方块显示大号小手。
 - [ ] 禁用按钮不显示小手，仍显示系统 `not-allowed`。
 - [ ] 取消勾选并保存后，游戏页恢复系统光标；设置页、成绩页和回放页始终不受影响。
-- [ ] “极简计时”卡片默认不勾选；整行可点击，键盘 Space 可切换。
+- [ ] “UI 显示”小标题可见；其下方“极简计时”卡片默认不勾选；整行可点击，键盘 Space 可切换。
 - [ ] 勾选“开始移动时只显示计时器”并保存后，游戏页观察阶段仍显示完整 UI。
-- [ ] 第一次有效移动后仅保留棋盘和计时数字；菜单、步数/TPS/ao、入口、刷新按钮和重玩状态栏隐藏。
+- [ ] 第一次有效移动后仅保留棋盘、计时数字和刷新按钮；菜单、步数/TPS/ao、入口和重玩状态栏隐藏。
 - [ ] 完成复原后恢复完整 UI；按 Space 开新局后观察阶段也恢复完整 UI。
 - [ ] 取消勾选并保存后，游戏页运行期间不再隐藏 UI。
 - [ ] 语言卡显示“英文界面翻译将在后续版本提供”的说明。

@@ -578,8 +578,8 @@ html[data-game-cursor='large']
 }
 
 /*
- * 极简计时：第一次有效移动后隐藏左栏、统计明细与入口、刷新按钮和重玩状态栏，
- * 只保留棋盘和计时数字。
+ * 极简计时：第一次有效移动后隐藏左栏、统计明细与入口和重玩状态栏，
+ * 保留棋盘、计时数字和棋盘下方的刷新按钮。
  *
  * 使用 visibility 而不是 display:none：三栏网格、棋盘尺寸与计时数字的位置
  * 都保持不变，避免第一步时画面跳动；visibility:hidden 的元素不会进入 Tab
@@ -588,8 +588,7 @@ html[data-game-cursor='large']
 .game-page--timer-only .game-menu,
 .game-page--timer-only .stats-list,
 .game-page--timer-only .retry-row,
-.game-page--timer-only .stats-actions,
-.game-page--timer-only .board-refresh {
+.game-page--timer-only .stats-actions {
   visibility: hidden;
 }
 

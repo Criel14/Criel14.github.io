@@ -133,7 +133,7 @@ v2 没有正式上线，不提供从这些键迁移到 IndexedDB 的逻辑。若
 - `language` 接受 `zh-CN` / `en`，本轮可保存但界面暂不翻译。
 - `timerFont` 接受 `jetbrains-mono` / `alibaba-puhuiti` / `arial` / `dseg7-classic` / `audiowide` / `press-start-2p`，只影响游戏页计时数字；历史值 `vt323` / `verdana` / `trebuchet-ms` 按默认字体静默回退。
 - `largeCursor` 是布尔值，默认 `true`；只影响 `puzzle.html` 游戏页的大鼠标指针，不影响设置页、成绩页和回放页。
-- `timerOnlyOnMove` 是布尔值，默认 `false`；只影响 `puzzle.html` 游戏页，开启后每局第一次有效移动时隐藏其他 UI，只保留棋盘和计时。
+- `timerOnlyOnMove` 是布尔值，默认 `false`；只影响 `puzzle.html` 游戏页，开启后每局第一次有效移动时隐藏其他 UI，保留棋盘、计时和刷新按钮。
 - 旧 version 1 数据缺少 `timerFont` / `largeCursor` / `timerOnlyOnMove` 时按默认值处理，不标记为损坏。
 - 缺失键不自动写入；用户在设置页点击“保存”才创建 key。
 - 读取状态为 `ok` / `missing` / `corrupt` / `unavailable`，页面按状态提示。
@@ -638,7 +638,7 @@ npm install -D fake-indexeddb
 - 切换阶数后使用该阶数分配的主题；重玩使用成绩阶数的主题；当前阶数回退时显示一条提示。
 - 清理 `puzzle.v2.appearance` 后回到默认彩虹外观；v3 数据触发回退提示。
 - 隐私模式/存储不可用的提示。
-- 开启极简计时后，第一次有效移动只保留棋盘和计时，完成/开新局恢复。
+- 开启极简计时后，第一次有效移动只保留棋盘、计时和刷新按钮，完成/开新局恢复。
 
 ## 9. 目录与依赖边界
 
