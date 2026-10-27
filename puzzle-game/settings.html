@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="设置网站颜色主题、计时器字体、语言和游戏主题。" />
+    <meta name="description" content="设置网站颜色主题、计时器字体、鼠标指针、语言和游戏主题。" />
     <title>设置</title>
     <link rel="stylesheet" href="../src/shared/styles/base.css" />
     <link rel="stylesheet" href="../src/games/puzzle/styles/settings.css" />
@@ -310,6 +310,33 @@
               </span>
             </label>
           </div>
+
+          <h3 class="settings-subtitle" id="settings-cursor-title">鼠标指针</h3>
+          <p class="settings-section__description" id="settings-cursor-description">
+            启用后，游戏页会使用更大的鼠标指针，高速移动时更容易看清位置；悬停在按钮等可点击元素上时仍显示小手。
+          </p>
+
+          <label class="cursor-card">
+            <input
+              class="cursor-card__input"
+              type="checkbox"
+              data-setting="largeCursor"
+              aria-labelledby="settings-cursor-toggle-label"
+              aria-describedby="settings-cursor-description"
+              checked
+            />
+            <span class="cursor-card__surface">
+              <span class="cursor-card__check" aria-hidden="true">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <use href="#icon-check"></use>
+                </svg>
+              </span>
+              <span class="cursor-card__text">
+                <strong id="settings-cursor-toggle-label">启用游戏页大鼠标指针</strong>
+                <small>仅影响数字华容道游戏页，不影响设置页、成绩页和回放页。</small>
+              </span>
+            </span>
+          </label>
         </section>
 
         <section

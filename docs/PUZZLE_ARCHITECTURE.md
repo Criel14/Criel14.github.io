@@ -278,7 +278,7 @@ export interface AppearanceState {
 | --- | --- | --- |
 | 游戏设置 | localStorage | `puzzle.v2.settings`，`{ version: 3, data: GameSettings }` |
 | 外观主题 | localStorage | `puzzle.v2.appearance`，`{ version: 4, data: AppearanceState }` |
-| 全站偏好 | localStorage | `site.v1.preferences`，`{ version: 1, data: SitePreferences }`（颜色主题、计时器字体、语言） |
+| 全站偏好 | localStorage | `site.v1.preferences`，`{ version: 1, data: SitePreferences }`（颜色主题、计时器字体、语言、游戏页大鼠标指针） |
 | 成绩摘要 | IndexedDB | DB `puzzle.v2` → store `scores`，主键 `id` |
 | 录像 | IndexedDB | DB `puzzle.v2` → store `replays`，主键 `scoreId` |
 
@@ -795,7 +795,7 @@ function getTileLayer(tile: number, size: PuzzleSize): number {
 - 自定义主题上限 20 个；数据模型允许列表扩展，但存储和 UI 以 `CUSTOM_THEME_SLOT_COUNT` 为准。
 - 自定义主题的 `supportedSizes` 缩小到正在被使用的阶数之外时，编辑器阻止保存，要求先在设置页切换这些阶数。
 - 分组管理集中在成绩页；设置页不重复实现，后续如需要只放跳转链接。
-- 自定义光标、极简 UI 属于 `GameSettings`，不属于 `Theme`；P8-5 再决定是否接入设置页“游戏”分类。
+- 游戏页大鼠标指针属于全站偏好 `site.v1.preferences.largeCursor`，不属于 `GameSettings`；`puzzle.v2.settings.customCursor` 为历史预留字段，本功能不使用。极简 UI 仍属于 `GameSettings`，P8-5 再接入。
 - 编辑器不升级 schema；`Theme` / `AppearanceState` 字段和 `APPEARANCE_SCHEMA_VERSION = 4` 不变。
 - 编辑器和设置页都按“显式保存”处理；返回/刷新直接丢弃 draft，不弹离开确认，底部保存条是唯一提醒。详见 `docs/PUZZLE_THEME.md`。
 - 实现状态（2026-10-25）：`theme-editor.html`、`styles/theme-editor.css`、`pages/theme-editor.ts` 和 `ui/theme-editor*.ts` 已落地；`ui/theme-history.ts` 是纯状态模块；`core/appearance/editor.ts` / `name.ts` 承载可测试的编辑纯函数（含 `prepareThemeForEditor()`）。`board-view` 增加 `data-tile` 钩子；设置页在 bfcache 恢复时重新读取外观，避免返回后显示旧主题列表。视觉收敛后编辑器不显示操作说明、无“显示数字”、无空白色编辑、无文字色“自动”。
@@ -973,7 +973,7 @@ types ← core ← ui   ← pages
 | ---------- | ---------------------------------------- | ------------------------------------------------------- |
 | 旧数据     | 不迁移、不兼容                           | 站点已无用户；减少历史特例和迁移代码                    |
 | 存储分层   | localStorage（设置/外观/全站偏好）+ IndexedDB（成绩/录像） | 小数据同步读写；大数据支持索引、配额和原子事务 |
-| 全站偏好   | `site.v1.preferences`，version 1         | 颜色主题/计时器字体/语言与拼图私有数据分开；迁移全站设置页不迁移数据 |
+| 全站偏好   | `site.v1.preferences`，version 1         | 颜色主题/计时器字体/语言/大鼠标指针与拼图私有数据分开；迁移全站设置页不迁移数据 |
 | 设置页     | 独立页面 + 草稿/保存条                   | 分类可扩展；避免模态框拥挤；重置/丢弃语义清晰            |
 | 主题色     | `#3498DB` + 白字                         | 统一设置页和游戏页选中态；接受小字号对比度取舍          |
 | 成绩模型   | 只存事实，派生值读时算                   | 消除 time/tps/ao/number 不一致                          |

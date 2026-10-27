@@ -561,7 +561,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 | P8-4c-2d | 主题编辑器（已实现 2026-10-25，含 alpha + Pickr） | `[x]` |
 | P8-4c-2e | 自定义主题删除（已实现 2026-10-25） | `[x]` |
 | P8-4c-2f | 测试、文档与手动验收              | `[ ]` |
-| P8-5 | 光标、极简 UI 与可访问性          | `[ ]` |
+| P8-5 | 极简 UI 与可访问性（大鼠标指针已完成 2026-10-27） | `[ ]` |
 | P8-6 | 游戏页 E2E                        | `[ ]` |
 
 > P8-4b 的详细任务、页面结构和验收以 `docs/SETTINGS_PAGE.md` 为准；P8-4c-1/P8-4c-2 以 `docs/PUZZLE_THEME.md` 为准。
@@ -569,6 +569,8 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 P8-4c-2d 实现备注（2026-10-25）：`theme-editor.html` 已替换占位页；新增 `core/appearance/editor.ts`、`core/appearance/name.ts`、`ui/theme-history.ts`、`ui/color-picker-field.ts`、`ui/theme-editor-board.ts`、`ui/theme-editor-controls.ts`、`ui/theme-editor.ts`、`pages/theme-editor.ts` 和 `styles/theme-editor.css`。设置页接入 bfcache `pageshow` 重读外观；新增 `undo` / `redo` / `paint-bucket` / `pipette` 图标。视觉收敛（2026-10-25）：移除全部操作说明和“显示数字”，空白色固定透明，文字色不再使用 auto，预览棋盘缩到约 `34rem`。颜色增强（2026-10-25）：数据层与编辑器支持 `#rrggbbaa`，四个颜色字段改用 Pickr 1.10.2 Nano（透明度 + HEXA 输入，仅编辑器加载），内边框“透明”复选框同日移除，完全透明改用 alpha 0。`npm test`（476 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 通过，手动验收待执行。
 
 P8-4c-2e 实现备注（2026-10-25）：自定义主题卡右下角新增删除按钮（位于编辑左侧，编辑保持最右），使用 `trash-2` 图标和危险色悬停。删除调用已有 `removeCustomTheme()` 只修改设置页 draft，不弹二次确认框；删除正在使用的主题时受影响阶数落到回退主题，底部未保存条负责落盘提醒，重置可撤销。删除后焦点移到加号卡，live region 播报“保存后生效”。不新增存储字段或对话框组件。
+
+P8-5 大鼠标指针实现备注（2026-10-27）：设置页“外观 → 鼠标指针”新增勾选卡片，偏好写入 `site.v1.preferences.largeCursor`（默认 `true`）。游戏页根据 `<html data-game-cursor>` 切换 `src/shared/cursors/default.png` 和 `pointer.png`，两张图的热点以左上角为原点，统一取 `8 3`（向右 8px、向下 3px）；按钮、链接和可点击方块使用小手，禁用按钮保留 `not-allowed`。只影响 `puzzle.html`，不修改 `puzzle.v2.settings`。
 
 ---
 

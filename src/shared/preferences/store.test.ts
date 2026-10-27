@@ -55,7 +55,15 @@ describe('normalizePreferences', () => {
         timerFont: 'audiowide',
         extra: 'ignored',
       }),
-    ).toEqual({ themeMode: 'dark', language: 'en', timerFont: 'audiowide' });
+    ).toEqual({ themeMode: 'dark', language: 'en', timerFont: 'audiowide', largeCursor: true });
+  });
+
+  it('largeCursor 只接受布尔值，非法值回退默认开启', () => {
+    expect(normalizePreferences({ largeCursor: false })).toEqual({
+      ...DEFAULT_SITE_PREFERENCES,
+      largeCursor: false,
+    });
+    expect(normalizePreferences({ largeCursor: 'yes' })).toEqual(DEFAULT_SITE_PREFERENCES);
   });
 
   it('非法枚举逐字段回退默认值', () => {
@@ -63,11 +71,13 @@ describe('normalizePreferences', () => {
       themeMode: 'light',
       language: 'en',
       timerFont: 'jetbrains-mono',
+      largeCursor: true,
     });
     expect(normalizePreferences({ themeMode: 'dark', language: 'fr' })).toEqual({
       themeMode: 'dark',
       language: 'zh-CN',
       timerFont: 'jetbrains-mono',
+      largeCursor: true,
     });
     expect(normalizePreferences({ timerFont: 'comic-sans' })).toEqual(DEFAULT_SITE_PREFERENCES);
   });
@@ -84,16 +94,21 @@ describe('loadPreferences', () => {
     expect(storage.has(SITE_PREFERENCES_STORAGE_KEY)).toBe(false);
   });
 
-  it('合法信封和三个字段返回 ok', () => {
+  it('合法信封和全部字段返回 ok', () => {
     const storage = createMemoryStorage();
     writeRaw(storage, {
       version: SITE_PREFERENCES_VERSION,
-      data: { themeMode: 'dark', language: 'en', timerFont: 'dseg7-classic' },
+      data: { themeMode: 'dark', language: 'en', timerFont: 'dseg7-classic', largeCursor: false },
     });
 
     expect(loadPreferences(storage)).toEqual({
       status: 'ok',
-      preferences: { themeMode: 'dark', language: 'en', timerFont: 'dseg7-classic' },
+      preferences: {
+        themeMode: 'dark',
+        language: 'en',
+        timerFont: 'dseg7-classic',
+        largeCursor: false,
+      },
     });
   });
 
@@ -107,12 +122,12 @@ describe('loadPreferences', () => {
 
       expect(loadPreferences(storage)).toEqual({
         status: 'ok',
-        preferences: { themeMode: 'light', language: 'zh-CN', timerFont },
+        preferences: { themeMode: 'light', language: 'zh-CN', timerFont, largeCursor: true },
       });
     }
   });
 
-  it('旧 version 1 数据缺少 timerFont 时仍为 ok，并使用默认字体', () => {
+  it('旧 version 1 数据缺少 timerFont / largeCursor 时仍为 ok，并使用默认值', () => {
     const storage = createMemoryStorage();
     writeRaw(storage, {
       version: SITE_PREFERENCES_VERSION,
@@ -121,7 +136,12 @@ describe('loadPreferences', () => {
 
     expect(loadPreferences(storage)).toEqual({
       status: 'ok',
-      preferences: { themeMode: 'dark', language: 'en', timerFont: 'jetbrains-mono' },
+      preferences: {
+        themeMode: 'dark',
+        language: 'en',
+        timerFont: 'jetbrains-mono',
+        largeCursor: true,
+      },
     });
   });
 
@@ -135,7 +155,12 @@ describe('loadPreferences', () => {
 
       expect(loadPreferences(storage)).toEqual({
         status: 'ok',
-        preferences: { themeMode: 'dark', language: 'en', timerFont: 'jetbrains-mono' },
+        preferences: {
+          themeMode: 'dark',
+          language: 'en',
+          timerFont: 'jetbrains-mono',
+          largeCursor: true,
+        },
       });
     }
   });
@@ -182,7 +207,12 @@ describe('loadPreferences', () => {
 
     expect(loadPreferences(storage)).toEqual({
       status: 'corrupt',
-      preferences: { themeMode: 'light', language: 'en', timerFont: 'jetbrains-mono' },
+      preferences: {
+        themeMode: 'light',
+        language: 'en',
+        timerFont: 'jetbrains-mono',
+        largeCursor: true,
+      },
     });
   });
 
@@ -190,12 +220,35 @@ describe('loadPreferences', () => {
     const storage = createMemoryStorage();
     writeRaw(storage, {
       version: SITE_PREFERENCES_VERSION,
-      data: { themeMode: 'dark', language: 'en', timerFont: 'comic-sans' },
+      data: { themeMode: 'dark', language: 'en', timerFont: 'comic-sans', largeCursor: false },
     });
 
     expect(loadPreferences(storage)).toEqual({
       status: 'corrupt',
-      preferences: { themeMode: 'dark', language: 'en', timerFont: 'jetbrains-mono' },
+      preferences: {
+        themeMode: 'dark',
+        language: 'en',
+        timerFont: 'jetbrains-mono',
+        largeCursor: false,
+      },
+    });
+  });
+
+  it('largeCursor 非法时返回 corrupt，并回退默认开启', () => {
+    const storage = createMemoryStorage();
+    writeRaw(storage, {
+      version: SITE_PREFERENCES_VERSION,
+      data: { themeMode: 'dark', language: 'en', largeCursor: 'yes' },
+    });
+
+    expect(loadPreferences(storage)).toEqual({
+      status: 'corrupt',
+      preferences: {
+        themeMode: 'dark',
+        language: 'en',
+        timerFont: 'jetbrains-mono',
+        largeCursor: true,
+      },
     });
   });
 
@@ -236,6 +289,7 @@ describe('savePreferences', () => {
       themeMode: 'dark',
       language: 'en',
       timerFont: 'press-start-2p',
+      largeCursor: false,
     } as const;
 
     savePreferences(preferences, storage);

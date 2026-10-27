@@ -992,6 +992,116 @@ body.settings-page {
   margin-left: auto;
 }
 
+/* 鼠标指针设置：整行可点卡片，左侧是原生 checkbox 的视觉替身。 */
+.cursor-card {
+  position: relative;
+  display: block;
+  max-width: 44rem;
+  margin-top: 1.25rem;
+  cursor: pointer;
+}
+
+.cursor-card__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.cursor-card__surface {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 1rem;
+  border: 1px solid var(--settings-border);
+  border-radius: var(--settings-radius-sm);
+  background: var(--settings-surface);
+  box-shadow: var(--settings-raised-shadow);
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.cursor-card:hover .cursor-card__surface {
+  border-color: var(--settings-border-strong);
+  background: var(--settings-surface-hover);
+}
+
+.cursor-card__input:checked + .cursor-card__surface {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  box-shadow:
+    var(--settings-raised-shadow),
+    0 0 0 1px var(--color-accent),
+    0 0 0 3px rgb(52 152 219 / 0.14);
+}
+
+.cursor-card__input:focus-visible + .cursor-card__surface {
+  outline: 2px solid #1f6f9f;
+  outline-offset: 3px;
+}
+
+.cursor-card__check {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-top: 0.05rem;
+  border: 1px solid var(--settings-border-strong);
+  border-radius: 6px;
+  background: var(--settings-surface-inset);
+  color: var(--color-on-accent);
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.04);
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.cursor-card__check .icon {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2.4;
+  opacity: 0;
+  transform: scale(0.8);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+
+.cursor-card__input:checked + .cursor-card__surface .cursor-card__check {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+}
+
+.cursor-card__input:checked + .cursor-card__surface .cursor-card__check .icon {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.cursor-card__text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.cursor-card__text strong {
+  font-size: 1rem;
+}
+
+.cursor-card__text small {
+  color: var(--settings-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
 .settings-note {
   max-width: 60ch;
   margin: 1rem 0 0;
@@ -1337,6 +1447,9 @@ body.settings-page {
   .settings-savebar,
   .theme-card__edit,
   .theme-card__delete,
+  .cursor-card__surface,
+  .cursor-card__check,
+  .cursor-card__check .icon,
   .puzzle-dialog.theme-assignment-dialog,
   .puzzle-dialog.theme-assignment-dialog::backdrop {
     transition: none;

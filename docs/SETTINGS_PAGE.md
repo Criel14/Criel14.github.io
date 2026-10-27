@@ -1,6 +1,6 @@
 # 设置页设计与 P8-4b/P8-4c 任务
 
-> 状态：P8-4b 设置页骨架与网站偏好已实现（2026-10-24），待手动验收；P8-4c-1 主题列表已实现（2026-10-24），待手动验收；P8-4c-2 设计确认（2026-10-24），P8-4c-2a 领域模型与存储已实现（2026-10-24），P8-4c-2b 设置页按阶数分配已实现（2026-10-25），待手动验收；P8-4c-2d 主题编辑器已实现（2026-10-25），自动检查通过，待手动验收；P8-4c-2e 自定义主题删除已实现（2026-10-25），自动检查通过，待手动验收；计时器字体设置已实现（2026-10-26），自动检查通过，待手动验收。游戏主题的完整模型以 `docs/PUZZLE_THEME.md` 为准。
+> 状态：P8-4b 设置页骨架与网站偏好已实现（2026-10-24），待手动验收；P8-4c-1 主题列表已实现（2026-10-24），待手动验收；P8-4c-2 设计确认（2026-10-24），P8-4c-2a 领域模型与存储已实现（2026-10-24），P8-4c-2b 设置页按阶数分配已实现（2026-10-25），待手动验收；P8-4c-2d 主题编辑器已实现（2026-10-25），自动检查通过，待手动验收；P8-4c-2e 自定义主题删除已实现（2026-10-25），自动检查通过，待手动验收；计时器字体设置已实现（2026-10-26），自动检查通过，待手动验收；游戏页大鼠标指针设置已实现（2026-10-27），自动检查通过，待手动验收。游戏主题的完整模型以 `docs/PUZZLE_THEME.md` 为准。
 >
 > 分支：`refactor/vite-ts`
 >
@@ -269,7 +269,7 @@ function canOpenSettings(): boolean {
 
 ## 4. 分类内容
 
-### 4.1 外观（颜色主题与计时器字体）
+### 4.1 外观（颜色主题、计时器字体与鼠标指针）
 
 导航短标签：`外观`；内容大标题：`颜色主题`。
 
@@ -320,6 +320,21 @@ function canOpenSettings(): boolean {
 - 字体选择进入 `site.v1.preferences` 草稿，随底部保存条保存；重置恢复上次保存值。
 - 每种字体的字体栈、字重、字距和缩放定义在 `src/shared/styles/base.css`；设置页预览卡和游戏页计时器共用同一组 token，避免示例与实际效果漂移。
 - Arial 直接引用系统字体，不打包字体文件；缺少时回退到相近的无衬线字体，不同系统的实际外观可能略有差异。
+
+#### 鼠标指针
+
+同一分类下用 `h3` “鼠标指针”分隔，说明文案：
+
+> 启用后，游戏页会使用更大的鼠标指针，高速移动时更容易看清位置；悬停在按钮等可点击元素上时仍显示小手。
+
+一个整行可点的勾选卡片：
+
+- 标题“启用游戏页大鼠标指针”，使用原生 `<input type="checkbox">`，默认勾选；视觉勾选框只是 `<label>` 内的替身，键盘和读屏仍操作原生 checkbox。
+- 存储字段为 `site.v1.preferences.largeCursor`，默认 `true`；与颜色主题、计时器字体、语言共用同一个保存条和 controller。
+- 只影响 `puzzle.html` 游戏页，不影响设置页、成绩页和回放页。
+- 开启时游戏页普通区域使用 `src/shared/cursors/default.png`，按钮、链接和可点击方块使用 `src/shared/cursors/pointer.png`；两张图都是 128×128。
+- 光标热点以图片左上角为原点，统一向右 8px、向下 3px（`8 3`）；禁用按钮继续使用原生 `not-allowed`，不套小手。
+- 偏好通过 `<html data-game-cursor="large|default">` 下发，游戏页在启动、bfcache 恢复和跨标签页 `storage` 事件时重新应用，不需要刷新页面。
 
 ### 4.2 语言
 
@@ -394,7 +409,7 @@ interface SettingsPageState {
 
 - 初始：`saved = draft = loadPreferencesResult().preferences`。
 - 用户修改控件：只更新 `draft`，不写 localStorage，不应用到页面。
-- `isDirty` 在归一化后比较 `themeMode`、`language`、`timerFont`；任一不同即显示保存条。
+- `isDirty` 在归一化后比较 `themeMode`、`language`、`timerFont`、`largeCursor`；任一不同即显示保存条。
 - 修改回原值：`isDirty` 变回 false，保存条自动消失。
 - 保存成功：`saved = draft = normalize(draft)`，保存条消失。
 - 重置：`draft = saved`，保存条消失。
@@ -486,12 +501,12 @@ interface SettingsController {
 }
 ```
 
-- `site-preferences` controller 同时负责颜色主题、计时器字体和语言。
+- `site-preferences` controller 同时负责颜色主题、计时器字体、鼠标指针和语言。
 - 关于页没有 controller，不参与脏状态。
 - P8-4c-2 的主题列表作为第二个 controller（`puzzle-theme`）接入，负责 `themeIdBySize` 的 draft/保存/重置和回退警告。
 - “应用到”对话框确认只更新 `puzzle-theme` controller 的 draft；底部保存条统一保存。
 - 主题编辑器是独立页面，不进入设置页 controller；它复用设置页保存条的视觉和交互样式，但维护独立的 baseline/draft/历史状态。
-- P8-5 的自定义光标/极简 UI 可以作为“游戏”分类下的第三个 controller 接入。
+- P8-5 的极简 UI 可以作为“游戏”分类下的第三个 controller 接入；游戏页大鼠标指针已作为外观偏好接入 `site.v1.preferences`。
 - 页面在任意表单变化后调用 `refreshSavebar()`；保存时依次调用所有 controller 的 `save()`，任一失败则中止并保留保存条。
 
 ## 6. 数据设计
@@ -545,18 +560,21 @@ export interface SitePreferences {
   readonly themeMode: ThemeMode;
   readonly language: SiteLanguage;
   readonly timerFont: TimerFontId;
+  readonly largeCursor: boolean;
 }
 
 export const DEFAULT_SITE_PREFERENCES: SitePreferences = {
   themeMode: 'light',
   language: 'zh-CN',
   timerFont: 'jetbrains-mono',
+  largeCursor: true,
 };
 ```
 
 - 默认使用 `light` 而不是 `system`，因为本轮没有深色主题，跟随系统也不会产生可见效果。
 - 语言默认 `zh-CN`。
 - 计时器默认 `jetbrains-mono`，与旧版游戏页保持一致。
+- 大鼠标指针默认开启：它是为高速游玩准备的可读性增强，且只作用于游戏页。
 - 类型放在 `src/shared/preferences/`，不依赖拼图模块。
 
 ### 6.3 归一化
@@ -566,10 +584,12 @@ export const DEFAULT_SITE_PREFERENCES: SitePreferences = {
 - `themeMode` 只接受 `system` / `light` / `dark`，非法值回退 `light`。
 - `language` 只接受 `zh-CN` / `en`，非法值回退 `zh-CN`。
 - `timerFont` 只接受六个约定 ID，非法值回退 `jetbrains-mono`。
+- `largeCursor` 只接受布尔值，非法值回退 `true`。
 - 忽略未知字段。
 - 非对象、缺字段、类型错误不抛异常，回退默认值。
 - 本轮 UI 只允许选择 `light`，但归一化接受三种主题值，避免未来版本写入的数据被当前版本破坏。
 - 旧 version 1 数据缺少 `timerFont` 时按默认字体处理，不标记为损坏。
+- 旧 version 1 数据缺少 `largeCursor` 时按默认开启处理，不标记为损坏。
 - 已移除的 VT323、Verdana、Trebuchet MS 历史值也按默认字体静默回退，不提示数据损坏。
 
 ### 6.4 读取状态
@@ -613,6 +633,7 @@ interface PreferencesLoadResult {
 - 设置 `document.documentElement.dataset.theme`；`system` 暂按 `light` 处理，存储中的 `dark` 会写入 dataset，但本轮没有对应 CSS，不产生可见效果。
 - 设置 `document.documentElement.dataset.language`（供后续调试/i18n 使用）。
 - 设置 `document.documentElement.dataset.timerFont`；`base.css` 根据该属性切换 `--font-timer`、字重、字距和缩放。
+- 设置 `document.documentElement.dataset.gameCursor`（`large` / `default`）；`game.css` 只在 `body.game-page` 下根据 `data-game-cursor="large"` 切换大光标，因此设置页和其他页面不受影响。
 - 不修改 `<html lang>`。
 - 不设置 `color-scheme: dark`，因为深色 CSS 尚未实现。
 - 不重新加载页面；设置页保存后更新根节点 dataset，字体预览卡本身始终展示各自的字体。游戏页在启动、bfcache 恢复或收到跨标签页 `storage` 事件时重新读取并应用偏好，因此返回游戏页后计时器会使用新字体。
@@ -628,6 +649,7 @@ interface PreferencesLoadResult {
 
 - 新 key 从 `version: 1` 开始。
 - `timerFont` 是在 version 1 内新增的向后兼容字段：旧数据缺字段时按默认值处理，不升版本、不丢已有主题/语言偏好；字段存在但非法时才报 `corrupt`。
+- `largeCursor` 同样是在 version 1 内新增的向后兼容字段：缺失时默认开启，非法值才报 `corrupt`。
 - 本轮不做旧数据迁移，也不读取旧 `config` 等键。
 - 版本不匹配视为 `corrupt`，回退默认值并提示。
 - 未来需要迁移时，在 `src/shared/preferences/` 内增加版本分支，不把迁移逻辑散落到页面。
@@ -731,7 +753,7 @@ interface SettingsController {
 
 - **P8-4c-2 游戏主题列表**：`puzzle-theme` controller 读取 `puzzle.v2.appearance` 到草稿，只更新 `themeIdBySize`；保存时写回完整 `AppearanceState`；使用 `ui/theme-preview.ts` 按支持的最大阶数预览；游戏页在下次加载时生效。
 - **P8-4c-2d 主题编辑器**：独立 `/puzzle-game/theme-editor.html`，有自己的 draft/baseline、50 步撤销/重做和保存条；左右 `1 : 2` 布局，右侧最大支持阶数预览，左侧编辑名称、支持阶数、模式、样式刷、盲玩色、内边框和 metrics；文字色全部为显式颜色，空白色固定透明、不提供编辑；通过油漆桶/吸管在棋盘上涂色。新建只在内存复制回退主题，保存后停留并更新 URL；不进入设置页 controller，也不自动分配阶数。详见 `docs/PUZZLE_THEME.md` 第 6 节。
-- **P8-5 自定义光标/极简 UI**：新增 `PuzzleBehaviorController`，读写 `puzzle.v2.settings` 的 `customCursor` / `minimalUi`；保存时只更新这两个字段，保留 size/gameMode/groups 等其他设置。
+- **P8-5 极简 UI**：新增 `PuzzleBehaviorController`，读写 `puzzle.v2.settings` 的 `minimalUi`；保存时只更新该字段，保留 size/gameMode/groups 等其他设置。游戏页大鼠标指针已改为 `site.v1.preferences.largeCursor`（2026-10-27），不使用 `puzzle.v2.settings.customCursor`。
 - **数据管理**：未来可以增加“清除旧数据”“导出设置”等分类；清除操作必须二次确认，不能混进普通保存流程。
 - 多个 controller 保存时按顺序执行；任一失败则停止并保留保存条。需要原子性的跨存储操作不在本轮设计范围内。
 
@@ -984,7 +1006,10 @@ npm run build
 
 保存流程：
 
-- [ ] 初始为浅色 + 中文 + JetBrains Mono，底部没有保存条。
+- [ ] 初始为浅色 + 中文 + JetBrains Mono + 大鼠标指针勾选，底部没有保存条。
+- [ ] 取消勾选“启用游戏页大鼠标指针”后出现保存条；改回勾选后保存条自动消失。
+- [ ] 取消勾选并保存后刷新，仍保持未勾选。
+- [ ] “重置”恢复上次保存的鼠标指针勾选状态。
 - [ ] 选择 English 后出现保存条。
 - [ ] 改回中文后保存条自动消失。
 - [ ] 再次选择 English，点击“重置”恢复中文，保存条消失。
@@ -1003,6 +1028,10 @@ npm run build
 - [ ] “计时器字体”显示 6 张字体卡，预览文本为 `23.06`，下方只显示字体名且不加粗。
 - [ ] JetBrains Mono 默认选中；切换字体后出现保存条，保存后刷新仍保持。
 - [ ] 每种字体预览都使用对应字体，且在大、小屏都不溢出预览框。
+- [ ] “鼠标指针”卡片默认勾选；整行可点击；键盘 Space 可切换，焦点环清晰。
+- [ ] 游戏页默认显示大鼠标箭头；按钮、链接和可点击方块显示大号小手。
+- [ ] 禁用按钮不显示小手，仍显示系统 `not-allowed`。
+- [ ] 取消勾选并保存后，游戏页恢复系统光标；设置页、成绩页和回放页始终不受影响。
 - [ ] 语言卡显示“英文界面翻译将在后续版本提供”的说明。
 - [ ] 游戏主题显示内置/自定义主题卡片，预览按支持的最大阶数渲染。
 - [ ] 卡片右上角覆盖徽标正确；未使用主题无徽标；多张卡片可同时使用中。
@@ -1052,7 +1081,8 @@ localStorage['site.v1.preferences']
   "data": {
     "themeMode": "light",
     "language": "en",
-    "timerFont": "jetbrains-mono"
+    "timerFont": "jetbrains-mono",
+    "largeCursor": true
   }
 }
 ```
@@ -1076,8 +1106,10 @@ localStorage['site.v1.preferences']
 - 非法 `themeMode` 回退 `light`。
 - 非法 `language` 回退 `zh-CN`。
 - 非法 `timerFont` 回退 `jetbrains-mono`。
+- 非法 `largeCursor` 回退 `true` 并标记 `corrupt`。
 - 新增的阿里巴巴普惠体和 Arial 字体 ID 可正常读取。
 - 旧 version 1 数据缺少 `timerFont` 时为 `ok`，并使用默认字体。
+- 旧 version 1 数据缺少 `largeCursor` 时为 `ok`，并默认开启大鼠标指针。
 - 已移除的 VT323、Verdana、Trebuchet MS 历史值为 `ok`，并回退默认字体。
 - 未知字段被忽略。
 - 保存写入 `{ version: 1, data }`。
@@ -1091,8 +1123,11 @@ localStorage['site.v1.preferences']
 - `themeMode` 不同返回 `true`。
 - `language` 不同返回 `true`。
 - `timerFont` 不同返回 `true`。
+- `largeCursor` 不同返回 `true`。
 - 重置后返回 `false`。
 - 归一化后比较不受未知字段影响。
+
+`apply.test.ts` 同时覆盖 `gameCursor` dataset：开启写 `large`，关闭写 `default`，非法值归一化后写 `large`。
 
 ### 13.3 hash/分类纯函数（如拆分）
 
@@ -1128,7 +1163,7 @@ localStorage['site.v1.preferences']
 - 游戏主题：P8-4c-2 按阶数分配、回退主题、独立编辑器与自定义主题删除，详见 `docs/PUZZLE_THEME.md`；排序/命名规则、导入导出仍待定。
 - 主题编辑器棋盘涂色的完整键盘/读屏替代方案，随 P8-5 可访问性工作处理；第一版以鼠标/触屏为主。
 - 主题名称数据层是否也强制 20 显示宽度；当前只由编辑器限制。
-- 自定义光标/极简 UI：放在设置页“游戏”分类下，还是留在游戏页快捷入口。
+- 极简 UI：是否接入、放在设置页“游戏”分类下，还是留在游戏页快捷入口；大鼠标指针已确定放在“外观”分类。
 - 全站设置页迁移：路径、返回来源、首页入口。
 - 设置导入/导出、数据清理、存储持久化申请。
 - 是否需要在设置页显示应用版本/构建信息。
@@ -1161,6 +1196,7 @@ localStorage['site.v1.preferences']
 | 2026-10-25 | 编辑器名称上限 20 显示宽度，允许重名；数据层保持宽松 |
 | 2026-10-25 | 编辑器不做离开确认、不注册 `beforeunload`；返回/刷新丢弃草稿 |
 | 2026-10-25 | 设置页从编辑器返回时处理 bfcache，重新读取外观 |
+| 2026-10-27 | 游戏页大鼠标指针存入 `site.v1.preferences.largeCursor`，默认开启；只作用于游戏页，不复用 `puzzle.v2.settings.customCursor` |
 
 ## 16. 参考
 

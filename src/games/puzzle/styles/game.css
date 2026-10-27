@@ -553,6 +553,30 @@ body.game-page {
   }
 }
 
+/*
+ * 大鼠标指针：由 site.v1.preferences.largeCursor 写入
+ * <html data-game-cursor="large">，只作用于游戏页。
+ *
+ * 光标热点以图片左上角为原点，向右 8px、向下 3px（x=8, y=3）。
+ * 禁用按钮不套小手，继续保留原生 not-allowed 反馈。
+ */
+html[data-game-cursor='large'] body.game-page {
+  cursor:
+    url('../../../shared/cursors/default.png') 8 3,
+    auto;
+}
+
+html[data-game-cursor='large'] body.game-page a[href]:not([aria-disabled='true']),
+html[data-game-cursor='large'] body.game-page button:not(:disabled):not([aria-disabled='true']),
+html[data-game-cursor='large']
+  body.game-page
+  .puzzle-board--interactive
+  .puzzle-board__tile:not(.puzzle-board__tile--blank) {
+  cursor:
+    url('../../../shared/cursors/pointer.png') 8 3,
+    pointer;
+}
+
 @media (max-width: 1100px) {
   body.game-page {
     --page-pad-x: 24px;

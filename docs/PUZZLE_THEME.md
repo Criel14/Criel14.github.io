@@ -420,8 +420,8 @@ const FALLBACK_THEME: Theme = {
 
 ### 2.12 不属于 Theme 的数据
 
-- 网站颜色主题、计时器字体、语言：`site.v1.preferences`。
-- 拼图阶数、游戏模式、操作模式、当前分组、自定义光标、极简 UI：`puzzle.v2.settings`。
+- 网站颜色主题、计时器字体、语言、游戏页大鼠标指针：`site.v1.preferences`。
+- 拼图阶数、游戏模式、操作模式、当前分组、极简 UI：`puzzle.v2.settings`；`customCursor` 为历史预留字段，当前大鼠标指针功能不使用。
 - 成绩、录像：IndexedDB `puzzle.v2`。
 - 主题只影响方块本身；页面背景、文字、按钮、边框和弹框使用 `src/shared/styles/base.css` 的语义 token。
 

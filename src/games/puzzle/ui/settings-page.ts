@@ -44,6 +44,7 @@ interface SettingsElements {
   readonly themeInputs: readonly HTMLInputElement[];
   readonly timerFontInputs: readonly HTMLInputElement[];
   readonly languageInputs: readonly HTMLInputElement[];
+  readonly largeCursorInput: HTMLInputElement;
   readonly themeNote: HTMLElement;
   readonly gameThemeRoot: HTMLElement;
 }
@@ -72,6 +73,7 @@ function getElements(): SettingsElements {
     themeInputs: [...document.querySelectorAll<HTMLInputElement>('[data-setting="themeMode"]')],
     timerFontInputs: [...document.querySelectorAll<HTMLInputElement>('[data-setting="timerFont"]')],
     languageInputs: [...document.querySelectorAll<HTMLInputElement>('[data-setting="language"]')],
+    largeCursorInput: requireElement<HTMLInputElement>('[data-setting="largeCursor"]'),
     themeNote: requireElement<HTMLElement>('[data-theme-note]'),
     gameThemeRoot: requireElement<HTMLElement>('[data-game-theme-picker]'),
   };
@@ -228,9 +230,9 @@ function renderLoadStatus(
 }
 
 /**
- * 颜色主题、计时器字体和语言共用一个 controller。
+ * 颜色主题、计时器字体、鼠标指针和语言共用一个 controller。
  *
- * 三项都属于 `site.v1.preferences`，拆成多个 controller 会导致保存时
+ * 四项都属于 `site.v1.preferences`，拆成多个 controller 会导致保存时
  * 写多次存储，无法保证一次保存的一致性。
  */
 function createPreferencesController(
@@ -251,6 +253,7 @@ function createPreferencesController(
     for (const input of elements.languageInputs) {
       input.checked = input.value === draft.language;
     }
+    elements.largeCursorInput.checked = draft.largeCursor;
     elements.themeNote.hidden = draft.themeMode === 'light';
   }
 
@@ -263,6 +266,7 @@ function createPreferencesController(
       themeMode: themeMode ?? draft.themeMode,
       timerFont: timerFont ?? draft.timerFont,
       language: language ?? draft.language,
+      largeCursor: elements.largeCursorInput.checked,
     });
     syncForm();
     onChange();
@@ -272,6 +276,7 @@ function createPreferencesController(
     ...elements.themeInputs,
     ...elements.timerFontInputs,
     ...elements.languageInputs,
+    elements.largeCursorInput,
   ]) {
     input.addEventListener('change', handleChange);
   }
