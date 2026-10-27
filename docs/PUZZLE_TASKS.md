@@ -572,6 +572,8 @@ P8-4c-2d 实现备注（2026-10-25）：`theme-editor.html` 已替换占位页�
 
 P8-4c-2e 实现备注（2026-10-25）：自定义主题卡右下角新增删除按钮（位于编辑左侧，编辑保持最右），使用 `trash-2` 图标和危险色悬停。删除调用已有 `removeCustomTheme()` 只修改设置页 draft，不弹二次确认框；删除正在使用的主题时受影响阶数落到回退主题，底部未保存条负责落盘提醒，重置可撤销。删除后焦点移到加号卡，live region 播报“保存后生效”。不新增存储字段或对话框组件。
 
+P8-4c-2 后续调整（2026-10-27）：设置页“应用到”对话框确认后立即保存本次分配，按钮文案改为“应用”；保存时以已保存外观为基准，只合并本次选中的阶数，不把自定义主题删除等其他草稿一起落库。成功后不出现保存条，失败时保留为未保存修改。重置只撤销剩余草稿，不撤销已应用分配；`corrupt` / `unavailable` / 版本不兼容时仍走显式保存。详见 `docs/SETTINGS_PAGE.md` 第 3.5 节、`docs/PUZZLE_THEME.md` 第 5.5/5.6 节。
+
 P8-5 大鼠标指针实现备注（2026-10-27）：设置页“外观 → 鼠标指针”新增勾选卡片，偏好写入 `site.v1.preferences.largeCursor`（默认 `true`）。游戏页根据 `<html data-game-cursor>` 切换 `src/shared/cursors/default.png` 和 `pointer.png`，两张图的热点以左上角为原点，统一取 `8 3`（向右 8px、向下 3px）；按钮、链接和可点击方块使用小手，禁用按钮保留 `not-allowed`。只影响 `puzzle.html`，不修改 `puzzle.v2.settings`。
 
 P8-5a 极简计时方案（2026-10-27 确认并实现）：设置页“外观”新增 `h3`“UI 显示”，其下方放同款勾选卡片“开始移动时只显示计时器”，偏好写入 `site.v1.preferences.timerOnlyOnMove`（默认 `false`），并通过 `<html data-timer-only-on-move>` 下发。游戏页在每局第一次有效移动后隐藏左栏菜单、步数/TPS/ao、入口和重玩状态栏，保留棋盘、计时数字和刷新按钮；完成复原或开新局后恢复完整 UI。重玩中不保留退出按钮；不提供中途退出极简视图的入口。CSS 使用 `visibility: hidden` 保持三栏布局和计时数字位置不变，隐藏元素不进入 Tab 顺序。`npm test`（488 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 均通过，已手动验收（2026-10-27）。移动端横屏留 TODO，等 P9/P10 基本完成后再做。P8-5c 可访问性审计、主题编辑器键盘涂色和 P8-6 E2E 均取消，由用户手动测试。

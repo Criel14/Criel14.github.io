@@ -1,6 +1,6 @@
 # 数字华容道数据存储设计
 
-> 状态：P6 已完成；P8-4a-0、P8-4b、P8-4c-1、P8-4c-2a/b/c/d/e/f、P8-5a 已实现并手动验收（2026-10-27）；`site.v1.preferences.timerOnlyOnMove` 已实现并手动验收（version 1 内兼容字段，2026-10-27）；移动端与 E2E 暂缓，E2E 改用户手动测试。
+> 状态：P6 已完成；P8-4a-0、P8-4b、P8-4c-1、P8-4c-2a/b/c/d/e/f、P8-5a 已实现并手动验收（2026-10-27）；`site.v1.preferences.timerOnlyOnMove` 已实现并手动验收（version 1 内兼容字段，2026-10-27）；“应用到”确认后立即保存本次分配（2026-10-27）；移动端与 E2E 暂缓，E2E 改用户手动测试。
 >
 > 分支：`refactor/vite-ts`
 >
@@ -109,7 +109,7 @@ v2 没有正式上线，不提供从这些键迁移到 IndexedDB 的逻辑。若
 - 颜色格式扩展是 v4 内的向后兼容变化：旧 6 位数据继续合法，不升级 envelope 版本，也不需要迁移；回滚到旧代码时，8 位色会被旧校验视为非法，这是已知的回滚风险。
 - 外观 v4 不做 v3 迁移：升级时清一次 `puzzle.v2.appearance`；不清时使用回退主题并提示。自定义主题会丢失，设置/分组/成绩不受影响。
 - 主题存储体积：`fixed` 模式 99 个背景色 + 99 个字体色约 2KB/主题；全部使用 8 位色时 20 个主题约 48KB，远低于 localStorage 配额。
-- P8-4c-2 设置页主题分配先写 draft，点击设置页“保存”后才写 `puzzle.v2.appearance`。
+- P8-4c-2 设置页“应用到”确认后立即写 `puzzle.v2.appearance`，但只以已保存外观为基准合并本次选中的阶数；draft 里的自定义主题删除等其他修改仍由保存条处理。
 - 主题编辑器是独立页面，自己维护 `baseline` / `draft`，点击编辑器“保存”后才写 `puzzle.v2.appearance`；返回/刷新丢弃 draft，不做离开确认。
 - 新建主题只在内存中复制回退主题（名称“新的主题”），未修改退出不写入 `themes`；保存成功后才创建自定义主题，并停留在编辑器把 URL 改为 `?theme=<id>`。
 - 编辑器保存后不自动分配阶数；`themeIdBySize` 保持不变，用户在设置页手动选择。
@@ -514,14 +514,14 @@ saveAppearance(appearance: AppearanceState, storage?: StorageAdapter): void;
 ### 6.4 设置页与主题编辑器
 
 1. 设置页启动时同步读取 `site.v1.preferences` 和 `puzzle.v2.appearance`；两者分别显示读取状态。
-2. 设置页主题列表使用 `loadAppearanceResult()` 的归一化结果；“应用到”对话框只更新页面 draft 的 `themeIdBySize`，不修改主题的 `supportedSizes`。
-3. 点击设置页“保存”：先保存全站偏好，再 `saveAppearance(draft)`；写入完整 `AppearanceState`，包括当前 `themes` 和 `themeIdBySize`。
+2. 设置页主题列表使用 `loadAppearanceResult()` 的归一化结果；“应用到”对话框只修改页面 `themeIdBySize`，不修改主题的 `supportedSizes`。确认后立即保存，但以已保存外观为基准只合并本次分配，不把 draft 里的其他修改一起写入。
+3. 点击设置页“保存”：先保存全站偏好，再 `saveAppearance(draft)`；写入完整 `AppearanceState`，包括当前 `themes` 和 `themeIdBySize`，用于提交自定义主题删除等剩余草稿。
 4. 主题编辑器读取 `puzzle.v2.appearance`，按 `?theme=<id>` 找到目标主题；新建时不写参数、不写存储，只在内存复制回退主题生成“新的主题”草稿。
 5. 编辑器内所有修改只更新页面 draft；点击“保存”时校验并合并目标主题、保留 `themeIdBySize` 和其他主题，再调用 `saveAppearance()`。
 6. 新建保存成功后，页面停留在编辑器，并把 URL `replaceState` 为 `?theme=<id>`；不自动分配阶数。编辑已有主题保存后也不改变 `themeIdBySize`。
 7. 编辑器“取消”/返回/刷新直接丢弃 draft，不做离开确认；新建未修改退出不会创建主题。设置页从编辑器返回时重新读取外观，并处理 bfcache。
 8. 编辑器撤销/重做只存在页面内存，不写 localStorage；保存不清空历史。
-9. 两处都只在显式保存时写 localStorage；读取 `corrupt` / `unavailable` / 版本不兼容时页面提示，不自动覆盖。
+9. 设置页“应用到”确认后立即写 localStorage；自定义主题删除、全站偏好和编辑器内容仍只在显式保存时写。读取 `corrupt` / `unavailable` / 版本不兼容时页面提示，不自动覆盖：“应用到”也只更新 draft，等待用户显式保存。
 
 ## 7. 错误处理
 

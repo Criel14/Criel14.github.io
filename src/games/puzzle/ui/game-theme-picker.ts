@@ -16,7 +16,7 @@ export const GAME_THEME_EDITOR_URL = '/puzzle-game/theme-editor.html';
 
 export interface GameThemePickerOptions {
   readonly root: HTMLElement;
-  /** “应用到”对话框确认后回调；只更新页面 draft，不直接写存储。 */
+  /** “应用到”对话框确认后回调；设置页通常立即保存本次分配，异常读取状态除外。 */
   readonly onAssign: (themeId: string, sizes: readonly PuzzleSize[]) => void;
   /**
    * 删除自定义主题；只更新页面 draft，不直接写存储。
@@ -29,7 +29,7 @@ export interface GameThemePickerOptions {
  * 设置页主题列表。
  *
  * 负责渲染按阶数覆盖的主题卡、加号卡和回退警告；不读写存储、不判断脏状态。
- * 分配和删除结果都交给设置页 controller 更新 draft。
+ * 分配由设置页 controller 立即保存（异常读取状态除外），删除仍进入 draft 等待保存条。
  */
 export interface GameThemePicker {
   render(appearance: AppearanceState): void;

@@ -49,8 +49,8 @@ function createOption(size: PuzzleSize, locked: boolean): AssignmentOption {
  * 打开“应用到”对话框。
  *
  * 只列出主题支持的阶数；已经属于该主题的阶数选中并锁定，其他阶数可自由勾选。
- * 返回 `null` 表示取消/关闭，返回阶数数组表示用户确认。调用方负责更新 draft 和
- * 重新渲染，这样对话框关闭后可以把焦点放回新生成的卡片按钮。
+ * 返回 `null` 表示取消/关闭，返回阶数数组表示用户确认。调用方负责立即保存本次
+ * 分配并重新渲染，这样对话框关闭后可以把焦点放回新生成的卡片按钮。
  */
 export function openThemeAssignmentDialog(
   options: ThemeAssignmentDialogOptions,
@@ -115,7 +115,7 @@ export function openThemeAssignmentDialog(
       actions: [
         { label: '取消', variant: 'secondary' },
         {
-          label: '确定',
+          label: '应用',
           variant: 'primary',
           onClick() {
             confirmedSizes = supportedSizes.filter((size) => selected.has(size));

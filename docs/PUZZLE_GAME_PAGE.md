@@ -564,7 +564,7 @@ P8-1 以当前实验室为视觉基线。正式实现时先复用结构和样式
   - 两套内置主题 + 自定义主题 + 加号卡；自定义主题上限从 3 放宽到 20。
   - 每张卡渲染 10×10 已复原棋盘预览，显示数字、主题颜色、透明空白块和 metrics。
   - 内置主题显示“内置”徽标；自定义主题显示铅笔编辑按钮。
-  - 主题选择进入设置页 draft，保存时才写 `puzzle.v2.appearance`。
+  - 主题选择进入设置页 draft，保存时才写 `puzzle.v2.appearance`（2026-10-27 后续调整：改为“应用到”确认后立即保存本次分配，见下方备注）。
   - 新增 `theme-editor.html` 占位页、`theme-preview`、`game-theme-picker`、`isAppearanceEqual`、`plus`/`pencil` 图标和 `createIcon` 工具。
 - 验收：两套内置主题和自定义主题卡片正确渲染；选中/保存/重置/刷新行为正确；20 个上限生效；加号/编辑入口可进入占位页；键盘和窄屏可用。
 - 依赖：P2、P8-4b。
@@ -595,6 +595,7 @@ P8-1 以当前实验室为视觉基线。正式实现时先复用结构和样式
 - 实现备注（2026-10-27，P8-4c-2c）：`replaceBoard(size)` 解析主题后，仅在 `appearanceResult.status` 为 `ok` / `missing` 且主题 ID 为 `FALLBACK_THEME_ID` 时，用 `notifier.show({ id: 'theme-fallback' })` 显示一条 6 秒 warning；切换到正常阶数时关闭同一条提示。`corrupt` / `unavailable` 时沿用现有外观提示，不叠加回退提示。重玩按成绩阶数走同一 `replaceBoard`。
 - 实现备注（2026-10-25，P8-4c-2d）：新增 `theme-editor.html`、`theme-editor.css`、编辑器 controller/控件/棋盘/历史模块，以及 `core/appearance/editor.ts` / `name.ts`。视觉收敛后移除全部操作说明和“显示数字”，空白块始终透明，文字色不再使用 auto（旧 auto 在载入时回退白色）；样式刷、吸管、工具切换不进入主题、脏状态或历史；50 份快照线性历史支持连续输入合并；设置页通过 `pageshow` + `persisted` 处理 bfcache。颜色增强（2026-10-25）：主题颜色支持 `#rrggbbaa`，编辑器四个颜色字段使用 Pickr Nano，透明色由 CSS 自然混色。`npm test`（476 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 通过；用户已于 2026-10-27 手动验收。
 - 实现备注（2026-10-25，P8-4c-2e）：设置页自定义主题卡右下角新增删除按钮（位于编辑左侧），使用 `trash-2` 图标；删除直接修改 appearance draft，不弹二次确认框，受影响阶数落到回退主题，底部保存条负责落盘提醒，重置可撤销。删除后焦点移到加号卡并播报，存储 schema 不变。
+- 后续调整（2026-10-27）：设置页“应用到”确认后立即保存本次分配，按钮文案改为“应用”；只合并本次选中的阶数，自定义主题删除等其他草稿仍由保存条处理。详见 `docs/SETTINGS_PAGE.md` 第 3.5 节、`docs/PUZZLE_THEME.md` 第 5.5/5.6 节。
 
 ### P8-5a 极简计时（已完成并手动验收 2026-10-27）
 

@@ -8,7 +8,7 @@ import {
   type PreferencesReadStatus,
 } from '../../../shared/preferences/store';
 import type { SitePreferences } from '../../../shared/preferences/types';
-import type { AppearanceState } from '../types';
+import type { AppearanceState, PuzzleSize } from '../types';
 import {
   assignThemeToSizes,
   cloneAppearance,
@@ -22,6 +22,7 @@ import {
   type AppearanceLoadResult,
 } from '../data/appearance-store';
 import { createGameThemePicker } from './game-theme-picker';
+import { formatCoverageDetail } from './theme-coverage';
 import {
   SETTINGS_GROUP_LABELS,
   SETTINGS_SECTIONS,
@@ -310,32 +311,69 @@ interface AppearanceController extends SettingsController {
   reload(appearance: AppearanceState): void;
 }
 
+interface AppearanceControllerOptions {
+  /** 外观数据正常或首次缺失时才立即落盘；损坏/版本不兼容时保留显式保存。 */
+  readonly canAutoSave: boolean;
+  readonly onChange: () => void;
+  readonly announce: (message: string) => void;
+  readonly onError: (message: string) => void;
+}
+
 /**
  * 主题分配 controller。
  *
- * 维护完整 AppearanceState 的 saved / draft；“应用到”对话框只修改其中的
- * themeIdBySize，删除主题只移除 themes 并把受影响阶数落到回退主题；
- * 两者都只在保存时一次性写入完整外观数据。
+ * 维护完整 AppearanceState 的 saved / draft。“应用到”确认后只把本次分配
+ * 立即合并进 saved 并写入存储，draft 里其他未保存修改（当前是自定义主题删除）
+ * 仍由保存条处理；重置只恢复这些未保存修改，不撤销已应用的分配。
  */
 function createAppearanceController(
   initial: AppearanceState,
   elements: SettingsElements,
-  onChange: () => void,
-  announce: (message: string) => void,
+  options: AppearanceControllerOptions,
 ): AppearanceController {
+  const { canAutoSave, onChange, announce, onError } = options;
   let saved = cloneAppearance(initial);
   let draft = cloneAppearance(initial);
+
+  /**
+   * 立即保存本次分配。
+   *
+   * 必须以 saved 为基准合并，不能直接写 draft，否则会把页面上尚未保存的
+   * 自定义主题删除一并落库，违背“只保存本次主题分配”的约定。
+   */
+  function applyAssignment(themeId: string, sizes: readonly PuzzleSize[]): void {
+    const nextDraft = assignThemeToSizes(draft, themeId, sizes);
+    if (nextDraft === draft) {
+      return;
+    }
+
+    draft = nextDraft;
+    picker.render(draft);
+
+    if (!canAutoSave) {
+      onChange();
+      return;
+    }
+
+    const persisted = assignThemeToSizes(saved, themeId, sizes);
+    try {
+      const normalized = normalizeAppearance(persisted);
+      saveAppearance(normalized);
+      saved = cloneAppearance(normalized);
+      onChange();
+      announce(`已应用到 ${formatCoverageDetail(sizes)}。`);
+    } catch (error) {
+      console.error('立即保存主题分配失败', error);
+      onChange();
+      onError('主题应用失败，已保留为未保存修改，请检查浏览器存储权限后重试。');
+      announce('主题应用失败，已保留为未保存修改。');
+    }
+  }
 
   const picker = createGameThemePicker({
     root: elements.gameThemeRoot,
     onAssign(themeId, sizes) {
-      const next = assignThemeToSizes(draft, themeId, sizes);
-      if (next === draft) {
-        return;
-      }
-      draft = next;
-      picker.render(draft);
-      onChange();
+      applyAssignment(themeId, sizes);
     },
     onRemove(themeId) {
       const target = draft.themes.find((theme) => theme.id === themeId && !theme.builtin);
@@ -459,12 +497,12 @@ export function mountSettingsPage(): void {
   );
   controllers.push(preferencesController);
 
-  const appearanceController = createAppearanceController(
-    appearanceResult.appearance,
-    elements,
-    handleFormChange,
+  const appearanceController = createAppearanceController(appearanceResult.appearance, elements, {
+    canAutoSave: appearanceResult.status === 'ok' || appearanceResult.status === 'missing',
+    onChange: handleFormChange,
     announce,
-  );
+    onError: showError,
+  });
   controllers.push(appearanceController);
 
   /*
