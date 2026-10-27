@@ -1,6 +1,6 @@
 # 重构计划
 
-> 状态：阶段 3 进行中（拼图 P0–P7 已完成；P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b 独立设置页与网站偏好已实现（2026-10-24，见 `docs/SETTINGS_PAGE.md`，待手动验收），P8-4c-1 设置页主题列表已实现（待手动验收），P8-4c-2 设计确认（2026-10-24，见 `docs/PUZZLE_THEME.md`），P8-4c-2a 主题模型升级与存储已实现（2026-10-24，自动检查通过），P8-4c-2b 设置页按阶数分配已实现（2026-10-25，自动检查通过，待手动验收），P8-4c-2d 主题编辑器已实现（2026-10-25，左右 1:2 实时预览 + 油漆桶/吸管 + 50 步撤销/重做，并补充 `#rrggbbaa` 颜色 alpha 与 Pickr Nano 取色器，见 `docs/PUZZLE_THEME.md` 第 6 节），自动检查通过，待手动验收；P8-4c-2e 自定义主题删除已实现（2026-10-25，直接改草稿 + 底部保存条落盘 + 重置可撤销，不额外弹确认框），自动检查通过，待手动验收；P8-4c-2c 游戏页回退提示、P8-4c-2f 最终验收待开始，P8-5 极简 UI/可访问性（大鼠标指针已完成 2026-10-27）、P8-6 E2E 待开始；P7-3 交互与视觉随 P8 手动验收，详细设计见 `docs/PUZZLE_GAME_PAGE.md`、`docs/SETTINGS_PAGE.md`、`docs/PUZZLE_THEME.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`、`docs/PUZZLE_SCORE_PAGE.md`）
+> 状态：阶段 3 进行中（拼图 P0–P7 已完成；P8-0～P8-4a、P8-4b、P8-4c-1、P8-4c-2a/b/d/e 已完成并手动验收（2026-10-27）；P8-4c-2c 当前阶数回退提示、P8-5a 极简计时已实现（2026-10-27），自动检查通过，待手动验收；P8-4c-2f 只剩回归与文档收尾；P8-5b 移动端横屏留 TODO；可访问性审计、主题编辑器键盘涂色和 P8-6 E2E 取消，E2E 改为用户手动测试；P7-3 交互与视觉已随 P8 手动验收，详细设计见 `docs/PUZZLE_GAME_PAGE.md`、`docs/SETTINGS_PAGE.md`、`docs/PUZZLE_THEME.md`、`docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`、`docs/PUZZLE_SCORE_PAGE.md`）
 >
 > 分支：`refactor/vite-ts`
 >
@@ -30,7 +30,7 @@
 
 - 构建：Vite，多页应用（MPA），保留现有页面 URL。
 - 语言：TypeScript（strict），浏览器原生 DOM / Canvas。
-- 测试：Vitest 覆盖核心逻辑和数据层；Playwright 做少量端到端冒烟测试。
+- 测试：Vitest 覆盖核心逻辑和数据层；E2E 暂不做，跨页面流程由用户手动验收。
 - 规范：ESLint + Prettier。
 - 部署：GitHub Actions 构建 `dist` 发布 GitHub Pages；Netlify 使用同一构建命令。
 - 存储：localStorage（设置/外观）+ IndexedDB（成绩/录像）；IndexedDB 使用 `idb` 轻量封装，测试使用 `fake-indexeddb`。
@@ -67,7 +67,6 @@
 │     │  └─ styles/
 │     └─ <game-id>/              # 后续游戏：core / data / ui / pages / styles
 ├─ public/                       # 运行时图片、图标等静态资源
-├─ tests/e2e/
 ├─ docs/                         # 文档，不参与构建
 ├─ .github/workflows/
 ├─ vite.config.ts
@@ -79,7 +78,7 @@
 
 - 拼图 HTML 入口继续放在原路径，构建后输出到 `dist` 下对应路径，旧链接不变；后续新游戏入口放顶层 `/<game-id>/`，接入约定详见 `docs/GAMES.md`。
 - `core` 不碰 DOM；`data` 负责持久化、schema 与校验；`ui` 只做 DOM 适配；`pages` 负责组装。拼图不迁移旧数据，详见 `docs/PUZZLE_ARCHITECTURE.md`。
-- 单元测试与 `core` 模块放在一起；跨页面浏览器测试放 `tests/e2e`。
+- 单元测试与 `core` 模块放在一起；E2E 取消，跨页面流程由用户手动验收。
 - `docs/` 只放文档和截图，不参与构建；旧代码不复制到 `docs/reference`，用 git tag / worktree 对照。
 
 ## 5. 分阶段步骤
@@ -98,7 +97,7 @@
 - **拼图旧数据不迁移、不兼容**。旧键 `config`、`scores`、`currentScore`、`currentScoreList` 不再读取。
 - 旧键只提供显式清理入口（`src/games/puzzle/data/legacy.ts`），不自动删除；GitHub Pages 与 Netlify 需分别清理。
 - **存储分层**：拼图设置、外观存 localStorage；成绩列表和录像存 IndexedDB（DB `puzzle.v2`，stores `scores` / `replays`，索引 `by-bucket` / `by-event`）。
-- **全站偏好**：颜色主题/计时器字体/语言/游戏页大鼠标指针存 localStorage `site.v1.preferences`（version 1），与拼图设置/外观分开；P8-4b 设置页读取和保存，详见 `docs/SETTINGS_PAGE.md`。
+- **全站偏好**：颜色主题/计时器字体/语言/游戏页大鼠标指针/极简计时存 localStorage `site.v1.preferences`（version 1），与拼图设置/外观分开；P8-4b 设置页读取和保存，详见 `docs/SETTINGS_PAGE.md`。
 - **游戏主题**：存 localStorage `puzzle.v2.appearance`（version 4）；内置主题 canonical，自定义主题上限 20 个；主题有 `supportedSizes`，按阶数分配存 `themeIdBySize`；异常/不兼容时使用系统回退主题；详见 `docs/PUZZLE_THEME.md`。
 - **主题逐块外观**：`palette` / `fontPalette` 逐块；空白块始终透明，盲玩色、内边框、metrics 整盘统一；内边框用 inset shadow + padding，字号按边框内区域计算。
 - **主题编辑器**：不升级 `puzzle.v2.appearance` schema；新建主题只在内存创建 draft，保存后才写入；名称 20 显示宽度只在编辑器执行；50 步撤销/重做只存内存快照，不落存储。
@@ -110,7 +109,7 @@
 - 分组管理集中在成绩页；游戏页只负责切换。详见 `docs/PUZZLE_SCORE_PAGE.md`。
 - 页面间不通过 localStorage 传状态；回放、重玩使用 URL 参数 + score id。
 - 统计筛选、选中成绩等页面状态使用 URL 参数；旧页面 URL 路径保留。
-- 版本管理：`puzzle.v2.settings` 使用 `version: 3`，`puzzle.v2.appearance` 使用 `version: 4`；全站偏好使用 `site.v1.preferences` + `version: 1`；IndexedDB 使用 `DB_VERSION = 2`。不再使用 `puzzle.v2.meta`；外观 v3 → v4 不做迁移，升级时清一次 `puzzle.v2.appearance`（自定义主题会丢失），设置/分组保留。
+- 版本管理：`puzzle.v2.settings` 使用 `version: 3`，`puzzle.v2.appearance` 使用 `version: 4`；全站偏好使用 `site.v1.preferences` + `version: 1`（`timerFont` / `largeCursor` / `timerOnlyOnMove` 为 version 1 内兼容字段）；IndexedDB 使用 `DB_VERSION = 2`。不再使用 `puzzle.v2.meta`；外观 v3 → v4 不做迁移，升级时清一次 `puzzle.v2.appearance`（自定义主题会丢失），设置/分组保留。
 - 不做 localStorage 降级成绩存储；IndexedDB 不可用时明确提示，避免两套数据源。
 - 后续游戏的数据策略在接入时单独决定，默认优先新键、不迁移旧记录。
 - 旧代码只作为行为参考，不复制进新目录；需要对照时使用 git tag、`git show` 或 worktree。
@@ -120,12 +119,12 @@
 - 以 README、`docs/PUZZLE_GAME.md` 和实际行为为准，维护一份功能清单。
 - 每个功能实现前先讨论：旧行为是什么、是否保留或优化、如何验收。
 - 必须覆盖：
-  - 拼图：三种操作模式、盲玩、计时/观察时间、ao5/ao12 规则、三种着色模式（降阶/按行/固定色）、主题级字号/间隙/圆角、逐块背景色与字体色、内边框、盲玩隐藏数字颜色、按阶数分配主题、预设/自定义主题、系统回退主题、游戏页大鼠标指针、录像回放、录像重玩、事件级分组、按分组/事件清空成绩与删除成绩、全量保存录像。
+  - 拼图：三种操作模式、盲玩、计时/观察时间、ao5/ao12 规则、三种着色模式（降阶/按行/固定色）、主题级字号/间隙/圆角、逐块背景色与字体色、内边框、盲玩隐藏数字颜色、按阶数分配主题、预设/自定义主题、系统回退主题、当前阶数回退提示、游戏页大鼠标指针、极简计时（第一次有效移动后只保留棋盘和计时）、录像回放、录像重玩、事件级分组、按分组/事件清空成绩与删除成绩、全量保存录像。
   - 设置页：独立页面分类导航、外观主题入口（本轮仅浅色）、中英文语言偏好、未保存提示条、关于页；游戏主题列表与按阶数分配在 P8-4c-2，独立主题编辑器在 P8-4c-2d。
   - 主题编辑器：左右 `1 : 2` 实时预览、名称与支持阶数、按阶/按行/全自定义、样式刷 + 油漆桶/吸管、盲玩色/内边框/metrics、颜色支持 `#rrggbbaa` alpha、Pickr Nano 取色器、空白块始终透明、文字色显式（无 auto）、无操作说明与“显示数字”、50 步撤销/重做、新建内存 draft、保存后停留并更新 URL、不做离开确认。
   - 后续游戏：按 `docs/GAMES.md` 接入，至少覆盖构建、核心逻辑测试和首页入口。
 - 数据：拼图旧成绩、旧配置、旧自定义方案不迁移；提供显式清理入口。成绩/录像使用 IndexedDB，设置/外观/全站偏好使用 localStorage；长录像不占满 localStorage。后续游戏的数据策略在接入时决定。
-- 质量：构建通过、核心测试通过、移动端和键盘可用、无控制台错误。
+- 质量：构建通过、核心测试通过、桌面端键盘可用、无控制台错误；移动端横屏暂缓，等 P9/P10 基本完成后再做；E2E 取消，由用户手动验收。
 - 性能目标（非硬性指标）：首页几乎零 JS；游戏页不加载图表；图表按需加载；图标不依赖第三方 CDN。
 
 ## 8. 工作方式
@@ -144,8 +143,11 @@
 - 设置页：是否迁移到全站 `/settings.html`、首页入口、分类扩展（游戏主题/维护/导入导出）与深色模式落地顺序，详见 `docs/SETTINGS_PAGE.md`。
 - 大鼠标指针资源：当前使用 128×128 PNG；后续可按需改 SVG data URI 或提供多尺寸资源。
 - 后续游戏选型与首个新游戏的接入时间。
-- P8-4c-2 游戏主题：按阶数分配、系统回退主题、逐块字体色、内边框已设计确认（2026-10-24），P8-4c-2a 领域模型与存储、P8-4c-2b 设置页按阶数分配已实现，P8-4c-2d 编辑器已实现（2026-10-25，左右 1:2 实时预览 + 油漆桶/吸管 + 50 步撤销/重做 + 新建内存 draft + `#rrggbbaa` alpha + Pickr Nano；视觉收敛后无提示文字、无显示数字、空白块始终透明、文字色无 auto），待手动验收；P8-4c-2e 自定义主题删除已实现（2026-10-25，直接改草稿 + 底部保存条落盘 + 重置可撤销，不额外弹确认框），待手动验收；游戏页回退提示待后续子任务；自定义主题排序/命名规则、主题导入导出仍待定。详见 `docs/PUZZLE_THEME.md`。
-- 主题编辑器棋盘涂色的完整键盘/读屏替代方案，随 P8-5 可访问性工作处理；第一版以鼠标/触屏为主。
+- P8-4c-2 游戏主题：按阶数分配、系统回退主题、逐块字体色、内边框已实现并手动验收（2026-10-27）；P8-4c-2c 当前阶数回退提示已实现（2026-10-27，待手动验收），不扫描全部阶数、不加操作按钮；自定义主题排序/命名规则、主题导入导出仍待定。详见 `docs/PUZZLE_THEME.md`。
+- 极简计时：设置页“外观 → 开始移动时只显示计时器”，存 `site.v1.preferences.timerOnlyOnMove`；第一次有效移动后隐藏其他 UI，完成/开新局恢复，重玩不保留退出按钮。已实现（2026-10-27），自动检查通过，待手动验收。
+- 移动端横屏：暂缓，等 P9/P10 基本完成后再做；当前只保证桌面端。
+- 主题编辑器棋盘涂色只支持鼠标/触屏，完整键盘/读屏替代方案不做（2026-10-27 确认放弃）。
+- E2E：取消 Playwright，改为用户手动验收。
 - 主题名称是否需要在数据层也强制 20 显示宽度；当前只由编辑器限制，数据层保持宽松。
 - 撤销历史是否需要跨刷新保留；当前只存在页面内存中。
 - 分组数量扩展（超过每事件 5 组）需要 schema/UI 调整；当前固定 5 组/事件。

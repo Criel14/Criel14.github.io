@@ -10,6 +10,8 @@ import type { SitePreferences } from './types';
  * 字重/字距/缩放，游戏页和设置页预览共用同一组 token。
  * largeCursor 由 `game.css` 的 `[data-game-cursor='large']` 规则切换
  * 游戏页大光标；其他页面没有对应规则，因此不会受影响。
+ * timerOnlyOnMove 由游戏页在每局第一次有效移动时读取，决定是否进入
+ * 极简计时视图；不在 CSS 中直接隐藏 UI，避免刷新时整页闪烁。
  */
 export function applyPreferences(
   preferences: SitePreferences,
@@ -22,4 +24,5 @@ export function applyPreferences(
   root.dataset.language = normalized.language;
   root.dataset.timerFont = normalized.timerFont;
   root.dataset.gameCursor = normalized.largeCursor ? 'large' : 'default';
+  root.dataset.timerOnlyOnMove = normalized.timerOnlyOnMove ? 'true' : 'false';
 }

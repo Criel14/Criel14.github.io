@@ -1,6 +1,6 @@
 # 数字华容道数据存储设计
 
-> 状态：P6 已完成（数据层与旧数据清理均已实现）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层已完成（2026-10-24）；P8-4b 独立设置页与 `site.v1.preferences` 已实现（2026-10-24，待手动验收）；P8-4c-1 主题存储与选择已实现（2026-10-24，待手动验收）；P8-4c-2 设计确认（2026-10-24），P8-4c-2a 外观 v4 领域模型与存储已实现（2026-10-24，不做 v3 迁移，自动检查通过），P8-4c-2b 设置页按阶数分配已实现（2026-10-25，自动检查通过，待手动验收），P8-4c-2d 主题编辑器已实现（2026-10-25，自动检查通过，待手动验收，不改变存储 schema），并补充 `#rrggbbaa` 颜色 alpha 与 Pickr Nano 取色器（2026-10-25，自动检查通过，待手动验收），P8-4c-2e 自定义主题删除已实现（2026-10-25，自动检查通过，待手动验收，不改变存储 schema），P8-4c-2c、P8-4c-2f 待开始
+> 状态：P6 已完成；P8-4a-0、P8-4b、P8-4c-1、P8-4c-2a/b/d/e 已实现并手动验收（2026-10-27）；`site.v1.preferences.timerOnlyOnMove` 已实现（version 1 内兼容字段，2026-10-27，待手动验收）；P8-4c-2c 当前阶数回退提示已实现，P8-4c-2f 只剩回归与文档收尾；移动端与 E2E 暂缓，E2E 改用户手动测试。
 >
 > 分支：`refactor/vite-ts`
 >
@@ -13,7 +13,7 @@
 - **设置和外观继续用 localStorage**：数据小、同步读写、页面启动即可用。
 - **游戏主题仍存 `puzzle.v2.appearance`**：内置主题 canonical、自定义主题最多 20 个；v4 数据包含 `themeIdBySize`、`supportedSizes`、`fontPalette`、`innerBorder`，颜色支持 `#rrggbb` / `#rrggbbaa`，自定义主题全按最重估算约 48KB，不需要 IndexedDB。详见 `docs/PUZZLE_THEME.md`。
 - **外观版本独立**：`puzzle.v2.settings` 保持 version 3，`puzzle.v2.appearance` 升到 version 4；不做 v3 → v4 迁移，升级时清一次 `puzzle.v2.appearance`，自定义主题会丢失。
-- **全站偏好独立存储**：颜色主题/计时器字体/语言/游戏页大鼠标指针存 localStorage `site.v1.preferences`（version 1），与拼图设置/外观分开；`timerFont` 和 `largeCursor` 都是 version 1 内新增的向后兼容字段，旧数据缺字段时按默认值处理。详见 `docs/SETTINGS_PAGE.md`。
+- **全站偏好独立存储**：颜色主题/计时器字体/语言/游戏页大鼠标指针/极简计时存 localStorage `site.v1.preferences`（version 1），与拼图设置/外观分开；`timerFont`、`largeCursor` 和 `timerOnlyOnMove` 都是 version 1 内新增的向后兼容字段，旧数据缺字段时按默认值处理。详见 `docs/SETTINGS_PAGE.md`。
 - **成绩列表和录像改用 IndexedDB**：数据大、需要按桶查询、需要原子事务。
 - **不使用 `puzzle.v2.meta`**：localStorage 的 envelope 自带 `version`，IndexedDB 用 `DB_VERSION`。
 - **分组按事件划分**：事件 = 阶数 + 游戏模式，共 18 个；每个事件固定 5 个分组，共 90 个。`GroupId` 为事件内槽位 1–5，只允许改名。详见 `docs/PUZZLE_SCORE_PAGE.md`。
@@ -84,7 +84,7 @@ v2 没有正式上线，不提供从这些键迁移到 IndexedDB 的逻辑。若
 - `groupId: 1`
 - `groups`: 固定 90 个；18 个事件 × 5 个槽位，默认名称 `分组1`–`分组5`
 - `customCursor: false`
-- `minimalUi: false`
+- `minimalUi: false`（历史预留字段；极简计时改用 `site.v1.preferences.timerOnlyOnMove`，当前不读取该字段）
 
 约束：
 
@@ -125,7 +125,7 @@ v2 没有正式上线，不提供从这些键迁移到 IndexedDB 的逻辑。若
 | --- | --- |
 | key | `site.v1.preferences` |
 | envelope | `{ version: 1, data: SitePreferences }` |
-| 默认值 | `{ themeMode: 'light', language: 'zh-CN', timerFont: 'jetbrains-mono', largeCursor: true }` |
+| 默认值 | `{ themeMode: 'light', language: 'zh-CN', timerFont: 'jetbrains-mono', largeCursor: true, timerOnlyOnMove: false }` |
 | 代码 | `src/shared/preferences/` |
 | 设计 | `docs/SETTINGS_PAGE.md` |
 
@@ -133,7 +133,8 @@ v2 没有正式上线，不提供从这些键迁移到 IndexedDB 的逻辑。若
 - `language` 接受 `zh-CN` / `en`，本轮可保存但界面暂不翻译。
 - `timerFont` 接受 `jetbrains-mono` / `alibaba-puhuiti` / `arial` / `dseg7-classic` / `audiowide` / `press-start-2p`，只影响游戏页计时数字；历史值 `vt323` / `verdana` / `trebuchet-ms` 按默认字体静默回退。
 - `largeCursor` 是布尔值，默认 `true`；只影响 `puzzle.html` 游戏页的大鼠标指针，不影响设置页、成绩页和回放页。
-- 旧 version 1 数据缺少 `timerFont` / `largeCursor` 时按默认值处理，不标记为损坏。
+- `timerOnlyOnMove` 是布尔值，默认 `false`；只影响 `puzzle.html` 游戏页，开启后每局第一次有效移动时隐藏其他 UI，只保留棋盘和计时。
+- 旧 version 1 数据缺少 `timerFont` / `largeCursor` / `timerOnlyOnMove` 时按默认值处理，不标记为损坏。
 - 缺失键不自动写入；用户在设置页点击“保存”才创建 key。
 - 读取状态为 `ok` / `missing` / `corrupt` / `unavailable`，页面按状态提示。
 - 字段级损坏时保留可恢复字段并返回 `corrupt`；保存时再一次性归一化并覆盖原数据。
@@ -625,18 +626,19 @@ npm install -D fake-indexeddb
 - 校验解码后的 moves 与原始一致。
 - 校验记录体积在紧凑编码预期范围内（不写死过窄的字节数）。
 
-### 8.6 E2E
+### 8.6 手动验收（E2E 取消）
 
-Playwright 阶段补充真实浏览器 IndexedDB 冒烟：
+不引入 Playwright；以下场景由用户在真实浏览器中手动验证：
 
 - 完成一局后刷新，成绩和录像仍在。
 - 删除成绩后录像不存在。
 - 清空当前分组后该桶为空，分组本身和其他组保留；清空当前事件后其他事件保留。
 - 分组改名后刷新仍生效，成绩和录像不受影响。
 - 设置和外观刷新后仍在（localStorage）；全站偏好刷新后仍在。
-- 切换阶数后使用该阶数分配的主题；重玩使用成绩阶数的主题；回退阶数显示回退主题。
+- 切换阶数后使用该阶数分配的主题；重玩使用成绩阶数的主题；当前阶数回退时显示一条提示。
 - 清理 `puzzle.v2.appearance` 后回到默认彩虹外观；v3 数据触发回退提示。
-- 隐私模式/存储不可用的提示（可手动验收）。
+- 隐私模式/存储不可用的提示。
+- 开启极简计时后，第一次有效移动只保留棋盘和计时，完成/开新局恢复。
 
 ## 9. 目录与依赖边界
 

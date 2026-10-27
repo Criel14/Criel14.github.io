@@ -15,7 +15,8 @@ export function isPreferencesDirty(saved: SitePreferences, draft: SitePreference
     normalizedSaved.themeMode !== normalizedDraft.themeMode ||
     normalizedSaved.language !== normalizedDraft.language ||
     normalizedSaved.timerFont !== normalizedDraft.timerFont ||
-    normalizedSaved.largeCursor !== normalizedDraft.largeCursor
+    normalizedSaved.largeCursor !== normalizedDraft.largeCursor ||
+    normalizedSaved.timerOnlyOnMove !== normalizedDraft.timerOnlyOnMove
   );
 }
 

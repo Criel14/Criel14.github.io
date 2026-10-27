@@ -45,6 +45,7 @@ interface SettingsElements {
   readonly timerFontInputs: readonly HTMLInputElement[];
   readonly languageInputs: readonly HTMLInputElement[];
   readonly largeCursorInput: HTMLInputElement;
+  readonly timerOnlyOnMoveInput: HTMLInputElement;
   readonly themeNote: HTMLElement;
   readonly gameThemeRoot: HTMLElement;
 }
@@ -74,6 +75,7 @@ function getElements(): SettingsElements {
     timerFontInputs: [...document.querySelectorAll<HTMLInputElement>('[data-setting="timerFont"]')],
     languageInputs: [...document.querySelectorAll<HTMLInputElement>('[data-setting="language"]')],
     largeCursorInput: requireElement<HTMLInputElement>('[data-setting="largeCursor"]'),
+    timerOnlyOnMoveInput: requireElement<HTMLInputElement>('[data-setting="timerOnlyOnMove"]'),
     themeNote: requireElement<HTMLElement>('[data-theme-note]'),
     gameThemeRoot: requireElement<HTMLElement>('[data-game-theme-picker]'),
   };
@@ -230,9 +232,9 @@ function renderLoadStatus(
 }
 
 /**
- * 颜色主题、计时器字体、鼠标指针和语言共用一个 controller。
+ * 颜色主题、计时器字体、鼠标指针、极简计时和语言共用一个 controller。
  *
- * 四项都属于 `site.v1.preferences`，拆成多个 controller 会导致保存时
+ * 五项都属于 `site.v1.preferences`，拆成多个 controller 会导致保存时
  * 写多次存储，无法保证一次保存的一致性。
  */
 function createPreferencesController(
@@ -254,6 +256,7 @@ function createPreferencesController(
       input.checked = input.value === draft.language;
     }
     elements.largeCursorInput.checked = draft.largeCursor;
+    elements.timerOnlyOnMoveInput.checked = draft.timerOnlyOnMove;
     elements.themeNote.hidden = draft.themeMode === 'light';
   }
 
@@ -267,6 +270,7 @@ function createPreferencesController(
       timerFont: timerFont ?? draft.timerFont,
       language: language ?? draft.language,
       largeCursor: elements.largeCursorInput.checked,
+      timerOnlyOnMove: elements.timerOnlyOnMoveInput.checked,
     });
     syncForm();
     onChange();
@@ -277,6 +281,7 @@ function createPreferencesController(
     ...elements.timerFontInputs,
     ...elements.languageInputs,
     elements.largeCursorInput,
+    elements.timerOnlyOnMoveInput,
   ]) {
     input.addEventListener('change', handleChange);
   }

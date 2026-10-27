@@ -79,6 +79,7 @@ function toPreferencesStoreError(error: unknown): PreferencesStoreError {
  * - 只接受约定的枚举值，非法或缺失字段回退默认值；
  * - timerFont 缺失时回退默认字体，兼容新增字段前的 version 1 数据；
  * - largeCursor 缺失时回退默认开启，兼容新增字段前的 version 1 数据；
+ * - timerOnlyOnMove 缺失时回退默认关闭，兼容新增字段前的 version 1 数据；
  * - 未知字段直接忽略，避免旧版本或未来字段污染当前数据；
  * - 返回新对象，调用方不能通过共享引用改动默认值。
  */
@@ -97,6 +98,10 @@ export function normalizePreferences(raw: unknown): SitePreferences {
       typeof record.largeCursor === 'boolean'
         ? record.largeCursor
         : DEFAULT_SITE_PREFERENCES.largeCursor,
+    timerOnlyOnMove:
+      typeof record.timerOnlyOnMove === 'boolean'
+        ? record.timerOnlyOnMove
+        : DEFAULT_SITE_PREFERENCES.timerOnlyOnMove,
   };
 }
 
@@ -119,7 +124,8 @@ export function createBrowserPreferencesStorage(): PreferencesStorage {
  * - missing：没有写过偏好，静默使用默认值；
  * - corrupt：JSON、信封或字段损坏，使用归一化结果并让页面提示；
  * - unavailable：浏览器存储不可用，使用默认值并提示；
- * - ok：信封和四个字段都合法；旧数据缺少 timerFont / largeCursor 也视为合法。
+ * - ok：信封和已知字段都合法；旧数据缺少 timerFont / largeCursor /
+ *   timerOnlyOnMove 也视为合法。
  *
  * 字段级损坏时仍保留合法字段，避免一个错误值丢掉另一项可恢复的偏好。
  */
@@ -155,9 +161,9 @@ export function loadPreferences(
   const data = parsed.data;
   const preferences = normalizePreferences(data);
   /*
-   * timerFont 和 largeCursor 都是 version 1 内新增的向后兼容字段：旧数据没有
-   * 这些键时按默认值处理，不应把整份偏好标记为损坏；字段存在但非法时才报
-   * corrupt，并保留同一条数据里其他合法字段。
+   * timerFont、largeCursor 和 timerOnlyOnMove 都是 version 1 内新增的向后兼容
+   * 字段：旧数据没有这些键时按默认值处理，不应把整份偏好标记为损坏；字段存在
+   * 但非法时才报 corrupt，并保留同一条数据里其他合法字段。
    * VT323、Verdana、Trebuchet MS 曾进入开发版本，但已从可选字体中移除；
    * 这些历史值同样按默认字体静默回退，不把整份偏好标记为损坏。
    */
@@ -168,11 +174,14 @@ export function loadPreferences(
     data.timerFont === 'trebuchet-ms' ||
     isTimerFontId(data.timerFont);
   const largeCursorValid = data.largeCursor === undefined || typeof data.largeCursor === 'boolean';
+  const timerOnlyOnMoveValid =
+    data.timerOnlyOnMove === undefined || typeof data.timerOnlyOnMove === 'boolean';
   const valid =
     isThemeMode(data.themeMode) &&
     isSiteLanguage(data.language) &&
     timerFontValid &&
-    largeCursorValid;
+    largeCursorValid &&
+    timerOnlyOnMoveValid;
 
   return {
     status: valid ? 'ok' : 'corrupt',

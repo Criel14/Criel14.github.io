@@ -1,6 +1,6 @@
 # 数字华容道重构架构
 
-> 状态：P0–P7 已实现；P8-0 设计确认（2026-10-21），P8-1 页面骨架、P8-2 输入/session/统计、P8-3 结算/保存/重玩与重玩状态栏已完成（2026-10-22～10-23）；分组模型改为事件级（2026-10-24 设计确认），P8-4a-0 分组模型与数据层、P8-4a 分组弹框已完成（2026-10-24），P8-4b 独立设置页与网站偏好已实现（2026-10-24，详见 `docs/SETTINGS_PAGE.md`，待手动验收），P8-4c-1 设置页主题列表已实现（待手动验收），P8-4c-2 设计确认（2026-10-24，详见 `docs/PUZZLE_THEME.md`），P8-4c-2a 主题模型升级与存储已实现（2026-10-24，自动检查通过），P8-4c-2b 设置页按阶数分配已实现（2026-10-25，自动检查通过，待手动验收），P8-4c-2d 主题编辑器已实现并补充颜色 alpha + Pickr Nano 取色器（2026-10-25，自动检查通过，待手动验收），P8-4c-2e 自定义主题删除已实现（2026-10-25，自动检查通过，待手动验收），P8-4c-2c、P8-4c-2f、P8-5～P8-6 待开始（P7-3 交互与视觉随 P8 手动验收）；回放、存储、设置页、游戏主题和成绩页的详细设计见独立文档
+> 状态：P0–P7 已实现；P8-0～P8-4a、P8-4b、P8-4c-1、P8-4c-2a/b/d/e 已完成并手动验收（2026-10-27）；P8-4c-2c 当前阶数回退提示、P8-5a 极简计时已实现（2026-10-27），自动检查通过，待手动验收；P8-4c-2f 只剩回归与文档收尾；P8-5b 移动端暂缓；可访问性审计、主题编辑器键盘涂色和 P8-6 E2E 取消，E2E 改为用户手动测试。回放、存储、设置页、游戏主题和成绩页的详细设计见独立文档
 >
 > 分支：`refactor/vite-ts`
 >
@@ -132,6 +132,7 @@ export interface GameSettings {
   /** 固定 90 个分组：18 个事件 × 5 个槽位；只允许修改 name。 */
   groups: readonly Group[];
   customCursor: boolean;
+  /** 历史预留字段；极简计时改用 site.v1.preferences.timerOnlyOnMove，当前不读取。 */
   minimalUi: boolean;
 }
 
@@ -276,7 +277,7 @@ export interface AppearanceState {
 | --- | --- | --- |
 | 游戏设置 | localStorage | `puzzle.v2.settings`，`{ version: 3, data: GameSettings }` |
 | 外观主题 | localStorage | `puzzle.v2.appearance`，`{ version: 4, data: AppearanceState }` |
-| 全站偏好 | localStorage | `site.v1.preferences`，`{ version: 1, data: SitePreferences }`（颜色主题、计时器字体、语言、游戏页大鼠标指针） |
+| 全站偏好 | localStorage | `site.v1.preferences`，`{ version: 1, data: SitePreferences }`（颜色主题、计时器字体、语言、游戏页大鼠标指针、极简计时） |
 | 成绩摘要 | IndexedDB | DB `puzzle.v2` → store `scores`，主键 `id` |
 | 录像 | IndexedDB | DB `puzzle.v2` → store `replays`，主键 `scoreId` |
 
@@ -793,7 +794,7 @@ function getTileLayer(tile: number, size: PuzzleSize): number {
 - 自定义主题上限 20 个；数据模型允许列表扩展，但存储和 UI 以 `CUSTOM_THEME_SLOT_COUNT` 为准。
 - 自定义主题的 `supportedSizes` 缩小到正在被使用的阶数之外时，编辑器阻止保存，要求先在设置页切换这些阶数。
 - 分组管理集中在成绩页；设置页不重复实现，后续如需要只放跳转链接。
-- 游戏页大鼠标指针属于全站偏好 `site.v1.preferences.largeCursor`，不属于 `GameSettings`；`puzzle.v2.settings.customCursor` 为历史预留字段，本功能不使用。极简 UI 仍属于 `GameSettings`，P8-5 再接入。
+- 游戏页大鼠标指针属于全站偏好 `site.v1.preferences.largeCursor`，不属于 `GameSettings`；`puzzle.v2.settings.customCursor` 为历史预留字段，本功能不使用。极简计时也属于全站偏好 `site.v1.preferences.timerOnlyOnMove`；`GameSettings.minimalUi` 保留为历史预留字段，P8-5 不读取。
 - 编辑器不升级 schema；`Theme` / `AppearanceState` 字段和 `APPEARANCE_SCHEMA_VERSION = 4` 不变。
 - 编辑器和设置页都按“显式保存”处理；返回/刷新直接丢弃 draft，不弹离开确认，底部保存条是唯一提醒。详见 `docs/PUZZLE_THEME.md`。
 - 实现状态（2026-10-25）：`theme-editor.html`、`styles/theme-editor.css`、`pages/theme-editor.ts` 和 `ui/theme-editor*.ts` 已落地；`ui/theme-history.ts` 是纯状态模块；`core/appearance/editor.ts` / `name.ts` 承载可测试的编辑纯函数（含 `prepareThemeForEditor()`）。`board-view` 增加 `data-tile` 钩子；设置页在 bfcache 恢复时重新读取外观，避免返回后显示旧主题列表。视觉收敛后编辑器不显示操作说明、无“显示数字”、无空白色编辑、无文字色“自动”。
@@ -943,7 +944,7 @@ types ← core ← ui   ← pages
 
 - **core**：Vitest 单元测试；时间、随机源、棋盘全部通过参数注入；不依赖 DOM。
 - **data**：localStorage 适配器用内存 `Storage` 测试；IndexedDB repository 用 `fake-indexeddb` 测试；覆盖缺键、损坏 JSON、非法记录、配额/不可用错误、索引查询、原子事务。全站偏好 store 使用内存适配器测试，不依赖浏览器。
-- **ui**：纯格式化函数和 lifecycle 用 Vitest node 单测；dialog / notice / board-view / 设置页等 DOM 交互不引入 DOM 模拟环境，以手动验收和后续 Playwright 为主。
+- **ui**：纯格式化函数和 lifecycle 用 Vitest node 单测；dialog / notice / board-view / 设置页等 DOM 交互不引入 DOM 模拟环境，以用户手动验收为主；E2E 暂不做。
 - **测试命名**：中文描述，和现有 `board.test.ts` / `moves.test.ts` 保持一致。
 - **每次提交前**：
   ```bash
@@ -952,7 +953,7 @@ types ← core ← ui   ← pages
   npm run lint
   npm run format:check
   ```
-- **UI 阶段**：不自动启动 dev server；由用户启动后手动验收或运行 Playwright。
+- **UI 阶段**：不自动启动 dev server；由用户启动后手动验收。
 
 必须覆盖的关键场景：
 
@@ -963,7 +964,7 @@ types ← core ← ui   ← pages
 - ui：lifecycle 的 signal / 监听器 / 定时器 / rAF 清理；dialog / notice 的 Esc、焦点回收、非阻塞提示在 P8 手动验收。
 - data：localStorage 设置/外观读写、IndexedDB 原子事务、`by-bucket` / `by-event` 索引、按桶/事件/全部清空、录像编码往返、90 个事件级分组与改名、旧键不读取、清理旧键。
 - preferences：缺键/损坏/不可用状态、字段归一化、保存往返、脏状态比较和重置。
-- settings：hash 分类、草稿/重置/保存、未保存提示条、语言偏好、运行中设置入口禁用，随 P8-4b 手动验收和 P8-6 E2E 覆盖。
+- settings：hash 分类、草稿/重置/保存、未保存提示条、语言偏好、运行中设置入口禁用，由用户手动验收；P8-6 E2E 取消。
 
 ## 14. 决策记录
 
@@ -971,7 +972,7 @@ types ← core ← ui   ← pages
 | ---------- | ---------------------------------------- | ------------------------------------------------------- |
 | 旧数据     | 不迁移、不兼容                           | 站点已无用户；减少历史特例和迁移代码                    |
 | 存储分层   | localStorage（设置/外观/全站偏好）+ IndexedDB（成绩/录像） | 小数据同步读写；大数据支持索引、配额和原子事务 |
-| 全站偏好   | `site.v1.preferences`，version 1         | 颜色主题/计时器字体/语言/大鼠标指针与拼图私有数据分开；迁移全站设置页不迁移数据 |
+| 全站偏好   | `site.v1.preferences`，version 1         | 颜色主题/计时器字体/语言/大鼠标指针/极简计时与拼图私有数据分开；迁移全站设置页不迁移数据 |
 | 设置页     | 独立页面 + 草稿/保存条                   | 分类可扩展；避免模态框拥挤；重置/丢弃语义清晰            |
 | 主题色     | `#3498DB` + 白字                         | 统一设置页和游戏页选中态；接受小字号对比度取舍          |
 | 成绩模型   | 只存事实，派生值读时算                   | 消除 time/tps/ao/number 不一致                          |

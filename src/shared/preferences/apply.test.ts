@@ -15,16 +15,26 @@ function apply(preferences: SitePreferences, root: FakeRoot): void {
 }
 
 describe('applyPreferences', () => {
-  it('把 light、en、计时器字体和大光标写入 dataset', () => {
+  it('把 light、en、计时器字体、大光标和极简计时写入 dataset', () => {
     const root = createRoot();
 
-    apply({ themeMode: 'light', language: 'en', timerFont: 'audiowide', largeCursor: true }, root);
+    apply(
+      {
+        themeMode: 'light',
+        language: 'en',
+        timerFont: 'audiowide',
+        largeCursor: true,
+        timerOnlyOnMove: true,
+      },
+      root,
+    );
 
     expect(root.dataset).toEqual({
       theme: 'light',
       language: 'en',
       timerFont: 'audiowide',
       gameCursor: 'large',
+      timerOnlyOnMove: 'true',
     });
   });
 
@@ -37,6 +47,7 @@ describe('applyPreferences', () => {
         language: 'zh-CN',
         timerFont: 'jetbrains-mono',
         largeCursor: true,
+        timerOnlyOnMove: false,
       },
       root,
     );
@@ -45,6 +56,7 @@ describe('applyPreferences', () => {
       language: 'zh-CN',
       timerFont: 'jetbrains-mono',
       gameCursor: 'large',
+      timerOnlyOnMove: 'false',
     });
 
     apply(
@@ -53,6 +65,7 @@ describe('applyPreferences', () => {
         language: 'zh-CN',
         timerFont: 'jetbrains-mono',
         largeCursor: true,
+        timerOnlyOnMove: false,
       },
       root,
     );
@@ -61,10 +74,11 @@ describe('applyPreferences', () => {
       language: 'zh-CN',
       timerFont: 'jetbrains-mono',
       gameCursor: 'large',
+      timerOnlyOnMove: 'false',
     });
   });
 
-  it('关闭大光标时写入 default', () => {
+  it('关闭大光标和极简计时时写入 default / false', () => {
     const root = createRoot();
 
     apply(
@@ -73,11 +87,13 @@ describe('applyPreferences', () => {
         language: 'zh-CN',
         timerFont: 'jetbrains-mono',
         largeCursor: false,
+        timerOnlyOnMove: false,
       },
       root,
     );
 
     expect(root.dataset.gameCursor).toBe('default');
+    expect(root.dataset.timerOnlyOnMove).toBe('false');
   });
 
   it('应用前归一化非法字段', () => {
@@ -89,6 +105,7 @@ describe('applyPreferences', () => {
         language: 'fr',
         timerFont: 'comic-sans',
         largeCursor: 'yes',
+        timerOnlyOnMove: 'yes',
       } as unknown as SitePreferences,
       root,
     );
@@ -98,6 +115,7 @@ describe('applyPreferences', () => {
       language: 'zh-CN',
       timerFont: 'jetbrains-mono',
       gameCursor: 'large',
+      timerOnlyOnMove: 'false',
     });
   });
 });

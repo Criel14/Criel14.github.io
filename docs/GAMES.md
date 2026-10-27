@@ -48,7 +48,7 @@ src/games/<game-id>/
 ## 5. 测试与验收
 
 - `core` 纯函数、`data` 编解码和关键 UI 状态至少有 Vitest 单测；测试与源码同目录，命名 `*.test.ts`，描述用中文。
-- 跨页面浏览器测试统一放 `tests/e2e/`。
+- 跨页面浏览器测试暂不做；需要时由用户手动验收，后续恢复 E2E 再统一放 `tests/e2e/`。
 - 新游戏接入至少确认：
   - `npm run build`、`npm test`、`npm run lint`、`npm run format:check` 通过；
   - 首页入口可达，直接访问 HTML 路径可运行；

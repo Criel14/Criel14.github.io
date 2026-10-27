@@ -43,6 +43,15 @@ describe('isPreferencesDirty', () => {
     ).toBe(true);
   });
 
+  it('timerOnlyOnMove 不同返回 true', () => {
+    expect(
+      isPreferencesDirty(DEFAULT_SITE_PREFERENCES, {
+        ...DEFAULT_SITE_PREFERENCES,
+        timerOnlyOnMove: true,
+      }),
+    ).toBe(true);
+  });
+
   it('归一化后比较，未知字段不会造成假脏状态', () => {
     const saved = { ...DEFAULT_SITE_PREFERENCES } as SitePreferences;
     const draft = {
@@ -61,6 +70,7 @@ describe('resetPreferencesDraft', () => {
       language: 'en',
       timerFont: 'audiowide',
       largeCursor: false,
+      timerOnlyOnMove: true,
     };
 
     const draft = resetPreferencesDraft(saved);

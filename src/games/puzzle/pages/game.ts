@@ -19,6 +19,7 @@ import type {
   SessionState,
 } from '../types';
 import { getThemeForSize } from '../core/appearance/appearance';
+import { FALLBACK_THEME_ID } from '../core/appearance/presets';
 import { isPuzzleSize } from '../core/board';
 import { getGroupName as resolveGroupName, isGroupId } from '../core/groups';
 import { generateScramble } from '../core/scramble';
@@ -267,6 +268,21 @@ function hasOpenDialog(): boolean {
   return document.querySelector('dialog[open]') !== null;
 }
 
+const TIMER_ONLY_CLASS = 'game-page--timer-only';
+
+/**
+ * 极简计时偏好由 applyPreferences 写入 <html data-timer-only-on-move>。
+ * 游戏页只在每局第一次有效移动时读取，运行中修改设置不会改变当前局。
+ */
+function isTimerOnlyOnMoveEnabled(): boolean {
+  return document.documentElement.dataset.timerOnlyOnMove === 'true';
+}
+
+/** 切换极简计时视图；用 body class 让 CSS 隐藏菜单、统计明细和入口。 */
+function setTimerOnlyView(active: boolean): void {
+  document.body.classList.toggle(TIMER_ONLY_CLASS, active);
+}
+
 /** 成绩 ID 只在结算时生成；无 randomUUID 的浏览器使用时间戳 + 随机后缀。 */
 function createScoreId(): string {
   if (typeof globalThis.crypto?.randomUUID === 'function') {
@@ -305,6 +321,31 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
   const appearanceResult = loadAppearanceResult();
   reportLoadStatus(notifier, 'settings', settingsResult.status);
   reportLoadStatus(notifier, 'appearance', appearanceResult.status);
+
+  /*
+   * 只有外观数据可读时才判断回退主题；corrupt / unavailable 已经由上面的
+   * 外观提示说明原因，再叠一条“暂未设置主题”会让用户误以为是配置问题。
+   */
+  const canReportThemeFallback =
+    appearanceResult.status === 'ok' || appearanceResult.status === 'missing';
+
+  /**
+   * 当前阶数落到系统回退主题时显示一条提示；切回正常阶数时关闭。
+   * 固定 id 保证切换阶数时只更新同一条，不堆叠多条提示。
+   */
+  function updateThemeFallbackNotice(size: PuzzleSize, themeId: string): void {
+    if (!canReportThemeFallback || themeId !== FALLBACK_THEME_ID) {
+      notifier.dismiss('theme-fallback');
+      return;
+    }
+
+    notifier.show({
+      id: 'theme-fallback',
+      type: 'warning',
+      message: `${size}×${size} 阶数暂未设置主题，请前往设置页设置`,
+      duration: 6_000,
+    });
+  }
 
   let settings = settingsResult.settings;
   const elements = getElements();
@@ -538,13 +579,15 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
     elements.boardMount.replaceChildren();
     elements.boardMount.removeAttribute('aria-busy');
 
+    const theme = getThemeForSize(appearanceResult.appearance, size);
     boardView = createBoardView({
       root: elements.boardMount,
       size,
-      theme: getThemeForSize(appearanceResult.appearance, size),
+      theme,
       numbersVisible: true,
     });
     boardSize = size;
+    updateThemeFallbackNotice(size, theme.id);
   }
 
   function ensureBoard(size: PuzzleSize): void {
@@ -579,6 +622,8 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
     }
 
     session = next;
+    // 新局从完整 UI 开始观察；只有第一次有效移动后才可能进入极简计时。
+    setTimerOnlyView(false);
     updateControlState();
     hudSnapshot = { time: '', steps: '', tps: '' };
     boardView.update(session.board);
@@ -665,10 +710,16 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
       return;
     }
 
-    const phaseChanged = session.phase !== next.phase;
+    const previousPhase = session.phase;
+    const phaseChanged = previousPhase !== next.phase;
     session = next;
     boardView?.update(session.board);
     updateHud(performance.now());
+
+    // 每局只在 observing → running 的第一次有效移动时读取偏好。
+    if (previousPhase === 'observing' && next.phase === 'running' && isTimerOnlyOnMoveEnabled()) {
+      setTimerOnlyView(true);
+    }
 
     if (phaseChanged) {
       // observing → running 后分组必须锁定；solved 也保持锁定直到开新局。
@@ -676,6 +727,8 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
     }
 
     if (session.phase === 'solved') {
+      // 复原后恢复完整 UI，让成绩提示、重玩入口和刷新按钮重新可见。
+      setTimerOnlyView(false);
       // 棋盘锁定后移除输入监听，避免仍显示可点击光标。
       detachInput?.();
       detachInput = null;
@@ -1083,6 +1136,7 @@ function renderPage(lifecycle: Lifecycle, notifier: Notifier): void {
     retryMode = false;
     retryLoading = false;
     retrySource = null;
+    setTimerOnlyView(false);
 
     notifier.dismiss('retry-loading');
     notifier.dismiss('retry-finished');
