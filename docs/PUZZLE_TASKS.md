@@ -4,7 +4,7 @@
 >
 > 当前分支：`refactor/vite-ts`
 >
-> 状态：P0–P7 已完成；P8-0～P8-4a、P8-4b、P8-4c-1、P8-4c-2a/b/d/e 已完成并手动验收（2026-10-27）；P8-4c-2c 当前阶数回退提示、P8-5a 极简计时已实现（2026-10-27），自动检查通过，待手动验收；P8-4c-2f 只剩回归与文档收尾；P8-5b 移动端暂缓；可访问性审计、主题编辑器键盘涂色、P8-6 E2E 均不做，E2E 改为用户手动测试。P5/P6 详细设计见 `docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`，成绩页与分组管理见 `docs/PUZZLE_SCORE_PAGE.md`，游戏主题见 `docs/PUZZLE_THEME.md`
+> 状态：P0–P7 已完成；P8-0～P8-4a、P8-4b、P8-4c-1、P8-4c-2a/b/c/d/e/f、P8-5a 已完成并手动验收（2026-10-27）；P8-5b 移动端暂缓；可访问性审计、主题编辑器键盘涂色、P8-6 E2E 均不做，E2E 改为用户手动测试。P5/P6 详细设计见 `docs/PUZZLE_REPLAY.md`、`docs/PUZZLE_STORAGE.md`，成绩页与分组管理见 `docs/PUZZLE_SCORE_PAGE.md`，游戏主题见 `docs/PUZZLE_THEME.md`
 >
 > 标记：`[ ]` 未开始 / `[~]` 进行中 / `[x]` 已完成 / `[!]` 阻塞 / `[-]` 取消或不做
 >
@@ -27,7 +27,7 @@
 | P10  | 回放页                    | P5、P6、P7 | `[ ]` |
 | P11  | 文档、清理与验收          | P8–P10     | `[ ]` |
 
-**当前进度：P0–P7 已完成；P8-0～P8-4a、P8-4b、P8-4c-1、P8-4c-2a/b/d/e 已手动验收（2026-10-27）。P8-4c-2c 当前阶数回退提示和 P8-5a 极简计时已实现（2026-10-27），自动检查通过，待手动验收。P8-4c-2f 只剩回归与文档收尾；P8-5b 移动端横屏留 TODO；P8-5c 可访问性审计和 P8-6 E2E 取消，均由用户手动测试。** P8 起进入页面组装，按顺序推进，不提前写页面；游戏页详细设计和布局实验见 `docs/PUZZLE_GAME_PAGE.md`，设置页设计见 `docs/SETTINGS_PAGE.md`，游戏主题与编辑器见 `docs/PUZZLE_THEME.md`，成绩页与分组管理见 `docs/PUZZLE_SCORE_PAGE.md`，游戏页后续以 `docs/PUZZLE_GAME_PAGE.md` 的“5.5 实现基线”为准。
+**当前进度：P0–P7 已完成；P8 桌面端功能（含 P8-4c-2c 当前阶数回退提示、P8-5a 极简计时和 P8-4c-2f 测试与文档收尾）已完成并手动验收（2026-10-27），完整检查 488 项测试、类型检查、ESLint、Prettier、构建均通过；P8-5b 移动端横屏留 TODO；P8-5c 可访问性审计和 P8-6 E2E 取消，均由用户手动测试；P9 成绩页、P10 回放页待开始。** P8 起进入页面组装，按顺序推进，不提前写页面；游戏页详细设计和布局实验见 `docs/PUZZLE_GAME_PAGE.md`，设置页设计见 `docs/SETTINGS_PAGE.md`，游戏主题与编辑器见 `docs/PUZZLE_THEME.md`，成绩页与分组管理见 `docs/PUZZLE_SCORE_PAGE.md`，游戏页后续以 `docs/PUZZLE_GAME_PAGE.md` 的“5.5 实现基线”为准。
 
 每个阶段结束都运行：
 
@@ -539,7 +539,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 
 > 详细设计、布局实验与 P8-0～P8-6 任务见 `docs/PUZZLE_GAME_PAGE.md`；设置页设计见 `docs/SETTINGS_PAGE.md`；游戏主题与编辑器见 `docs/PUZZLE_THEME.md`。
 >
-> 当前：P8-0～P8-4a、P8-4b、P8-4c-1、P8-4c-2a/b/d/e 已手动验收（2026-10-27）；P8-4c-2c 当前阶数回退提示、P8-5a 极简计时已实现（2026-10-27），待手动验收；P8-4c-2f 做回归与文档收尾；P8-5b 移动端横屏暂缓；P8-5c 可访问性审计和 P8-6 E2E 取消。后续游戏页实现以 `docs/PUZZLE_GAME_PAGE.md` 的“5.5 实现基线”为准，设置页以 `docs/SETTINGS_PAGE.md` 为准，游戏主题以 `docs/PUZZLE_THEME.md` 为准，`prototype/layout-lab.html` 保留到最终视觉验收。
+> 当前：P8 桌面端功能已完成并手动验收（2026-10-27），包括 P8-4c-2c 当前阶数回退提示、P8-5a 极简计时和 P8-4c-2f 测试与文档收尾；P8-5b 移动端横屏暂缓；P8-5c 可访问性审计和 P8-6 E2E 取消。后续游戏页实现以 `docs/PUZZLE_GAME_PAGE.md` 的“5.5 实现基线”为准，设置页以 `docs/SETTINGS_PAGE.md` 为准，游戏主题以 `docs/PUZZLE_THEME.md` 为准，`prototype/layout-lab.html` 保留到最终视觉验收。
 >
 > 分组管理和成绩页的交互见 `docs/PUZZLE_SCORE_PAGE.md`；P8-4a 只负责游戏页的分组切换，不负责重命名。
 >
@@ -557,11 +557,11 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
 | P8-4c-1 | 设置页主题列表与选择              | `[x]` |
 | P8-4c-2a | 主题模型升级与存储（外观 v4）    | `[x]` |
 | P8-4c-2b | 设置页按阶数分配与对话框          | `[x]` |
-| P8-4c-2c | 游戏页按阶数解析与当前阶数回退提示（已实现 2026-10-27） | `[~]` |
+| P8-4c-2c | 游戏页按阶数解析与当前阶数回退提示（已完成并手动验收 2026-10-27） | `[x]` |
 | P8-4c-2d | 主题编辑器（已实现 2026-10-25，含 alpha + Pickr） | `[x]` |
 | P8-4c-2e | 自定义主题删除（已实现 2026-10-25） | `[x]` |
-| P8-4c-2f | 测试、文档与手动验收（手动验收已完成） | `[~]` |
-| P8-5a | 极简计时（已实现 2026-10-27，待手动验收） | `[~]` |
+| P8-4c-2f | 测试、文档与手动验收（已完成 2026-10-27） | `[x]` |
+| P8-5a | 极简计时（已完成并手动验收 2026-10-27） | `[x]` |
 | P8-5b | 移动端横屏（TODO，暂缓）          | `[ ]` |
 | P8-5c | 可访问性审计                      | `[-]` |
 | P8-6 | 游戏页 E2E（改手动测试）          | `[-]` |
@@ -574,7 +574,7 @@ P8-4c-2e 实现备注（2026-10-25）：自定义主题卡右下角新增删除�
 
 P8-5 大鼠标指针实现备注（2026-10-27）：设置页“外观 → 鼠标指针”新增勾选卡片，偏好写入 `site.v1.preferences.largeCursor`（默认 `true`）。游戏页根据 `<html data-game-cursor>` 切换 `src/shared/cursors/default.png` 和 `pointer.png`，两张图的热点以左上角为原点，统一取 `8 3`（向右 8px、向下 3px）；按钮、链接和可点击方块使用小手，禁用按钮保留 `not-allowed`。只影响 `puzzle.html`，不修改 `puzzle.v2.settings`。
 
-P8-5a 极简计时方案（2026-10-27 确认并实现）：设置页“外观”新增 `h3`“UI 显示”，其下方放同款勾选卡片“开始移动时只显示计时器”，偏好写入 `site.v1.preferences.timerOnlyOnMove`（默认 `false`），并通过 `<html data-timer-only-on-move>` 下发。游戏页在每局第一次有效移动后隐藏左栏菜单、步数/TPS/ao、入口和重玩状态栏，保留棋盘、计时数字和刷新按钮；完成复原或开新局后恢复完整 UI。重玩中不保留退出按钮；不提供中途退出极简视图的入口。CSS 使用 `visibility: hidden` 保持三栏布局和计时数字位置不变，隐藏元素不进入 Tab 顺序。`npm test`（488 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 均通过，待手动验收。移动端横屏留 TODO，等 P9/P10 基本完成后再做。P8-5c 可访问性审计、主题编辑器键盘涂色和 P8-6 E2E 均取消，由用户手动测试。
+P8-5a 极简计时方案（2026-10-27 确认并实现）：设置页“外观”新增 `h3`“UI 显示”，其下方放同款勾选卡片“开始移动时只显示计时器”，偏好写入 `site.v1.preferences.timerOnlyOnMove`（默认 `false`），并通过 `<html data-timer-only-on-move>` 下发。游戏页在每局第一次有效移动后隐藏左栏菜单、步数/TPS/ao、入口和重玩状态栏，保留棋盘、计时数字和刷新按钮；完成复原或开新局后恢复完整 UI。重玩中不保留退出按钮；不提供中途退出极简视图的入口。CSS 使用 `visibility: hidden` 保持三栏布局和计时数字位置不变，隐藏元素不进入 Tab 顺序。`npm test`（488 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 均通过，已手动验收（2026-10-27）。移动端横屏留 TODO，等 P9/P10 基本完成后再做。P8-5c 可访问性审计、主题编辑器键盘涂色和 P8-6 E2E 均取消，由用户手动测试。
 
 ---
 

@@ -1,6 +1,6 @@
 # 数字华容道数据存储设计
 
-> 状态：P6 已完成；P8-4a-0、P8-4b、P8-4c-1、P8-4c-2a/b/d/e 已实现并手动验收（2026-10-27）；`site.v1.preferences.timerOnlyOnMove` 已实现（version 1 内兼容字段，2026-10-27，待手动验收）；P8-4c-2c 当前阶数回退提示已实现，P8-4c-2f 只剩回归与文档收尾；移动端与 E2E 暂缓，E2E 改用户手动测试。
+> 状态：P6 已完成；P8-4a-0、P8-4b、P8-4c-1、P8-4c-2a/b/c/d/e/f、P8-5a 已实现并手动验收（2026-10-27）；`site.v1.preferences.timerOnlyOnMove` 已实现并手动验收（version 1 内兼容字段，2026-10-27）；移动端与 E2E 暂缓，E2E 改用户手动测试。
 >
 > 分支：`refactor/vite-ts`
 >

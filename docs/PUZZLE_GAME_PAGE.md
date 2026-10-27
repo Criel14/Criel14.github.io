@@ -1,6 +1,6 @@
 # 数字华容道游戏页设计与 P8 任务
 
-> 状态：P8-0～P8-4a、P8-4b、P8-4c-1、P8-4c-2a/b/d/e 已完成并手动验收（2026-10-27）；P8-4c-2c 当前阶数回退提示、P8-5a 极简计时已实现（2026-10-27），自动检查通过，待手动验收；P8-4c-2f 只剩回归与文档收尾；P8-5b 移动端暂缓；可访问性审计、主题编辑器键盘涂色、P8-6 E2E 均不做，E2E 改为用户手动测试。
+> 状态：P8-0～P8-4a、P8-4b、P8-4c-1、P8-4c-2a/b/c/d/e/f、P8-5a 已完成并手动验收（2026-10-27）；P8-5b 移动端暂缓；可访问性审计、主题编辑器键盘涂色、P8-6 E2E 均不做，E2E 改为用户手动测试。
 >
 > 分支：`refactor/vite-ts`
 >
@@ -554,7 +554,7 @@ P8-1 以当前实验室为视觉基线。正式实现时先复用结构和样式
   - 游戏页设置按钮改为链接；运行中、重玩中、保存中禁用。
 - 验收：见 `docs/SETTINGS_PAGE.md` 第 12 节。
 - 依赖：P6、P7、P8-2、P8-3。
-- 实现备注（2026-10-24）：设置页导航由注册表生成；偏好字段级损坏时保留可恢复字段并提示；游戏页设置链接用 `aria-disabled` 表达禁用，新标签页打开不拦截。自动检查已通过，手动验收待执行。
+- 实现备注（2026-10-24）：设置页导航由注册表生成；偏好字段级损坏时保留可恢复字段并提示；游戏页设置链接用 `aria-disabled` 表达禁用，新标签页打开不拦截。自动检查已通过，已手动验收（2026-10-27）。
 
 ### P8-4c-1 设置页主题列表与选择
 
@@ -569,12 +569,12 @@ P8-1 以当前实验室为视觉基线。正式实现时先复用结构和样式
 - 验收：两套内置主题和自定义主题卡片正确渲染；选中/保存/重置/刷新行为正确；20 个上限生效；加号/编辑入口可进入占位页；键盘和窄屏可用。
 - 依赖：P2、P8-4b。
 - 详细验收见 `docs/PUZZLE_THEME.md` 第 11.3 节（P8-4c-2 会替换其中的单选和固定预览行为）。
-- 实现备注（2026-10-24）：主题卡由 `game-theme-picker` 动态渲染，10×10 预览复用 `board-view`；设置页新增 `puzzle-theme` controller；自定义主题上限 20；`theme-editor.html` 为占位页；自动检查已通过，手动验收待执行。
+- 实现备注（2026-10-24）：主题卡由 `game-theme-picker` 动态渲染，10×10 预览复用 `board-view`；设置页新增 `puzzle-theme` controller；自定义主题上限 20；`theme-editor.html` 为占位页；自动检查已通过，已手动验收（2026-10-27）。
 - 后续变更（2026-10-24）：P8-4c-2 将替换 radio 单选和固定 10×10 预览，改为按阶数分配、覆盖徽标和支持的最大阶数预览；当前行为以 `docs/PUZZLE_THEME.md` 为准。
 
 ### P8-4c-2 主题模型升级、按阶数分配与编辑器
 
-- [~] 详见 `docs/PUZZLE_THEME.md` 第 1.2、5、6、7 节；P8-4c-2c 当前阶数回退提示已实现，待手动验收。
+- [x] 详见 `docs/PUZZLE_THEME.md` 第 1.2、5、6、7 节；P8-4c-2c 当前阶数回退提示已完成并手动验收（2026-10-27），回放页复用留待 P10。
 - 内容：
   - `Theme` 增加 `supportedSizes`、逐块 `fontPalette`、内边框 `innerBorder`；`AppearanceState` 改为 `themeIdBySize`。
   - 设置页主题卡改为按钮 + 右上角覆盖徽标；预览按支持的最大阶数渲染。
@@ -596,9 +596,9 @@ P8-1 以当前实验室为视觉基线。正式实现时先复用结构和样式
 - 实现备注（2026-10-25，P8-4c-2d）：新增 `theme-editor.html`、`theme-editor.css`、编辑器 controller/控件/棋盘/历史模块，以及 `core/appearance/editor.ts` / `name.ts`。视觉收敛后移除全部操作说明和“显示数字”，空白块始终透明，文字色不再使用 auto（旧 auto 在载入时回退白色）；样式刷、吸管、工具切换不进入主题、脏状态或历史；50 份快照线性历史支持连续输入合并；设置页通过 `pageshow` + `persisted` 处理 bfcache。颜色增强（2026-10-25）：主题颜色支持 `#rrggbbaa`，编辑器四个颜色字段使用 Pickr Nano，透明色由 CSS 自然混色。`npm test`（476 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 通过；用户已于 2026-10-27 手动验收。
 - 实现备注（2026-10-25，P8-4c-2e）：设置页自定义主题卡右下角新增删除按钮（位于编辑左侧），使用 `trash-2` 图标；删除直接修改 appearance draft，不弹二次确认框，受影响阶数落到回退主题，底部保存条负责落盘提醒，重置可撤销。删除后焦点移到加号卡并播报，存储 schema 不变。
 
-### P8-5a 极简计时（已实现 2026-10-27，待手动验收）
+### P8-5a 极简计时（已完成并手动验收 2026-10-27）
 
-- [~] 文件：`src/shared/preferences/types.ts`、`store.ts`、`apply.ts`、`src/games/puzzle/ui/settings-page.ts`、`puzzle-game/settings.html`、`src/games/puzzle/pages/game.ts`、`src/games/puzzle/styles/game.css`
+- [x] 文件：`src/shared/preferences/types.ts`、`store.ts`、`apply.ts`、`src/games/puzzle/ui/settings-page.ts`、`puzzle-game/settings.html`、`src/games/puzzle/pages/game.ts`、`src/games/puzzle/styles/game.css`
 - 内容：
   - 设置页“外观”新增 `h3`“UI 显示”，其下方放同款勾选卡片“开始移动时只显示计时器”。
   - 偏好存入 `site.v1.preferences.timerOnlyOnMove`，默认 `false`；旧 version 1 数据缺字段时按 `false` 处理，不升版本；通过 `<html data-timer-only-on-move>` 下发给游戏页。
@@ -608,7 +608,7 @@ P8-1 以当前实验室为视觉基线。正式实现时先复用结构和样式
   - 不读写 `puzzle.v2.settings.minimalUi`；该字段保留为历史预留值。
 - 验收：设置项保存/重置/刷新正确；观察阶段完整 UI；第一次有效移动后只保留棋盘、计时和刷新按钮；完成/开新局恢复；关闭设置后行为不变。
 - 依赖：P8-2、P8-3、P8-4b。
-- 实现备注（2026-10-27）：偏好字段已加入 `site.v1.preferences`，设置页共用现有保存条；设置页新增 `h3`“UI 显示”小标题；`applyPreferences` 写 `<html data-timer-only-on-move>`；游戏页在 `observing → running` 时读取并添加 `body.game-page--timer-only`，完成复原、开新局和退出重玩时移除。CSS 使用 `visibility: hidden` 保留三栏网格和计时器位置，隐藏元素不进入 Tab 顺序；重玩状态栏一并隐藏，刷新按钮保持可见。`npm test`（488 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 均通过，待手动验收。
+- 实现备注（2026-10-27）：偏好字段已加入 `site.v1.preferences`，设置页共用现有保存条；设置页新增 `h3`“UI 显示”小标题；`applyPreferences` 写 `<html data-timer-only-on-move>`；游戏页在 `observing → running` 时读取并添加 `body.game-page--timer-only`，完成复原、开新局和退出重玩时移除。CSS 使用 `visibility: hidden` 保留三栏网格和计时器位置，隐藏元素不进入 Tab 顺序；重玩状态栏一并隐藏，刷新按钮保持可见。`npm test`（488 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 均通过，已手动验收（2026-10-27）。
 
 ### P8-5b 移动端横屏（TODO，暂缓）
 

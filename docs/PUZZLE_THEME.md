@@ -1,6 +1,6 @@
 # 数字华容道游戏主题与按阶数分配（P8-4c）
 
-> 状态：P8-4c-1、P8-4c-2a/b/d/e 均已手动验收（2026-10-27）；P8-4c-2c 当前阶数回退提示已实现（2026-10-27），自动检查通过，待手动验收；P8-4c-2f 只剩回归检查与文档收尾；主题编辑器键盘涂色放弃，记录为已知限制。移动端与 E2E 均暂缓，E2E 改为用户手动测试。
+> 状态：P8-4c-1、P8-4c-2a/b/c/d/e/f 均已手动验收（2026-10-27）；主题编辑器键盘涂色放弃，记录为已知限制。移动端与 E2E 均暂缓，E2E 改为用户手动测试。
 >
 > 分支：`refactor/vite-ts`
 >
@@ -68,7 +68,7 @@ P8-4c-2 会替换 P8-4c-1 的“单主题 radio + 固定 10×10 预览”交互�
   - 对话框只列该主题支持的阶数；当前已应用的选中并锁定；`全选` 仅作批量勾选辅助。
   - 保存/重置/脏状态/焦点管理沿用设置页。
   - 回退主题警告和读取状态提示。
-- **P8-4c-2c 游戏页按阶数解析**（已实现 2026-10-27，待手动验收）
+- **P8-4c-2c 游戏页按阶数解析**（已完成并手动验收 2026-10-27）
   - 不再启动时固定一个主题；`replaceBoard(size)` 按当前阶数取主题（已实现）。
   - 重玩使用成绩的阶数解析主题（已实现）。
   - 仅在**当前阶数**落到回退主题时显示一条非阻塞提示，不扫描其他阶数；文案固定为“N×N 阶数暂未设置主题，请前往设置页设置”。
@@ -90,7 +90,7 @@ P8-4c-2 会替换 P8-4c-1 的“单主题 radio + 固定 10×10 预览”交互�
   - 删除只修改设置页草稿，不弹二次确认框；受影响阶数落回退主题，保存后才写入存储。
   - 底部未保存条作为安全提示，重置可恢复；删除后焦点移到加号卡并播报。
   - 新增 `trash-2` 图标。
-- **P8-4c-2f 测试与验收**
+- **P8-4c-2f 测试与验收**（已完成 2026-10-27）
   - 核心纯函数、schema、store 单测。
   - 设置页/游戏页/编辑器手动验收已完成（2026-10-27）。
   - E2E 取消，改为用户手动测试。
@@ -1211,14 +1211,14 @@ function replaceBoard(size: PuzzleSize): void {
 - [x] `settings.css` 完成卡片、徽标、回退警告、对话框和响应式。
 - [x] 更新 `SETTINGS_PAGE.md`、`PUZZLE_GAME_PAGE.md`。
 
-实现备注（2026-10-25）：`game-theme-picker` 不再持有 radio；卡片使用独立透明按钮打开原生 `<dialog>`，确认结果交给 `puzzle-theme` controller 更新 draft。`AppearanceLoadResult` 新增可选 `issue`（不改变四态 `status`），设置页据此区分 v3/未知版本与普通损坏。`puzzle-game/settings.html` 加载 `overlays.css`。随后根据视觉反馈移除“当前分配”9 格总览，回退警告保留在卡片网格上方；同时增加卡片高度和预览区顶部留白，覆盖徽标改为扁平样式。`npm test`（409 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 均通过；手动验收待执行。
+实现备注（2026-10-25）：`game-theme-picker` 不再持有 radio；卡片使用独立透明按钮打开原生 `<dialog>`，确认结果交给 `puzzle-theme` controller 更新 draft。`AppearanceLoadResult` 新增可选 `issue`（不改变四态 `status`），设置页据此区分 v3/未知版本与普通损坏。`puzzle-game/settings.html` 加载 `overlays.css`。随后根据视觉反馈移除“当前分配”9 格总览，回退警告保留在卡片网格上方；同时增加卡片高度和预览区顶部留白，覆盖徽标改为扁平样式。`npm test`（409 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 均通过；已手动验收（2026-10-27）。
 
 ### 10.3 P8-4c-2c 游戏页
 
 - [x] `game.ts` 在 `replaceBoard(size)` 中按阶数解析主题；移除启动时固定主题。
 - [x] 重玩使用成绩阶数解析。
 - [x] 当前阶数回退时显示一条非阻塞提示；`corrupt` / `unavailable` 时沿用现有提示、不叠加。
-- [ ] 回放页后续实现时复用 `getThemeForSize`。
+- [ ] 回放页后续实现时复用 `getThemeForSize`（P10 接入时执行，不阻塞 P8）。
 
 ### 10.4 P8-4c-2d 主题编辑器（已实现 2026-10-25）
 
@@ -1243,7 +1243,7 @@ function replaceBoard(size: PuzzleSize): void {
 
 实现备注（2026-10-25）：新增 `core/appearance/editor.ts`（模式切换、涂色目标、样式刷应用/读取、`prepareThemeForEditor()`、脏比较和保存前校验）、`core/appearance/name.ts`（grapheme/显示宽度计算）、`ui/theme-history.ts`（50 份快照线性历史与连续输入合并）、`ui/theme-editor-board.ts`（棋盘悬停/点击/高亮）、`ui/theme-editor-controls.ts`（左侧控件）和 `ui/theme-editor.ts`（controller）。`board-view` 的 tile 增加稳定的 `data-tile` 钩子；`getTilePaletteIndex` 从 `theme.ts` 导出复用。设置页新增 `pageshow` + `persisted` 处理，bfcache 返回时重新读取外观并重渲染主题列表。
 
-视觉收敛（2026-10-25）：移除预览和左侧的全部操作说明文字；移除“显示数字”开关，预览始终显示数字；移除空白色编辑，编辑器固定透明；移除文字色“自动”，旧 auto 在载入时回退白色；预览棋盘最大宽度收到约 `34rem`。颜色 alpha 与 Pickr（2026-10-25）：`theme` / `fontPalette` / `blankColor` / `blindTileColor` / `innerBorder.color` 接受 `#rrggbb` 或 `#rrggbbaa`，不升级 v4 schema；新增 `ui/color-picker-field.ts` 封装 Pickr Nano，四个颜色字段实时预览，`change` 连续合并、滑杆结束/保存/关闭时结束历史合并；内边框“透明”复选框同日移除，改用 alpha 0。样式刷和工具切换不进入主题、脏状态或历史。`npm test`（476 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 通过；手动验收待执行。
+视觉收敛（2026-10-25）：移除预览和左侧的全部操作说明文字；移除“显示数字”开关，预览始终显示数字；移除空白色编辑，编辑器固定透明；移除文字色“自动”，旧 auto 在载入时回退白色；预览棋盘最大宽度收到约 `34rem`。颜色 alpha 与 Pickr（2026-10-25）：`theme` / `fontPalette` / `blankColor` / `blindTileColor` / `innerBorder.color` 接受 `#rrggbb` 或 `#rrggbbaa`，不升级 v4 schema；新增 `ui/color-picker-field.ts` 封装 Pickr Nano，四个颜色字段实时预览，`change` 连续合并、滑杆结束/保存/关闭时结束历史合并；内边框“透明”复选框同日移除，改用 alpha 0。样式刷和工具切换不进入主题、脏状态或历史。`npm test`（476 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 通过；已手动验收（2026-10-27）。
 
 ### 10.5 P8-4c-2e 自定义主题删除（已实现 2026-10-25）
 
@@ -1258,10 +1258,10 @@ function replaceBoard(size: PuzzleSize): void {
 
 ### 10.6 P8-4c-2f 测试与验收
 
-- [ ] `npm test`、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build`（实现阶段已全部通过；P8-4c-2f 最终验收仍按完整链路重跑）。
+- [x] `npm test`（488 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 于 2026-10-27 最终重跑通过。
 - [x] 设置页、游戏页、编辑器手动验收（2026-10-27）。
 - [x] E2E 取消，改为用户手动测试；不再补充 Playwright。
-- [ ] 更新所有相关文档和决策记录。
+- [x] 更新所有相关文档和决策记录（2026-10-27）。
 
 ## 11. 验收
 

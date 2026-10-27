@@ -1,6 +1,6 @@
 # 设置页设计与 P8-4b/P8-4c 任务
 
-> 状态：P8-4b 设置页骨架与网站偏好、P8-4c-1 主题列表、P8-4c-2a/b 主题模型与按阶数分配、P8-4c-2d 主题编辑器、P8-4c-2e 自定义主题删除、计时器字体和游戏页大鼠标指针均已手动验收（2026-10-27）；极简计时设置（`timerOnlyOnMove`）已实现（2026-10-27），自动检查通过，待手动验收；移动端暂缓；主题编辑器键盘涂色不做，记录为已知限制。游戏主题的完整模型以 `docs/PUZZLE_THEME.md` 为准。
+> 状态：P8-4b 设置页骨架与网站偏好、P8-4c-1 主题列表、P8-4c-2a/b 主题模型与按阶数分配、P8-4c-2d 主题编辑器、P8-4c-2e 自定义主题删除、计时器字体、游戏页大鼠标指针和极简计时设置（`timerOnlyOnMove`）均已手动验收（2026-10-27）；移动端暂缓；主题编辑器键盘涂色不做，记录为已知限制。游戏主题的完整模型以 `docs/PUZZLE_THEME.md` 为准。
 >
 > 分支：`refactor/vite-ts`
 >
@@ -970,7 +970,7 @@ elements.settingsLink.title = canOpen
 - [x] 新增 `plus` / `pencil` 图标和 `createIcon` 工具。
 - [x] 新增 `isAppearanceEqual` 与测试。
 - [x] 更新文档和自动检查。
-- [ ] 手动验收。
+- [x] 手动验收（2026-10-27）。
 
 实现备注（2026-10-24）：
 
@@ -979,7 +979,7 @@ elements.settingsLink.title = canOpen
 - 设置页新增 `puzzle-theme` controller；选择只改 draft，保存时写入完整 `puzzle.v2.appearance`。
 - 内置主题显示“内置”徽标，自定义主题显示垃圾桶删除按钮和铅笔编辑按钮；加号卡跳转 `theme-editor.html`（P8-4c-2d 已替换为真实编辑器）。
 - 自定义主题上限 20；达到上限时加号卡禁用并显示说明。
-- 自动检查已通过；手动验收待执行。
+- 自动检查已通过；已手动验收（2026-10-27）。
 
 ### 11.5 P8-4c-2 按阶数分配与主题模型升级
 
@@ -997,7 +997,7 @@ elements.settingsLink.title = canOpen
 
 实现备注（2026-10-25）：P8-4c-2b 用 `theme-coverage.ts` 统一覆盖摘要与完整阶数文案；卡片按钮打开原生 `<dialog>`，确认后只更新 `puzzle-theme` 的 draft。`loadAppearanceResult()` 的 `issue` 用于区分版本不兼容和普通损坏提示；`puzzle-game/settings.html` 已加载 `overlays.css`。根据视觉反馈，已移除“当前分配”9 格总览，保留卡片网格上方的回退警告，并增加卡片高度与预览顶部留白。P8-4c-2d 的编辑器已实现并替代占位页；设置页新增 bfcache 重读逻辑，主题分配 controller 暴露 `reload()`。自动检查已通过；用户已于 2026-10-27 手动验收。
 
-实现备注（2026-10-27，极简计时）：`site.v1.preferences` 新增 `timerOnlyOnMove`（默认 `false`，旧 version 1 数据缺字段仍为 `ok`），`applyPreferences` 写入 `<html data-timer-only-on-move>`。设置页在“鼠标指针”卡片下方新增 `h3`“UI 显示”和同款勾选卡片，共用 `site-preferences` controller 和底部保存条。游戏页在每局第一次有效移动时读取该 dataset，只隐藏游戏页 UI；设置页与保存逻辑不受影响。`npm test`（488 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 均通过，待手动验收。
+实现备注（2026-10-27，极简计时）：`site.v1.preferences` 新增 `timerOnlyOnMove`（默认 `false`，旧 version 1 数据缺字段仍为 `ok`），`applyPreferences` 写入 `<html data-timer-only-on-move>`。设置页在“鼠标指针”卡片下方新增 `h3`“UI 显示”和同款勾选卡片，共用 `site-preferences` controller 和底部保存条。游戏页在每局第一次有效移动时读取该 dataset，只隐藏游戏页 UI；设置页与保存逻辑不受影响。`npm test`（488 项）、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run build` 均通过，已手动验收（2026-10-27）。
 
 ## 12. 验收
 
