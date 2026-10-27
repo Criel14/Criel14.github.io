@@ -815,7 +815,7 @@ function getTileLayer(tile: number, size: PuzzleSize): number {
 - `ui/notice.ts` 提供非阻塞 notice：顶部居中、稳定 id 去重、loading 可原地更新为成功/失败；info/success 使用 `role="status"`，warning/error 使用 `role="alert"`，不抢焦点。
 - 存储错误通过 `showStorageErrorNotice` 映射 `unavailable` / `blocked` / `quota` / `validation` / `corrupt` / `unknown`；回放 `issues` 通过 `showReplayIssueNotice` 提示，不阻塞页面。
 - `ui/lifecycle.ts` 提供 `createLifecycle` 与 `dispose`：统一 `AbortSignal`、事件监听、定时器、rAF 和销毁回调；页面卸载或重开一局时统一清理。
-- `styles/overlays.css` 提供基础样式，颜色使用 `base.css` 语义 token；页面级布局在 P8 调整。
+- `styles/overlays.css` 提供基础样式；notice 复用游戏页按钮 / 设置页保存条的浮起表面（浅灰面、1px 边框、顶部白色高光、双层轻阴影），保留语义色左边线和圆点。
 - UI 层不 import data；`StorageNoticeCode` 在 `notice.ts` 内定义，页面传入 `DataStoreErrorCode` 时由 TypeScript 校验。
 - P7-3 不引入 dialog / notice 库，也不引入 DOM 模拟环境；dialog / notice 的交互与视觉在 P8 接入手动验收。
 

@@ -527,7 +527,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
   - 基于原生 `<dialog>` 的确认框/设置框封装；不引入 dialog / notice 库。
   - 非阻塞 toast/notice，包含 loading、存储不可用、配额不足、录像损坏提示。
   - `createLifecycle` / `dispose` 辅助，统一页面卸载时的监听器、定时器和 rAF 清理。
-  - `overlays.css` 提供 dialog / notice 的基础样式，颜色使用 `base.css` 语义 token；页面级布局在 P8 调整。
+  - `overlays.css` 提供 dialog / notice 的基础样式；notice 复用游戏页按钮 / 设置页保存条的浮起表面，保留语义色左边线和圆点；页面级布局在 P8 调整。
 - 测试/验收：
   - `lifecycle` 用 Vitest node 单测覆盖 signal、监听器、定时器、rAF 和幂等清理。
   - dialog / notice 不引入 DOM 模拟环境、不做 DOM 单测；Esc/取消/确认、焦点回收、非阻塞提示随 P8 接入手动验收。
