@@ -179,7 +179,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
   - `normalizeMetrics(raw)`：非数字、NaN、Infinity、越界值回退/夹取。
   - `toCssVariables(theme)`：读取 `theme.metrics`、`theme.color.blankColor` 和 `theme.blindTileColor`，返回纯对象，不碰 DOM。
 - 测试：
-  - 字号 0–1、间隙 0–0.1、圆角 0–0.5 的边界。
+  - 字号 0–1、间隙 0–0.2、圆角 0–0.5 的边界。
   - `NaN` / `Infinity` / 字符串输入（防御性）回退。
   - CSS 变量键名与值正确，且来自传入主题的 metrics。
 - 依赖：P2-0、P2-2。
@@ -508,7 +508,7 @@ UI 阶段不自动启动 dev server；需要看效果时由用户启动。
   - `createBoardView({ root, size, theme, numbersVisible })` 只负责渲染；输入拆到 `board-input.ts`。
   - `update(board)`、`setTheme(theme)`、`setNumbersVisible(visible)`、`destroy()`；`element` 暴露棋盘外层。
   - 每个 tile 通过 `getTileVisual` 设置 `--tile-bg` / `--tile-fg`；CSS 不区分着色模式。
-  - 复用 `toCssVariables(theme)` 设置 `--tile-font-ratio`、`--tile-gap-ratio`、`--tile-radius-ratio`、`--blank-color`、`--blind-tile-bg`；不再单建 `board-style.ts`。
+  - 复用 `toCssVariables(theme)` 设置 `--tile-font-ratio`、`--tile-gap-ratio`、`--tile-radius-ratio`、`--blind-tile-bg`；不再单建 `board-style.ts`。
   - 用 CSS 容器查询单位计算 `--cell-size`，不使用 `ResizeObserver`。
   - `attachBoardInput(element, callbacks, { captureTouchMove })`：click / 鼠标经过 / 触摸路径统一在 board 容器采集，只上报格子下标。
   - 只读模式用于成绩详情和回放：只创建 board-view，不挂输入。

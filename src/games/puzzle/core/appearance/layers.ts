@@ -5,7 +5,7 @@ import { isPuzzleSize } from '../board';
  * 计算方块所在的 L 形层号，保留旧版“按层降阶”的视觉分布。
  *
  * 输入 tile 是方块数字，不是棋盘索引；坐标从 0 开始。
- * 空白块 0、越界数字、非整数 tile、非法阶数统一返回 0，调用方据此使用空白色。
+ * 空白块 0、越界数字、非整数 tile、非法阶数统一返回 0，调用方据此返回透明背景。
  */
 export function getTileLayer(tile: number, size: number): number {
   if (!isPuzzleSize(size) || !Number.isInteger(tile) || tile <= 0 || tile >= size * size) {

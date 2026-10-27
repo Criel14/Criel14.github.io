@@ -57,11 +57,6 @@ function getFontPaletteColor(tile: number, size: number, color: ColorMode): stri
     : FALLBACK_COLOR;
 }
 
-/** 主题里的空白色非法时退回透明，避免把棋盘染成白色。 */
-function getSafeBlankColor(color: ColorMode): string {
-  return isValidBlankColor(color.blankColor) ? color.blankColor : TRANSPARENT;
-}
-
 /**
  * 判断是否为 #rrggbb 或 #rrggbbaa 颜色。
  *
@@ -92,15 +87,15 @@ export function formatHexColorWithAlpha(value: string): string | null {
   return (normalized.length === 7 ? `${normalized}ff` : normalized).toUpperCase();
 }
 
-/** 空白色和内边框颜色都允许透明、#rrggbb 或 #rrggbbaa。 */
-export function isValidBlankColor(value: string): boolean {
+/** 主题里允许透明的颜色：transparent、#rrggbb 或 #rrggbbaa；当前用于内边框颜色。 */
+export function isValidColorOrTransparent(value: string): boolean {
   return value === TRANSPARENT || isValidHexColor(value);
 }
 
-/** 返回方块背景色；空白/非法方块使用主题空白色。 */
+/** 返回方块背景色；空白/非法方块始终透明。 */
 export function getTileColor(tile: number, size: number, theme: Theme): string {
   if (!isRenderableTile(tile, size)) {
-    return getSafeBlankColor(theme.color);
+    return TRANSPARENT;
   }
   return getPaletteColor(tile, size, theme.color) ?? FALLBACK_COLOR;
 }
@@ -116,7 +111,7 @@ export function getTileFontColor(tile: number, size: number, theme: Theme): stri
 /** 统一返回方块视觉；board-view 只需消费这一个函数。 */
 export function getTileVisual(tile: number, size: number, theme: Theme): TileVisual {
   if (!isRenderableTile(tile, size)) {
-    return { background: getSafeBlankColor(theme.color), color: TRANSPARENT };
+    return { background: TRANSPARENT, color: TRANSPARENT };
   }
 
   return {
@@ -132,21 +127,18 @@ function cloneColorMode(color: ColorMode): ColorMode {
         mode: 'layer',
         palette: [...color.palette],
         fontPalette: [...color.fontPalette],
-        blankColor: color.blankColor,
       };
     case 'row':
       return {
         mode: 'row',
         palette: [...color.palette],
         fontPalette: [...color.fontPalette],
-        blankColor: color.blankColor,
       };
     case 'fixed':
       return {
         mode: 'fixed',
         palette: [...color.palette],
         fontPalette: [...color.fontPalette],
-        blankColor: color.blankColor,
       };
   }
 }

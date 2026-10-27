@@ -7,7 +7,7 @@ import {
   getTileColor,
   getTileFontColor,
   getTileVisual,
-  isValidBlankColor,
+  isValidColorOrTransparent,
   isValidHexColor,
   normalizeHexColor,
 } from './theme';
@@ -52,21 +52,18 @@ const layerTheme = createTheme({
   mode: 'layer',
   palette: layerPalette,
   fontPalette: createFontPalette(18, '#ffffff'),
-  blankColor: 'transparent',
 });
 
 const rowTheme = createTheme({
   mode: 'row',
   palette: rowPalette,
   fontPalette: createFontPalette(10, '#ffffff'),
-  blankColor: 'transparent',
 });
 
 const fixedTheme = createTheme({
   mode: 'fixed',
   palette: fixedPalette,
   fontPalette: createFontPalette(99, '#ffffff'),
-  blankColor: 'transparent',
 });
 
 describe('getTileVisual', () => {
@@ -88,7 +85,7 @@ describe('getTileVisual', () => {
     expect(getTileVisual(3, 2, fixedTheme).background).toBe(fixedPalette[2]);
   });
 
-  it('空白块和非法方块使用空白色与透明字体', () => {
+  it('空白块和非法方块始终透明', () => {
     expect(getTileVisual(0, 4, layerTheme)).toEqual({
       background: 'transparent',
       color: 'transparent',
@@ -103,12 +100,11 @@ describe('getTileVisual', () => {
     });
   });
 
-  it('保留色板、字体色和空白色的 alpha 通道', () => {
+  it('保留色板和字体色的 alpha 通道', () => {
     const alphaTheme = createTheme({
       mode: 'fixed',
       palette: ['#12345680'],
       fontPalette: ['#ffffff40'],
-      blankColor: '#00000000',
     });
 
     expect(getTileVisual(1, 4, alphaTheme)).toEqual({
@@ -116,7 +112,7 @@ describe('getTileVisual', () => {
       color: '#ffffff40',
     });
     expect(getTileVisual(0, 4, alphaTheme)).toEqual({
-      background: '#00000000',
+      background: 'transparent',
       color: 'transparent',
     });
   });
@@ -126,7 +122,6 @@ describe('getTileVisual', () => {
       mode: 'layer',
       palette: ['#000000'],
       fontPalette: ['#000000'],
-      blankColor: 'transparent',
     });
     expect(getTileVisual(5, 4, shortTheme)).toEqual({
       background: '#ffffff',
@@ -136,7 +131,7 @@ describe('getTileVisual', () => {
 });
 
 describe('getTileColor', () => {
-  it('正常方块返回调色板颜色，空白块返回空白色', () => {
+  it('正常方块返回调色板颜色，空白块始终透明', () => {
     expect(getTileColor(5, 4, layerTheme)).toBe(layerPalette[1]);
     expect(getTileColor(0, 4, layerTheme)).toBe('transparent');
   });
@@ -148,7 +143,6 @@ describe('字体色', () => {
       mode: 'fixed',
       palette: ['#000000'],
       fontPalette: ['#123456'],
-      blankColor: 'transparent',
     });
     expect(getTileFontColor(1, 4, theme)).toBe('#123456');
   });
@@ -158,7 +152,6 @@ describe('字体色', () => {
       mode: 'fixed',
       palette: ['#000000', '#ffffff'],
       fontPalette: ['#ffffff', '#123456'],
-      blankColor: 'transparent',
     });
     expect(getTileFontColor(1, 4, theme)).toBe('#ffffff');
     expect(getTileFontColor(2, 4, theme)).toBe('#123456');
@@ -171,7 +164,6 @@ describe('字体色', () => {
       mode: 'layer',
       palette: layerPalette,
       fontPalette,
-      blankColor: 'transparent',
     });
 
     expect(getTileFontColor(5, 4, theme)).toBe('#123456');
@@ -183,7 +175,6 @@ describe('字体色', () => {
       mode: 'fixed',
       palette: ['#000000'],
       fontPalette: ['#fff'],
-      blankColor: 'transparent',
     });
     expect(getTileFontColor(1, 4, theme)).toBe('#ffffff');
   });
@@ -193,7 +184,6 @@ describe('字体色', () => {
       mode: 'layer',
       palette: layerPalette,
       fontPalette: [],
-      blankColor: 'transparent',
     });
     expect(getTileFontColor(5, 4, theme)).toBe('#ffffff');
   });
@@ -235,12 +225,12 @@ describe('颜色校验', () => {
     expect(formatHexColorWithAlpha('#fff')).toBeNull();
   });
 
-  it('空白色和内边框颜色允许 transparent、6 位或 8 位色', () => {
-    expect(isValidBlankColor('transparent')).toBe(true);
-    expect(isValidBlankColor('#000000')).toBe(true);
-    expect(isValidBlankColor('#00000080')).toBe(true);
-    expect(isValidBlankColor('none')).toBe(false);
-    expect(isValidBlankColor('#fff')).toBe(false);
+  it('内边框颜色允许 transparent、6 位或 8 位色', () => {
+    expect(isValidColorOrTransparent('transparent')).toBe(true);
+    expect(isValidColorOrTransparent('#000000')).toBe(true);
+    expect(isValidColorOrTransparent('#00000080')).toBe(true);
+    expect(isValidColorOrTransparent('none')).toBe(false);
+    expect(isValidColorOrTransparent('#fff')).toBe(false);
   });
 });
 

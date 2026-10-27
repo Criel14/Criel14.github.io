@@ -40,8 +40,10 @@
 }
 
 .puzzle-board__tile--blank {
-  background-color: var(--blank-color, transparent);
+  /* 空白块始终透明，不参与主题着色，也不绘制内边框。 */
+  background-color: transparent;
   color: transparent;
+  box-shadow: none;
 }
 
 .puzzle-board--numbers-hidden .puzzle-board__tile:not(.puzzle-board__tile--blank) {

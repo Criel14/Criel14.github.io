@@ -242,7 +242,7 @@ function isSameArray<T>(a: readonly T[], b: readonly T[]): boolean {
 
 /** 比较两个着色模式的所有字段，包括 palette / fontPalette 顺序。 */
 function isColorModeEqual(a: ColorMode, b: ColorMode): boolean {
-  if (a.mode !== b.mode || a.blankColor !== b.blankColor) {
+  if (a.mode !== b.mode) {
     return false;
   }
   return isSameArray(a.palette, b.palette) && isSameArray(a.fontPalette, b.fontPalette);

@@ -71,7 +71,6 @@ describe('saveAppearance / loadAppearanceResult', () => {
         fontPalette: base.color.fontPalette.map((color, index) =>
           index === 0 ? '#ffffff40' : color,
         ),
-        blankColor: '#00000080',
       },
       innerBorder: { color: '#ffffff40', widthRatio: 0.02 },
       blindTileColor: '#3498db80',
@@ -114,7 +113,8 @@ describe('saveAppearance / loadAppearanceResult', () => {
     expect(storedValue.version).toBe(APPEARANCE_SCHEMA_VERSION);
     const data = storedValue.data as AppearanceState;
     expect(data.themes[2].color.fontPalette).toEqual(Array(18).fill('#ffffff'));
-    expect(data.themes[2].innerBorder).toEqual({ color: 'transparent', widthRatio: 0.1 });
+    expect(data.themes[2].color).not.toHaveProperty('blankColor');
+    expect(data.themes[2].innerBorder).toEqual({ color: 'transparent', widthRatio: 0.2 });
   });
 
   it('内置主题始终使用当前代码的 canonical 版本', () => {
@@ -239,7 +239,22 @@ describe('saveAppearance / loadAppearanceResult', () => {
 });
 
 describe('normalizeAppearance', () => {
-  it('修复可恢复的字体色、空白色、内边框、盲玩色和 metrics', () => {
+  it('忽略旧数据里的 blankColor 字段', () => {
+    const custom = createCustomTheme();
+    const appearance = normalizeAppearance({
+      themeIdBySize: createThemeIdBySize({ 10: custom.id }),
+      themes: [
+        {
+          ...custom,
+          color: { ...custom.color, blankColor: '#ffffff' },
+        },
+      ],
+    });
+
+    expect(appearance.themes[2]?.color).not.toHaveProperty('blankColor');
+  });
+
+  it('修复可恢复的字体色、内边框、盲玩色和 metrics', () => {
     const custom = createCustomTheme();
     const appearance = normalizeAppearance({
       themeIdBySize: createThemeIdBySize({ 10: custom.id }),
@@ -248,7 +263,6 @@ describe('normalizeAppearance', () => {
           ...custom,
           color: {
             ...custom.color,
-            blankColor: 'not-a-color',
             fontPalette: ['not-a-font-color'],
           },
           innerBorder: {
@@ -268,12 +282,11 @@ describe('normalizeAppearance', () => {
     expect(appearance.themes[2]).toMatchObject({
       id: custom.id,
       color: {
-        blankColor: 'transparent',
         fontPalette: Array(18).fill('#ffffff'),
       },
       innerBorder: {
         color: 'transparent',
-        widthRatio: 0.1,
+        widthRatio: 0.2,
       },
       blindTileColor: '#3498db',
       metrics: {

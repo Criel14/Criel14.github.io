@@ -99,13 +99,13 @@ v2 没有正式上线，不提供从这些键迁移到 IndexedDB 的逻辑。若
 ### 2.3 外观
 
 - 存储 `AppearanceState`：`themeIdBySize` + `themes`；每个阶数独立记录主题 ID，不存在单一 `activeThemeId`。
-- 内置主题不可修改、不可删除；自定义主题可以编辑逐块背景色/字体色、盲玩色、内边框和 metrics，上限 20 个（`CUSTOM_THEME_SLOT_COUNT = 20`）。自定义主题可从设置页删除，删除只改草稿，受影响阶数落到 `FALLBACK_THEME`，保存后才写入存储。编辑器不提供空白色编辑，保存时固定为 `transparent`；数据字段继续保留以兼容旧主题。
+- 内置主题不可修改、不可删除；自定义主题可以编辑逐块背景色/字体色、盲玩色、内边框和 metrics，上限 20 个（`CUSTOM_THEME_SLOT_COUNT = 20`）。自定义主题可从设置页删除，删除只改草稿，受影响阶数落到 `FALLBACK_THEME`，保存后才写入存储。编辑器不提供空白块背景色编辑，空白块始终透明。
 - `Theme.supportedSizes` 表示主题设计上支持的阶数，默认全部 2–10；`themeIdBySize` 表示当前分配，两者不能混用。
 - 主题非法时过滤；`themeIdBySize` 指向缺失主题、主题不支持该阶数或值为回退 ID 时，该阶数使用 `FALLBACK_THEME`。
 - `Theme.color.palette` 与 `Theme.color.fontPalette` 长度均由 mode 决定（18/10/99）；palette 和 fontPalette 每项均为 `#rrggbb` / `#rrggbbaa`，不再接受 `auto`。
-- `Theme.color.blankColor` 允许 `transparent` / `#rrggbb` / `#rrggbbaa`；编辑器仍固定保存为 `transparent`。
-- `Theme.innerBorder` 是方块内边框，整盘统一；颜色允许 `transparent` / `#rrggbb` / `#rrggbbaa`，宽度 0–0.1。它不改变方块外尺寸，字号按“格子边长 − 2 × 内边框宽度”计算。
-- `Theme.blindTileColor` 是盲玩隐藏数字时的方块背景色，必须是 `#rrggbb` 或 `#rrggbbaa`；默认 `#3498db`，空白块仍使用 `blankColor`。
+- `Theme.color` 不再包含 `blankColor`：空白块始终透明，不保存背景色。v4 envelope 不变，旧数据里的 `blankColor` 读取时忽略，新保存不再写入。
+- `Theme.innerBorder` 是方块内边框，只作用于非空白方块；颜色允许 `transparent` / `#rrggbb` / `#rrggbbaa`，宽度 0–0.2。它不改变方块外尺寸，字号按“格子边长 − 2 × 内边框宽度”计算。
+- `Theme.blindTileColor` 是盲玩隐藏数字时的方块背景色，必须是 `#rrggbb` 或 `#rrggbbaa`；默认 `#3498db`，空白块始终透明、不参与这个颜色。
 - 颜色格式扩展是 v4 内的向后兼容变化：旧 6 位数据继续合法，不升级 envelope 版本，也不需要迁移；回滚到旧代码时，8 位色会被旧校验视为非法，这是已知的回滚风险。
 - 外观 v4 不做 v3 迁移：升级时清一次 `puzzle.v2.appearance`；不清时使用回退主题并提示。自定义主题会丢失，设置/分组/成绩不受影响。
 - 主题存储体积：`fixed` 模式 99 个背景色 + 99 个字体色约 2KB/主题；全部使用 8 位色时 20 个主题约 48KB，远低于 localStorage 配额。

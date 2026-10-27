@@ -115,7 +115,6 @@ function createLayerTheme(
       mode: 'layer',
       palette,
       fontPalette: createFontPalette(palette.length, '#ffffff'),
-      blankColor: 'transparent',
     },
     innerBorder: { ...DEFAULT_INNER_BORDER },
     blindTileColor: DEFAULT_BLIND_TILE_COLOR,
@@ -148,7 +147,6 @@ export const FALLBACK_THEME: Theme = freezeTheme({
     palette: createFontPalette(18, DEFAULT_BLIND_TILE_COLOR),
     // 回退主题使用明确白字。
     fontPalette: createFontPalette(18, '#ffffff'),
-    blankColor: 'transparent',
   },
   innerBorder: { ...DEFAULT_INNER_BORDER },
   blindTileColor: DEFAULT_BLIND_TILE_COLOR,

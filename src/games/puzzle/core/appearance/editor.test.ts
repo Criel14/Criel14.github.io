@@ -37,7 +37,6 @@ function createTheme(overrides: Partial<Theme> = {}): Theme {
       mode: 'layer',
       palette: [...LAYER_COLORS],
       fontPalette: [...LAYER_FONTS],
-      blankColor: 'transparent',
     },
     ...overrides,
   };
@@ -77,7 +76,6 @@ describe('changeThemeColorMode', () => {
         mode: 'layer',
         palette: [...LAYER_COLORS],
         fontPalette: [...LAYER_FONTS],
-        blankColor: '#ffffff',
       },
       innerBorder: { color: '#000000', widthRatio: 0.02 },
       blindTileColor: '#ff0000',
@@ -89,7 +87,6 @@ describe('changeThemeColorMode', () => {
     expect(next.color.mode).toBe('row');
     expect(next.color.palette).toEqual(Array.from({ length: 10 }, () => DEFAULT_BLIND_TILE_COLOR));
     expect(next.color.fontPalette).toEqual(Array.from({ length: 10 }, () => fallbackFont));
-    expect(next.color.blankColor).toBe(FALLBACK_THEME.color.blankColor);
     // 盲玩色、内边框和 metrics 也回到回退值，避免旧样式残留。
     expect(next.blindTileColor).toBe(FALLBACK_THEME.blindTileColor);
     expect(next.innerBorder).toEqual(FALLBACK_THEME.innerBorder);
@@ -109,7 +106,6 @@ describe('changeThemeColorMode', () => {
         mode: 'row',
         palette: LAYER_COLORS.slice(0, 10),
         fontPalette: LAYER_FONTS.slice(0, 10),
-        blankColor: '#ffffff',
       },
     });
     const next = changeThemeColorMode(theme, 'fixed');
@@ -121,7 +117,6 @@ describe('changeThemeColorMode', () => {
     expect(next.color.palette.every((color) => color === DEFAULT_BLIND_TILE_COLOR)).toBe(true);
     expect(next.color.fontPalette.every((color) => color === fallbackFont)).toBe(true);
     expect(next.color.palette[0]).not.toBe(LAYER_COLORS[0]);
-    expect(next.color.blankColor).toBe(FALLBACK_THEME.color.blankColor);
   });
 
   it('固定色切回降阶时重置为 18 项', () => {
@@ -134,7 +129,6 @@ describe('changeThemeColorMode', () => {
         mode: 'fixed',
         palette: colors,
         fontPalette: Array.from({ length: 99 }, () => '#ffffff'),
-        blankColor: 'transparent',
       },
     });
     const next = changeThemeColorMode(theme, 'layer');
@@ -170,7 +164,6 @@ describe('getAffectedTiles', () => {
     mode: 'layer',
     palette: LAYER_COLORS,
     fontPalette: LAYER_FONTS,
-    blankColor: 'transparent',
   };
 
   it('按层返回同一 L 形层', () => {
@@ -247,7 +240,6 @@ describe('applyBrushToTheme', () => {
         mode: 'row',
         palette: LAYER_COLORS.slice(0, 10),
         fontPalette: LAYER_FONTS.slice(0, 10),
-        blankColor: 'transparent',
       },
     });
     const next = applyBrushToTheme(theme, 9, 4, {
@@ -292,7 +284,6 @@ describe('readBrushFromTheme', () => {
         mode: 'layer',
         palette: ['#abcdef80', ...LAYER_COLORS.slice(1)],
         fontPalette: ['#ffffff40', ...LAYER_FONTS.slice(1)],
-        blankColor: 'transparent',
       },
     });
 
@@ -312,7 +303,6 @@ describe('readBrushFromTheme', () => {
         mode: 'layer',
         palette: ['red'],
         fontPalette: ['red'],
-        blankColor: 'transparent',
       },
     });
     expect(readBrushFromTheme(theme, 1, 4)).toEqual({
@@ -323,18 +313,16 @@ describe('readBrushFromTheme', () => {
 });
 
 describe('prepareThemeForEditor', () => {
-  it('把空白色固定为透明，统一小写并回退非法字体色', () => {
+  it('统一小写并回退非法字体色', () => {
     const theme = createTheme({
       color: {
         mode: 'layer',
         palette: [...LAYER_COLORS],
         fontPalette: ['#AABBCC', 'red', ...LAYER_FONTS.slice(2)],
-        blankColor: '#ffffff',
       },
     });
     const prepared = prepareThemeForEditor(theme);
 
-    expect(prepared.color.blankColor).toBe('transparent');
     expect(prepared.color.fontPalette[0]).toBe('#aabbcc');
     expect(prepared.color.fontPalette[1]).toBe('#ffffff');
     expect(prepared.color.fontPalette.every((color) => /^#[0-9a-f]{6}$/i.test(color))).toBe(true);
@@ -342,13 +330,12 @@ describe('prepareThemeForEditor', () => {
     expect(prepared.color.mode).toBe(theme.color.mode);
   });
 
-  it('保留 8 位色并统一小写，同时继续把空白色固定为透明', () => {
+  it('保留 8 位色并统一小写', () => {
     const theme = createTheme({
       color: {
         mode: 'layer',
         palette: ['#AABBCC80', ...LAYER_COLORS.slice(1)],
         fontPalette: ['#FFFFFF40', ...LAYER_FONTS.slice(1)],
-        blankColor: '#12345680',
       },
       innerBorder: { color: '#AABBCC40', widthRatio: 0.02 },
       blindTileColor: '#AABBCC60',
@@ -357,7 +344,6 @@ describe('prepareThemeForEditor', () => {
 
     expect(prepared.color.palette[0]).toBe('#aabbcc80');
     expect(prepared.color.fontPalette[0]).toBe('#ffffff40');
-    expect(prepared.color.blankColor).toBe('transparent');
     expect(prepared.innerBorder).toEqual({ color: '#aabbcc40', widthRatio: 0.02 });
     expect(prepared.blindTileColor).toBe('#aabbcc60');
     expect(theme.color.palette[0]).toBe('#AABBCC80');
@@ -369,7 +355,6 @@ describe('prepareThemeForEditor', () => {
         mode: 'layer',
         palette: [...LAYER_COLORS],
         fontPalette: [...LAYER_FONTS],
-        blankColor: '#123456',
       },
     });
     const prepared = prepareThemeForEditor(theme);
@@ -377,7 +362,6 @@ describe('prepareThemeForEditor', () => {
     expect(prepared).not.toBe(theme);
     expect(prepared.color).not.toBe(theme.color);
     expect(prepared.color.palette).not.toBe(theme.color.palette);
-    expect(theme.color.blankColor).toBe('#123456');
     expect(theme.color.fontPalette[0]).toBe(LAYER_FONTS[0]);
   });
 });
@@ -410,13 +394,12 @@ describe('validateTheme', () => {
     expect(validateTheme(theme, createContext(theme))).toEqual([]);
   });
 
-  it('接受带 alpha 的背景色、字体色、空白色、盲玩色和内边框色', () => {
+  it('接受带 alpha 的背景色、字体色、盲玩色和内边框色', () => {
     const theme = createTheme({
       color: {
         mode: 'layer',
         palette: ['#12345680', ...LAYER_COLORS.slice(1)],
         fontPalette: ['#ffffff40', ...LAYER_FONTS.slice(1)],
-        blankColor: '#00000000',
       },
       innerBorder: { color: '#FFFFFF40', widthRatio: 0.02 },
       blindTileColor: '#3498db80',
@@ -474,7 +457,6 @@ describe('validateTheme', () => {
         mode: 'layer',
         palette: ['#ffffff'],
         fontPalette: ['#ffffff'],
-        blankColor: 'transparent',
       },
     });
     expect(
@@ -488,7 +470,6 @@ describe('validateTheme', () => {
         mode: 'layer',
         palette: ['red', ...LAYER_COLORS.slice(1)],
         fontPalette: [...LAYER_FONTS],
-        blankColor: 'transparent',
       },
     });
     expect(
@@ -502,7 +483,6 @@ describe('validateTheme', () => {
         mode: 'layer',
         palette: [...LAYER_COLORS],
         fontPalette: ['red'],
-        blankColor: 'transparent',
       },
     });
     expect(
@@ -510,35 +490,31 @@ describe('validateTheme', () => {
     ).toBe(true);
   });
 
-  it('空白色、盲玩色、内边框和 metrics 非法时返回对应错误', () => {
-    const blank = createTheme({
-      color: {
-        mode: 'layer',
-        palette: [...LAYER_COLORS],
-        fontPalette: [...LAYER_FONTS],
-        blankColor: 'white',
-      },
-    });
-    expect(
-      validateTheme(blank, createContext(blank)).some((issue) => issue.field === 'blankColor'),
-    ).toBe(true);
-
+  it('盲玩色、内边框和 metrics 非法时返回对应错误', () => {
     const blind = createTheme({ blindTileColor: 'red' });
     expect(
       validateTheme(blind, createContext(blind)).some((issue) => issue.field === 'blindTileColor'),
     ).toBe(true);
 
-    const border = createTheme({ innerBorder: { color: 'transparent', widthRatio: 0.2 } });
+    const border = createTheme({ innerBorder: { color: 'transparent', widthRatio: 0.3 } });
     expect(
       validateTheme(border, createContext(border)).some((issue) => issue.field === 'innerBorder'),
     ).toBe(true);
 
     const metrics = createTheme({
-      metrics: { fontSizeRatio: 2, gapRatio: 0.06, radiusRatio: 0 },
+      metrics: { fontSizeRatio: 2, gapRatio: 0.3, radiusRatio: 0 },
     });
     expect(
       validateTheme(metrics, createContext(metrics)).some((issue) => issue.field === 'metrics'),
     ).toBe(true);
+  });
+
+  it('内边框宽度和间隙允许 0.2 上限', () => {
+    const theme = createTheme({
+      innerBorder: { color: 'transparent', widthRatio: 0.2 },
+      metrics: { ...FALLBACK_THEME.metrics, gapRatio: 0.2 },
+    });
+    expect(validateTheme(theme, createContext(theme))).toEqual([]);
   });
 
   it('保留 ID、内置主题和重复新 ID 会被拒绝', () => {

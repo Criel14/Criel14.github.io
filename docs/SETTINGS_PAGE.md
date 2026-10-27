@@ -364,7 +364,7 @@ function canOpenSettings(): boolean {
 内容：
 
 - 两套内置主题 + 用户自定义主题的动态卡片列表。
-- 每张卡渲染该主题**支持的最大阶数**的已复原棋盘预览，显示逐块背景色/字体色、空白色、内边框和 metrics。
+- 每张卡渲染该主题**支持的最大阶数**的已复原棋盘预览，显示逐块背景色/字体色、透明空白块、内边框和 metrics。
 - 卡片右上角显示覆盖徽标：`所有阶数`、`4 阶`、`2–9 阶`、`2–4、8–10 阶` 或 `N 个阶数`；未使用时无徽标。
 - 使用中的卡片使用主题蓝边框/浅蓝背景；多张卡片可同时处于使用中状态。
 - 不显示“当前分配”9 格总览；每个阶数的当前主题由卡片覆盖徽标和“应用到”对话框表达。
@@ -752,7 +752,7 @@ interface SettingsController {
 ### 8.3 未来分类接入
 
 - **P8-4c-2 游戏主题列表**：`puzzle-theme` controller 读取 `puzzle.v2.appearance` 到草稿，只更新 `themeIdBySize`；保存时写回完整 `AppearanceState`；使用 `ui/theme-preview.ts` 按支持的最大阶数预览；游戏页在下次加载时生效。
-- **P8-4c-2d 主题编辑器**：独立 `/puzzle-game/theme-editor.html`，有自己的 draft/baseline、50 步撤销/重做和保存条；左右 `1 : 2` 布局，右侧最大支持阶数预览，左侧编辑名称、支持阶数、模式、样式刷、盲玩色、内边框和 metrics；文字色全部为显式颜色，空白色固定透明、不提供编辑；通过油漆桶/吸管在棋盘上涂色。新建只在内存复制回退主题，保存后停留并更新 URL；不进入设置页 controller，也不自动分配阶数。详见 `docs/PUZZLE_THEME.md` 第 6 节。
+- **P8-4c-2d 主题编辑器**：独立 `/puzzle-game/theme-editor.html`，有自己的 draft/baseline、50 步撤销/重做和保存条；左右 `1 : 2` 布局，右侧最大支持阶数预览，左侧编辑名称、支持阶数、模式、样式刷、盲玩色、内边框和 metrics；文字色全部为显式颜色，空白块始终透明、不提供背景色编辑；通过油漆桶/吸管在棋盘上涂色。新建只在内存复制回退主题，保存后停留并更新 URL；不进入设置页 controller，也不自动分配阶数。详见 `docs/PUZZLE_THEME.md` 第 6 节。
 - **P8-5 极简 UI**：新增 `PuzzleBehaviorController`，读写 `puzzle.v2.settings` 的 `minimalUi`；保存时只更新该字段，保留 size/gameMode/groups 等其他设置。游戏页大鼠标指针已改为 `site.v1.preferences.largeCursor`（2026-10-27），不使用 `puzzle.v2.settings.customCursor`。
 - **数据管理**：未来可以增加“清除旧数据”“导出设置”等分类；清除操作必须二次确认，不能混进普通保存流程。
 - 多个 controller 保存时按顺序执行；任一失败则停止并保留保存条。需要原子性的跨存储操作不在本轮设计范围内。
@@ -964,7 +964,7 @@ elements.settingsLink.title = canOpen
 - [x] `puzzle-theme` controller 改为 `themeIdBySize` draft/保存/重置。
 - [x] 回退主题警告与读取状态。
 - [x] 编辑器方案确认（2026-10-25）：左右 `1 : 2` 布局、实时预览、样式刷 + 油漆桶/吸管、50 步撤销/重做、新建内存 draft、保存后停留并更新 URL、不做离开确认。详见 `docs/PUZZLE_THEME.md` 第 6 节。
-- [x] 独立 `theme-editor.html`：支持阶数、样式刷、吸管、盲玩色、内边框、metrics；文字色显式、空白色固定透明。
+- [x] 独立 `theme-editor.html`：支持阶数、样式刷、吸管、盲玩色、内边框、metrics；文字色显式、空白块始终透明。
 - [x] 新建主题复制回退主题；取消勾选使用中的支持阶数时阻止保存。
 - [x] 设置页从编辑器返回时处理 bfcache：`pageshow` 的 `persisted` 为 true 时重新读取外观并重渲染主题列表。
 - [x] 自定义主题卡增加删除按钮：删除只改草稿，不弹二次确认；保存后落盘，重置可恢复；删除后焦点移到加号卡并播报。

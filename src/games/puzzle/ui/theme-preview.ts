@@ -13,7 +13,7 @@ export interface ThemePreviewOptions {
 /**
  * 装饰性主题预览。
  *
- * 复用游戏页的 board-view，保证颜色、空白色和 metrics 与游戏一致；外层
+ * 复用游戏页的 board-view，保证颜色、空白块和 metrics 与游戏一致；外层
  * aria-hidden，且不处理输入，设置卡片和编辑器可以直接把它当缩略图使用。
  */
 export interface ThemePreview {

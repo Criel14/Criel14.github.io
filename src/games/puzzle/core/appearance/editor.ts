@@ -11,7 +11,7 @@ import {
 import {
   cloneTheme,
   getTilePaletteIndex,
-  isValidBlankColor,
+  isValidColorOrTransparent,
   isValidHexColor,
   normalizeHexColor,
 } from './theme';
@@ -39,15 +39,14 @@ function createColorMode(
   mode: ColorMode['mode'],
   palette: readonly string[],
   fontPalette: readonly string[],
-  blankColor: string,
 ): ColorMode {
   switch (mode) {
     case 'layer':
-      return { mode, palette: [...palette], fontPalette: [...fontPalette], blankColor };
+      return { mode, palette: [...palette], fontPalette: [...fontPalette] };
     case 'row':
-      return { mode, palette: [...palette], fontPalette: [...fontPalette], blankColor };
+      return { mode, palette: [...palette], fontPalette: [...fontPalette] };
     case 'fixed':
-      return { mode, palette: [...palette], fontPalette: [...fontPalette], blankColor };
+      return { mode, palette: [...palette], fontPalette: [...fontPalette] };
   }
 }
 
@@ -74,7 +73,7 @@ export function changeThemeColorMode(theme: Theme, mode: ColorMode['mode']): The
 
   return {
     ...cloneTheme(theme),
-    color: createColorMode(mode, palette, fontPalette, FALLBACK_THEME.color.blankColor),
+    color: createColorMode(mode, palette, fontPalette),
     innerBorder: { ...FALLBACK_THEME.innerBorder },
     blindTileColor: FALLBACK_THEME.blindTileColor,
     metrics: { ...FALLBACK_THEME.metrics },
@@ -87,7 +86,6 @@ export function changeThemeColorMode(theme: Theme, mode: ColorMode['mode']): The
  * - 8 位 alpha 颜色原样保留，并把所有 hex 统一成小写，避免 Color Picker
  *   输出大小写不同造成假脏状态。
  * - 缺失或非法的字体色回退白色，保证编辑器里所有颜色都是具体值。
- * - 空白色统一固定为 `transparent`；空白块不再允许自定义。
  * - 其余字段和模式保持不变，返回深拷贝，不修改入参。
  */
 export function prepareThemeForEditor(theme: Theme): Theme {
@@ -100,7 +98,7 @@ export function prepareThemeForEditor(theme: Theme): Theme {
 
   return {
     ...clone,
-    color: createColorMode(clone.color.mode, palette, fontPalette, 'transparent'),
+    color: createColorMode(clone.color.mode, palette, fontPalette),
     innerBorder: {
       ...clone.innerBorder,
       color:
@@ -170,7 +168,7 @@ export function applyBrushToTheme(
 
   return {
     ...theme,
-    color: createColorMode(theme.color.mode, palette, fontPalette, theme.color.blankColor),
+    color: createColorMode(theme.color.mode, palette, fontPalette),
   };
 }
 
@@ -218,7 +216,6 @@ export type ThemeValidationField =
   | 'usage'
   | 'palette'
   | 'fontPalette'
-  | 'blankColor'
   | 'blindTileColor'
   | 'innerBorder'
   | 'metrics'
@@ -308,18 +305,12 @@ export function validateTheme(
     });
   }
 
-  if (!isValidBlankColor(theme.color.blankColor)) {
-    issues.push({
-      field: 'blankColor',
-      message: '空白色必须是 transparent、#rrggbb 或 #rrggbbaa。',
-    });
-  }
   if (!isValidHexColor(theme.blindTileColor)) {
     issues.push({ field: 'blindTileColor', message: '盲玩色必须是 #rrggbb 或 #rrggbbaa 格式。' });
   }
   if (
-    !isValidBlankColor(theme.innerBorder.color) ||
-    !isFiniteInRange(theme.innerBorder.widthRatio, 0, 0.1)
+    !isValidColorOrTransparent(theme.innerBorder.color) ||
+    !isFiniteInRange(theme.innerBorder.widthRatio, 0, 0.2)
   ) {
     issues.push({ field: 'innerBorder', message: '内边框颜色或宽度不合法。' });
   }
@@ -327,7 +318,7 @@ export function validateTheme(
   const metrics = theme.metrics;
   if (
     !isFiniteInRange(metrics.fontSizeRatio, 0, 1) ||
-    !isFiniteInRange(metrics.gapRatio, 0, 0.1) ||
+    !isFiniteInRange(metrics.gapRatio, 0, 0.2) ||
     !isFiniteInRange(metrics.radiusRatio, 0, 0.5)
   ) {
     issues.push({ field: 'metrics', message: '字号、间隙或圆角超出允许范围。' });

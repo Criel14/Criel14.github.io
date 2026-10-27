@@ -179,9 +179,6 @@ interface ColorModeFields {
    * 每一项为 '#rrggbb' 或 '#rrggbbaa'。
    */
   readonly fontPalette: readonly string[];
-
-  /** 空白格背景色；整盘统一。默认 transparent，也允许 #rrggbb / #rrggbbaa。 */
-  readonly blankColor: string;
 }
 
 /** 降阶：现有 L 形分层，颜色绑定数字块。 */
@@ -206,7 +203,7 @@ export type ColorMode = LayerColorMode | RowColorMode | FixedColorMode;
 export interface BoardMetrics {
   /** 字号 = 边框内边长 × fontSizeRatio，范围 0–1。 */
   readonly fontSizeRatio: number;
-  /** 间隙 = 格子边长 × gapRatio，范围 0–0.1。 */
+  /** 间隙 = 格子边长 × gapRatio，范围 0–0.2。 */
   readonly gapRatio: number;
   /** 圆角 = 格子边长 × radiusRatio，范围 0–0.5。 */
   readonly radiusRatio: number;
@@ -216,7 +213,7 @@ export interface BoardMetrics {
 export interface ThemeInnerBorder {
   /** 'transparent'、#rrggbb 或 #rrggbbaa。 */
   readonly color: string;
-  /** 单边宽度 = 格子边长 × widthRatio；0–0.1，0 表示无边框。 */
+  /** 单边宽度 = 格子边长 × widthRatio；0–0.2，0 表示无边框。 */
   readonly widthRatio: number;
 }
 
@@ -233,7 +230,7 @@ export interface Theme {
   /**
    * 盲玩隐藏数字时，所有非空方块的背景色。
    * 必须为 #rrggbb 或 #rrggbbaa；默认 #3498db，用户可在自定义主题里调整。
-   * 空白块仍使用 color.blankColor，不参与这个颜色。
+   * 空白块始终透明，不参与这个颜色。
    */
   readonly blindTileColor: string;
   readonly metrics: BoardMetrics;

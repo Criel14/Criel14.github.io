@@ -1,6 +1,6 @@
 import type { BoardMetrics, Theme, ThemeInnerBorder } from '../../types';
 import { DEFAULT_BLIND_TILE_COLOR, DEFAULT_INNER_BORDER, DEFAULT_METRICS } from './presets';
-import { isValidBlankColor, isValidHexColor } from './theme';
+import { isValidColorOrTransparent, isValidHexColor } from './theme';
 
 /** 把数值夹取到 [min, max]；非有限值由 normalizeMetrics 负责回退。 */
 export function clampRatio(value: number, min: number, max: number): number {
@@ -22,7 +22,7 @@ export function normalizeMetrics(raw: unknown): BoardMetrics {
 
   return {
     fontSizeRatio: readRatio(record.fontSizeRatio, 0, 1, DEFAULT_METRICS.fontSizeRatio),
-    gapRatio: readRatio(record.gapRatio, 0, 0.1, DEFAULT_METRICS.gapRatio),
+    gapRatio: readRatio(record.gapRatio, 0, 0.2, DEFAULT_METRICS.gapRatio),
     radiusRatio: readRatio(record.radiusRatio, 0, 0.5, DEFAULT_METRICS.radiusRatio),
   };
 }
@@ -31,37 +31,33 @@ export function normalizeMetrics(raw: unknown): BoardMetrics {
  * 归一化方块内边框。
  *
  * 颜色允许 transparent / #rrggbb / #rrggbbaa，非法时回退透明；
- * 宽度非有限数时回退 0，有限但越界时夹取到 0–0.1。
+ * 宽度非有限数时回退 0，有限但越界时夹取到 0–0.2。
  * 宽度是“格子边长的比例”，不是像素值。
  */
 export function normalizeInnerBorder(raw: unknown): ThemeInnerBorder {
   const record = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {};
   const color =
-    typeof record.color === 'string' && isValidBlankColor(record.color)
+    typeof record.color === 'string' && isValidColorOrTransparent(record.color)
       ? record.color
       : DEFAULT_INNER_BORDER.color;
-  const widthRatio = readRatio(record.widthRatio, 0, 0.1, DEFAULT_INNER_BORDER.widthRatio);
+  const widthRatio = readRatio(record.widthRatio, 0, 0.2, DEFAULT_INNER_BORDER.widthRatio);
 
   return { color, widthRatio };
 }
 
 /**
  * 生成棋盘全局 CSS 变量。
- * palette 颜色和逐块字体色由 getTileVisual 逐个 tile 应用，这里只负责空白色、
- * 盲玩色、内边框和固定的比例。
+ * palette 颜色和逐块字体色由 getTileVisual 逐个 tile 应用，这里只负责盲玩色、
+ * 内边框和固定的比例。
  */
 export function toCssVariables(theme: Theme): Readonly<Record<string, string>> {
   const metrics = normalizeMetrics(theme.metrics);
   const innerBorder = normalizeInnerBorder(theme.innerBorder);
-  const blankColor = isValidBlankColor(theme.color.blankColor)
-    ? theme.color.blankColor
-    : 'transparent';
   const blindTileColor = isValidHexColor(theme.blindTileColor)
     ? theme.blindTileColor
     : DEFAULT_BLIND_TILE_COLOR;
 
   return Object.freeze({
-    '--blank-color': blankColor,
     '--blind-tile-bg': blindTileColor,
     '--tile-inner-border-color': innerBorder.color,
     '--tile-inner-border-width-ratio': String(innerBorder.widthRatio),

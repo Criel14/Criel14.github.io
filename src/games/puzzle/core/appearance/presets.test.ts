@@ -75,13 +75,12 @@ describe('BUILTIN_THEMES', () => {
     expect(theme.color.palette).toHaveLength(18);
   });
 
-  it('支持全部阶数，颜色、字体色、空白色和内边框符合约定', () => {
+  it('支持全部阶数，颜色、字体色和内边框符合约定', () => {
     for (const theme of BUILTIN_THEMES) {
       for (const color of theme.color.palette) {
         expect(color).toMatch(HEX_COLOR_PATTERN);
       }
       expect(theme.supportedSizes).toEqual(PUZZLE_SIZES);
-      expect(theme.color.blankColor).toBe('transparent');
       expect(theme.color.fontPalette).toHaveLength(18);
       expect(theme.color.fontPalette.every((color) => color === '#ffffff')).toBe(true);
       expect(theme.innerBorder).toEqual({ color: 'transparent', widthRatio: 0 });
@@ -145,7 +144,6 @@ describe('FALLBACK_THEME', () => {
     expect(FALLBACK_THEME.color.palette.every((color) => color === '#3498db')).toBe(true);
     expect(FALLBACK_THEME.color.fontPalette).toHaveLength(18);
     expect(FALLBACK_THEME.color.fontPalette.every((color) => color === '#ffffff')).toBe(true);
-    expect(FALLBACK_THEME.color.blankColor).toBe('transparent');
     expect(FALLBACK_THEME.innerBorder).toEqual({ color: 'transparent', widthRatio: 0 });
     expect(FALLBACK_THEME.blindTileColor).toBe('#3498db');
   });

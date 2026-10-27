@@ -193,7 +193,6 @@ describe('isTheme / isAppearanceState', () => {
         fontPalette: theme.color.fontPalette.map((color, index) =>
           index === 0 ? '#ffffff40' : color,
         ),
-        blankColor: '#00000080',
       },
       innerBorder: { color: '#ffffff40', widthRatio: 0.02 },
       blindTileColor: '#3498db80',
@@ -209,7 +208,22 @@ describe('isTheme / isAppearanceState', () => {
     ).toBe(true);
   });
 
-  it('拒绝色板、字体色、空白色、内边框和 metrics 非法', () => {
+  it('接受内边框宽度和间隙的 0.2 上限', () => {
+    expect(
+      isTheme({
+        ...theme,
+        innerBorder: { color: 'transparent', widthRatio: 0.2 },
+      }),
+    ).toBe(true);
+    expect(
+      isTheme({
+        ...theme,
+        metrics: { ...theme.metrics, gapRatio: 0.2 },
+      }),
+    ).toBe(true);
+  });
+
+  it('拒绝色板、字体色、内边框和 metrics 非法', () => {
     expect(
       isTheme({
         ...theme,
@@ -240,25 +254,25 @@ describe('isTheme / isAppearanceState', () => {
     expect(
       isTheme({
         ...theme,
-        color: { ...theme.color, blankColor: 'red' },
-      }),
-    ).toBe(false);
-    expect(
-      isTheme({
-        ...theme,
         innerBorder: { color: 'red', widthRatio: 0 },
       }),
     ).toBe(false);
     expect(
       isTheme({
         ...theme,
-        innerBorder: { color: 'transparent', widthRatio: 0.2 },
+        innerBorder: { color: 'transparent', widthRatio: 0.3 },
       }),
     ).toBe(false);
     expect(
       isTheme({
         ...theme,
         metrics: { ...theme.metrics, fontSizeRatio: 2 },
+      }),
+    ).toBe(false);
+    expect(
+      isTheme({
+        ...theme,
+        metrics: { ...theme.metrics, gapRatio: 0.3 },
       }),
     ).toBe(false);
     expect(

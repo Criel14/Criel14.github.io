@@ -13,7 +13,6 @@ const theme: Theme = {
     mode: 'layer',
     palette: ['#ffffff'],
     fontPalette: ['#ffffff'],
-    blankColor: 'transparent',
   },
   innerBorder: { color: 'transparent', widthRatio: 0 },
   blindTileColor: '#3498db',
@@ -51,6 +50,11 @@ describe('normalizeMetrics', () => {
       gapRatio: 0,
       radiusRatio: 0.5,
     });
+  });
+
+  it('间隙上限为 0.2', () => {
+    expect(normalizeMetrics({ ...theme.metrics, gapRatio: 0.2 }).gapRatio).toBe(0.2);
+    expect(normalizeMetrics({ ...theme.metrics, gapRatio: 0.3 }).gapRatio).toBe(0.2);
   });
 
   it('NaN、Infinity、字符串和缺失字段回退默认值', () => {
@@ -100,10 +104,10 @@ describe('normalizeInnerBorder', () => {
     expect(normalizeInnerBorder(null)).toEqual({ color: 'transparent', widthRatio: 0 });
   });
 
-  it('宽度越界夹取到 0–0.1', () => {
+  it('宽度越界夹取到 0–0.2', () => {
     expect(normalizeInnerBorder({ color: '#ffffff', widthRatio: 0.5 })).toEqual({
       color: '#ffffff',
-      widthRatio: 0.1,
+      widthRatio: 0.2,
     });
     expect(normalizeInnerBorder({ color: '#ffffff', widthRatio: -1 })).toEqual({
       color: '#ffffff',
@@ -113,9 +117,8 @@ describe('normalizeInnerBorder', () => {
 });
 
 describe('toCssVariables', () => {
-  it('生成空白色、盲玩色、内边框和三个比例变量', () => {
+  it('生成盲玩色、内边框和三个比例变量', () => {
     expect(toCssVariables(theme)).toEqual({
-      '--blank-color': 'transparent',
       '--blind-tile-bg': '#3498db',
       '--tile-inner-border-color': 'transparent',
       '--tile-inner-border-width-ratio': '0',
@@ -137,26 +140,23 @@ describe('toCssVariables', () => {
     };
 
     expect(toCssVariables(invalidTheme)).toEqual({
-      '--blank-color': 'transparent',
       '--blind-tile-bg': '#3498db',
       '--tile-inner-border-color': 'transparent',
-      '--tile-inner-border-width-ratio': '0.1',
+      '--tile-inner-border-width-ratio': '0.2',
       '--tile-font-ratio': '1',
       '--tile-gap-ratio': '0',
       '--tile-radius-ratio': String(DEFAULT_METRICS.radiusRatio),
     });
   });
 
-  it('透传空白色、盲玩色和内边框色的 alpha', () => {
+  it('透传盲玩色和内边框色的 alpha', () => {
     const alphaTheme: Theme = {
       ...theme,
-      color: { ...theme.color, blankColor: '#00000080' },
       innerBorder: { color: '#ffffff40', widthRatio: 0.02 },
       blindTileColor: '#3498db80',
     };
 
     expect(toCssVariables(alphaTheme)).toMatchObject({
-      '--blank-color': '#00000080',
       '--blind-tile-bg': '#3498db80',
       '--tile-inner-border-color': '#ffffff40',
     });
@@ -164,14 +164,6 @@ describe('toCssVariables', () => {
 
   it('不生成由 board-view 计算的 --cell-size', () => {
     expect(toCssVariables(theme)).not.toHaveProperty('--cell-size');
-  });
-
-  it('非法空白色回退 transparent', () => {
-    const invalidBlank: Theme = {
-      ...theme,
-      color: { ...theme.color, blankColor: '#fff' },
-    };
-    expect(toCssVariables(invalidBlank)['--blank-color']).toBe('transparent');
   });
 
   it('非法盲玩色回退主题蓝', () => {

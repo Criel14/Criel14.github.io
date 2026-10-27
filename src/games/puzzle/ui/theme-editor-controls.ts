@@ -324,7 +324,7 @@ export function createThemeEditorControls(
     const current = getTheme();
     const entries: readonly [MetricKey, HTMLInputElement, number][] = [
       ['fontSizeRatio', fontSize, 0],
-      ['gapRatio', gap, 0],
+      ['gapRatio', gap, 1],
       ['radiusRatio', radius, 0],
     ];
     for (const [key, input, digits] of entries) {
@@ -415,7 +415,10 @@ export function createThemeEditorControls(
         emitTheme(apply(getTheme(), value), { mergeKey, final: false });
         const output = root.querySelector<HTMLElement>(`[data-range-value="${mergeKey}"]`);
         if (output !== null) {
-          output.textContent = formatPercent(value, mergeKey === 'innerBorderWidth' ? 1 : 0);
+          output.textContent = formatPercent(
+            value,
+            mergeKey === 'innerBorderWidth' || mergeKey === 'gapRatio' ? 1 : 0,
+          );
         }
       },
       { signal },
@@ -428,7 +431,10 @@ export function createThemeEditorControls(
         emitTheme(apply(getTheme(), value), { mergeKey, final: true });
         const output = root.querySelector<HTMLElement>(`[data-range-value="${mergeKey}"]`);
         if (output !== null) {
-          output.textContent = formatPercent(value, mergeKey === 'innerBorderWidth' ? 1 : 0);
+          output.textContent = formatPercent(
+            value,
+            mergeKey === 'innerBorderWidth' || mergeKey === 'gapRatio' ? 1 : 0,
+          );
         }
       },
       { signal },

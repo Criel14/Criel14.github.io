@@ -20,7 +20,7 @@
 - **纯逻辑优先**。`core` 不碰 DOM / localStorage / IndexedDB；`data` 负责持久化与校验；`ui` 只做 DOM；`pages` 负责组装。
 - **成绩只存事实**。`tps`、`number`、`ao5`、`ao12`、时间格式化全部读时派生。
 - **页面间不通过 localStorage 传状态**。回放、重玩使用 URL 参数 + score id。
-- **外观统一到 `Theme`**：每个主题包含一种着色模式（降阶 / 按行 / 固定色）、逐块背景色/字体色、空白色、盲玩色、方块内边框和自带的字号、间隙、圆角；主题声明 `supportedSizes`，当前分配按阶数存 `themeIdBySize`；内置保留两套降阶预设，自定义主题上限 20；异常使用系统回退主题。P8-4c-2 在设置页按阶数分配，并在独立 `theme-editor.html` 编辑主题内容，详见 `docs/PUZZLE_THEME.md`。
+- **外观统一到 `Theme`**：每个主题包含一种着色模式（降阶 / 按行 / 固定色）、逐块背景色/字体色、盲玩色、方块内边框和自带的字号、间隙、圆角；主题声明 `supportedSizes`，当前分配按阶数存 `themeIdBySize`；内置保留两套降阶预设，自定义主题上限 20；异常使用系统回退主题。P8-4c-2 在设置页按阶数分配，并在独立 `theme-editor.html` 编辑主题内容，详见 `docs/PUZZLE_THEME.md`。
 - **设置页独立**：P8-4b 使用 `/puzzle-game/settings.html`，采用分类导航 + 草稿/保存条；不再使用游戏页模态框。详见 `docs/SETTINGS_PAGE.md`。
 - **计时使用单调时钟 + 显式 session 状态机**；回放使用时间轴 + `requestAnimationFrame`，详见 `docs/PUZZLE_REPLAY.md`。
 - **不引入 UI 框架、状态库、插件系统**。项目规模不大，边界清晰比抽象层数更重要。
@@ -33,7 +33,7 @@
 - 数据模型只保存事实，派生值只有一个计算入口。
 - 页面可独立加载，状态可从 URL 恢复；刷新、后退、分享链接行为可预期。
 - 旧代码只作为行为参考，不复制旧实现中的历史 workaround。
-- 外观支持降阶、按行、固定色三种着色模式；每个主题独立保存逐块背景色/字体色、整盘空白色/盲玩色/内边框和尺寸比例，并按阶数分配使用。
+- 外观支持降阶、按行、固定色三种着色模式；每个主题独立保存逐块背景色/字体色、整盘盲玩色/内边框和尺寸比例，并按阶数分配使用。
 - 保持运行时轻量：无框架，图表按需加载，不依赖运行时 CDN。
 
 ### 非目标
@@ -85,7 +85,7 @@
 | `Bucket`          | `size + gameMode + groupId` 组成的一个成绩桶，即“事件 + 分组”       |
 | `GroupId`         | 事件内的固定分组槽位 1–5；成绩、筛选和 URL 使用编号，不随名称变化   |
 | `Group`           | 某个事件下的固定分组，共 90 个；只允许修改名称                      |
-| `ColorMode`       | 主题的着色模式：降阶、按行或固定色，包含逐块背景色/字体色和空白色  |
+| `ColorMode`       | 主题的着色模式：降阶、按行或固定色，包含逐块背景色/字体色          |
 | `Theme`           | 统一外观入口：名称 + 支持阶数 + `ColorMode` + 内边框 + 盲玩色 + metrics，内置主题不可修改 |
 | `BoardMetrics`    | 某个主题自带的字号、间隙、圆角比例，用户可调整                      |
 | `ThemeInnerBorder` | 方块内边框：整盘统一的颜色与宽度，不改变方块外尺寸                 |
@@ -177,9 +177,6 @@ interface ColorModeFields {
    * 每项为 '#rrggbb' 或 '#rrggbbaa'。
    */
   fontPalette: readonly string[];
-
-  /** 空白格背景色；整盘统一。默认 transparent，也允许 #rrggbb / #rrggbbaa。 */
-  blankColor: string;
 }
 
 /** 降阶：现有 L 形分层，颜色绑定数字块。 */
@@ -203,7 +200,7 @@ export type ColorMode = LayerColorMode | RowColorMode | FixedColorMode;
 export interface BoardMetrics {
   /** 字号 = 边框内边长 × fontSizeRatio，范围 0–1。 */
   fontSizeRatio: number;
-  /** 间隙 = 实际格子边长 × gapRatio，范围 0–0.1。 */
+  /** 间隙 = 实际格子边长 × gapRatio，范围 0–0.2。 */
   gapRatio: number;
   /** 圆角 = 实际格子边长 × radiusRatio，范围 0–0.5。 */
   radiusRatio: number;
@@ -213,7 +210,7 @@ export interface BoardMetrics {
 export interface ThemeInnerBorder {
   /** 'transparent'、'#rrggbb' 或 '#rrggbbaa'。 */
   color: string;
-  /** 单边宽度 = 格子边长 × widthRatio；0–0.1，0 表示无边框。 */
+  /** 单边宽度 = 格子边长 × widthRatio；0–0.2，0 表示无边框。 */
   widthRatio: number;
 }
 
@@ -230,6 +227,7 @@ export interface Theme {
   /**
    * 盲玩隐藏数字时，所有非空方块的背景色。
    * 必须为 #rrggbb 或 #rrggbbaa；默认 #3498db，用户可在自定义主题里调整。
+   * 空白块始终透明，不参与这个颜色。
    */
   blindTileColor: string;
   metrics: BoardMetrics;
@@ -258,14 +256,14 @@ export interface AppearanceState {
 - `ScoreRecord.groupId`、`GameSettings.groupId`、`ScoreFilter.groupId` 必须是 1–5 的整数。分组身份由 `size + gameMode + groupId` 共同确定；分组固定存在，因此不需要处理“分组被删除”的引用失效。
 - 分组只允许改名，不允许改变所属事件或槽位；改名不影响已保存成绩。
 - `ScoreRecord.id` 全局唯一；新成绩用 `crypto.randomUUID()`，无该 API 时使用带随机后缀的回退实现。
-- `Theme.color.palette` / `fontPalette` 长度由 mode 决定：layer 18、row 10、fixed 99；`palette` 和 `fontPalette` 每项均为 `#rrggbb` / `#rrggbbaa`，`blankColor` 允许 `transparent` / `#rrggbb` / `#rrggbbaa`。
-- `Theme.innerBorder.color` 允许 `transparent` / `#rrggbb` / `#rrggbbaa`；`widthRatio` 为 0–0.1；默认 `{ transparent, 0 }`。内边框不改变方块外尺寸，字号按“格子边长 − 2 × 内边框宽度”计算。
+- `Theme.color.palette` / `fontPalette` 长度由 mode 决定：layer 18、row 10、fixed 99；`palette` 和 `fontPalette` 每项均为 `#rrggbb` / `#rrggbbaa`。
+- `Theme.innerBorder.color` 允许 `transparent` / `#rrggbb` / `#rrggbbaa`；`widthRatio` 为 0–0.2；默认 `{ transparent, 0 }`。内边框只作用于非空白方块，不改变方块外尺寸，字号按“格子边长 − 2 × 内边框宽度”计算。
 - `Theme.supportedSizes` 非空、升序、去重，每项为 2–10；默认全部。
-- `Theme.blindTileColor` 必须是 `#rrggbb` 或 `#rrggbbaa`；默认 `#3498db`，只用于盲玩隐藏数字时的非空方块，空白块仍使用 `blankColor`。
+- `Theme.blindTileColor` 必须是 `#rrggbb` 或 `#rrggbbaa`；默认 `#3498db`，只用于盲玩隐藏数字时的非空方块；空白块始终透明，不参与这个颜色。
 - `Theme.metrics` 必须在约定范围内；非法值回退 `DEFAULT_METRICS`。
 - `AppearanceState.themeIdBySize` 必须有 2–10 共 9 个键；每个值要么是 `FALLBACK_THEME_ID`，要么能解析到 `themes` 中一个 `supportedSizes` 包含该阶数的主题。
 - `AppearanceState.themes` 至少包含两套内置主题；回退主题不在 `themes` 中。
-- 内置主题不可修改、不可删除；自定义主题可编辑、可删除，数据结构支持逐块颜色/字体色、空白色、盲玩色、内边框和 metrics，上限 20 个（`CUSTOM_THEME_SLOT_COUNT = 20`）。删除只改设置页草稿，受影响阶数落到回退主题，保存后才写入存储。主题编辑器不提供空白色编辑：打开时固定空白色透明；文字色全部为显式 hex。
+- 内置主题不可修改、不可删除；自定义主题可编辑、可删除，数据结构支持逐块颜色/字体色、盲玩色、内边框和 metrics，上限 20 个（`CUSTOM_THEME_SLOT_COUNT = 20`）。删除只改设置页草稿，受影响阶数落到回退主题，保存后才写入存储。主题编辑器不提供空白块背景色编辑：空白块始终透明；文字色全部为显式 hex。
 - **不存储** `tps`、`number`、`ao5`、`ao12`、`dateTime` 字符串、`device`。
 
 ## 5. 存储
@@ -735,13 +733,13 @@ function getTileLayer(tile: number, size: PuzzleSize): number {
 - 最大层数：`2 * size - 2`；2×2 为 2 层，10×10 为 18 层。
 - 降阶模式的 `palette` 固定 18 色；当前阶数只使用前 `2*size-2` 层。
 - 颜色绑定的是方块数字，不是方块当前位置；打乱后颜色跟随数字块移动。
-- `tile === 0` 使用 `theme.color.blankColor`；默认 `transparent`，让棋盘背景透出，不强行改成旧版的 `#f0f0f0`。
+- `tile === 0` 始终透明，让棋盘背景透出，不强行改成旧版的 `#f0f0f0`，也不保存背景色。
 
 ### 10.2 Theme / ColorMode / BoardMetrics
 
 - `Theme` 是统一外观入口：
   - `supportedSizes`：主题设计上支持的阶数，默认全部 2–10；
-  - `color: ColorMode`：着色模式、逐块背景色 `palette`、逐块字体色 `fontPalette`、空白色；
+  - `color: ColorMode`：着色模式、逐块背景色 `palette`、逐块字体色 `fontPalette`；
   - `innerBorder`：方块内边框，整盘统一；
   - `blindTileColor`：盲玩隐藏数字时的非空方块背景色；
   - `metrics: BoardMetrics`：字号、间隙、圆角，按主题保存。
@@ -751,8 +749,8 @@ function getTileLayer(tile: number, size: PuzzleSize): number {
   - `rainbow-soft`：旧“预设2 / 彩虹微调”，低饱和，metrics 为 `0.5 / 0 / 0.01`。
 - 按行、固定色当前只作为自定义主题可选的模式，不提供内置预设。
 - 两套内置主题的 `fontPalette` 都是 18 个 `#ffffff`，沿用旧版白色；回退主题和 `createCustomThemeDraft()` 也默认 18 个显式 `#ffffff`。字体色直接使用配置值，不再支持 `auto`；旧值在读取时回退白色。
-- `blankColor` 默认 `transparent`，让棋盘背景透出。
-- `innerBorder` 默认 `{ transparent, 0 }`；内边框不改变方块外尺寸，字号按边框内区域计算。
+- 空白块始终透明，不保存背景色，也不参与 `palette` / `fontPalette` / `blindTileColor`。
+- `innerBorder` 默认 `{ transparent, 0 }`；只作用于非空白方块，不改变方块外尺寸，字号按边框内区域计算。
 - `blindTileColor` 默认 `#3498db`，属于 `Theme`，用户可在自定义主题里调整；空白块不参与这个颜色。
 - 内置主题不可修改、不可删除；用户要调整颜色、字体色、边框或 metrics 时，复制为自定义主题再编辑。
 - 回退主题 `FALLBACK_THEME` 是系统常量，不在 `BUILTIN_THEMES`，不可选择、不持久化；用于异常阶数和新主题初始 draft。
@@ -764,12 +762,12 @@ function getTileLayer(tile: number, size: PuzzleSize): number {
   - 降阶：`getTileLayer(tile, size) - 1` 取 `palette` / `fontPalette`；
   - 按行：`Math.floor((tile - 1) / size)` 取 `palette` / `fontPalette`，颜色跟随数字块原本所属行；
   - 固定色：`tile - 1` 取 `palette` / `fontPalette`，数字与颜色永久绑定；
-  - 空白块使用 `theme.color.blankColor`，字体色为 `transparent`。
+  - 空白块始终返回 `transparent` 背景和 `transparent` 字体。
 - `fontPalette[index]` 直接使用配置的 `#rrggbb` / `#rrggbbaa`，不再根据背景亮度计算黑白；缺失或非法值回退白色。
 - `ui/board-view.ts` 给每个 tile 设置 `--tile-bg` / `--tile-fg`；CSS 使用这两个变量，不关心当前是哪种模式。
-- `core/appearance/metrics.ts` 的 `toCssVariables(theme)` 从 `theme.metrics`、`color.blankColor`、`innerBorder` 和 `blindTileColor` 生成 `--tile-font-ratio`、`--tile-gap-ratio`、`--tile-radius-ratio`、`--blank-color`、`--blind-tile-bg`、`--tile-inner-border-color`、`--tile-inner-border-width-ratio`；页面通过 CSS 变量渲染，不逐项写死样式。
-- 内边框用 `inset box-shadow` 绘制；`.puzzle-board__tile` 用 `padding: var(--tile-inner-border-width)` 把文字限制在边框内，字号使用 `calc(var(--tile-inner-size) * var(--tile-font-ratio))`。边框宽度 0 时退化为原字号公式。
-- 盲玩隐藏数字时，非空方块统一使用 `--blind-tile-bg`；空白块保持 `--blank-color`。
+- `core/appearance/metrics.ts` 的 `toCssVariables(theme)` 从 `theme.metrics`、`innerBorder` 和 `blindTileColor` 生成 `--tile-font-ratio`、`--tile-gap-ratio`、`--tile-radius-ratio`、`--blind-tile-bg`、`--tile-inner-border-color`、`--tile-inner-border-width-ratio`；页面通过 CSS 变量渲染，不逐项写死样式。
+- 内边框用 `inset box-shadow` 绘制；`.puzzle-board__tile` 用 `padding: var(--tile-inner-border-width)` 把文字限制在边框内，字号使用 `calc(var(--tile-inner-size) * var(--tile-font-ratio))`。边框宽度 0 时退化为原字号公式；空白块清除 `box-shadow`，不绘制内边框。
+- 盲玩隐藏数字时，非空方块统一使用 `--blind-tile-bg`；空白块始终透明。
 - 棋盘用 `container-type: inline-size`，内层 grid 用 `cqw` 计算 `--cell-size`，不依赖 `ResizeObserver`。
 - `ui/board-view.ts` 只渲染；点击、鼠标经过和触摸路径由 `ui/board-input.ts` 采集后交给页面。
 - 换主题或修改 metrics 只更新 CSS 变量和 tile 颜色，不重建 tile。
@@ -785,7 +783,7 @@ function getTileLayer(tile: number, size: PuzzleSize): number {
 - 主题编辑器是独立页面 `/puzzle-game/theme-editor.html`，自己维护 draft，点击编辑器“保存”后才写存储；不能在每次选色时直接落库。
 - 编辑器布局为左侧控制、右侧最大支持阶数预览的 `1 : 2` 两栏；预览复用 `board-view`，滚动时 sticky。
 - 编辑器使用“样式刷 + 油漆桶”：点击棋盘按阶/行/单块涂色；吸管从棋盘读回当前组样式后自动切回油漆桶。样式刷、吸管和工具切换不属于主题，不触发脏状态。
-- 编辑器颜色全部是显式 `#rrggbb` / `#rrggbbaa`；旧数据里的 `auto` 在读取时回退白色。空白色固定为 `transparent`，编辑器不提供空白色编辑和“显示数字”开关，预览始终显示数字。
+- 编辑器颜色全部是显式 `#rrggbb` / `#rrggbbaa`；旧数据里的 `auto` 在读取时回退白色。空白块始终透明，编辑器不提供背景色编辑和“显示数字”开关，预览始终显示数字。
 - 新建编辑器只在内存创建“新的主题 + 回退样式”draft，不写 `themes`；未修改退出不产生主题，保存后才写入。
 - 编辑器保存后停留在当前页；新建保存成功后用 `history.replaceState` 写入 `?theme=<id>`，刷新进入编辑模式。保存后不自动分配阶数。
 - 编辑器提供 50 步快照撤销/重做，页头按钮 + `Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z` / `Ctrl/Cmd+Y`；历史只保存 `Theme` 深拷贝，不保存 DOM、棋盘对象、样式刷或预览状态。

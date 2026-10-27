@@ -6,7 +6,7 @@ import {
 } from '../core/appearance/appearance';
 import { normalizeInnerBorder, normalizeMetrics } from '../core/appearance/metrics';
 import { DEFAULT_BLIND_TILE_COLOR, FALLBACK_THEME_ID } from '../core/appearance/presets';
-import { cloneTheme, isValidBlankColor, isValidHexColor } from '../core/appearance/theme';
+import { cloneTheme, isValidHexColor } from '../core/appearance/theme';
 import { isPuzzleSize, PUZZLE_SIZES } from '../core/board';
 import {
   createLocalStorage,
@@ -71,8 +71,8 @@ function normalizeSupportedSizes(value: unknown): readonly PuzzleSize[] | null {
 
 /**
  * 修复主题颜色。
- * 结构和 palette 不可恢复时返回 null；空白色和 fontPalette 可回退到安全默认值。
- * palette / fontPalette / blankColor 均接受 #rrggbb / #rrggbbaa。
+ * 结构和 palette 不可恢复时返回 null；fontPalette 可回退到安全默认值。
+ * palette / fontPalette 均接受 #rrggbb / #rrggbbaa。
  */
 function normalizeColorMode(value: unknown): ColorMode | null {
   if (!isRecord(value)) {
@@ -94,23 +94,17 @@ function normalizeColorMode(value: unknown): ColorMode | null {
     return null;
   }
 
-  const blankColor =
-    typeof value.blankColor === 'string' && isValidBlankColor(value.blankColor)
-      ? value.blankColor
-      : 'transparent';
-
   return {
     mode,
     palette: [...palette],
     fontPalette: normalizeFontPalette(value.fontPalette, palette.length),
-    blankColor,
   };
 }
 
 /**
  * 修复单个自定义主题。
  *
- * supportedSizes、palette 和基本身份不可恢复时返回 null；字体色、空白色、内边框、
+ * supportedSizes、palette 和基本身份不可恢复时返回 null；字体色、内边框、
  * 盲玩色和 metrics 按文档规则修复。
  */
 function normalizeCustomTheme(value: unknown): Theme | null {

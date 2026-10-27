@@ -40,7 +40,6 @@ function createCustomTheme(overrides: Partial<Theme> = {}): Theme {
       mode: 'row',
       palette: rowPalette,
       fontPalette: rowFontPalette,
-      blankColor: 'transparent',
     },
     innerBorder: { color: 'transparent', widthRatio: 0 },
     blindTileColor: '#3498db',
@@ -407,7 +406,6 @@ describe('isAppearanceEqual', () => {
         mode: 'row',
         palette: custom.color.palette.map((color, index) => (index === 0 ? '#000000' : color)),
         fontPalette: custom.color.fontPalette,
-        blankColor: custom.color.blankColor,
       },
     });
     const changedFont = createCustomTheme({
@@ -424,16 +422,6 @@ describe('isAppearanceEqual', () => {
       isAppearanceEqual(appearance, {
         ...appearance,
         themes: [builtin!, soft!, changedFont],
-      }),
-    ).toBe(false);
-    expect(
-      isAppearanceEqual(appearance, {
-        ...appearance,
-        themes: [
-          { ...builtin!, color: { ...builtin!.color, blankColor: '#ffffff' } },
-          soft!,
-          extra!,
-        ],
       }),
     ).toBe(false);
     expect(

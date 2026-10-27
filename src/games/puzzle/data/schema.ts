@@ -14,7 +14,7 @@ import type {
 } from '../types';
 import { CUSTOM_THEME_SLOT_COUNT } from '../core/appearance/appearance';
 import { BUILTIN_THEMES, FALLBACK_THEME_ID } from '../core/appearance/presets';
-import { isValidBlankColor, isValidHexColor } from '../core/appearance/theme';
+import { isValidColorOrTransparent, isValidHexColor } from '../core/appearance/theme';
 import { isPuzzleSize, isValidBoard, PUZZLE_SIZES } from '../core/board';
 import { EVENT_GAME_MODES, EVENT_SIZES, GROUP_COUNT, GROUP_IDS, isGroupId } from '../core/groups';
 import { isDirection } from '../core/moves';
@@ -75,7 +75,7 @@ function isBoardMetrics(value: unknown): value is BoardMetrics {
 
   return (
     isRatio(value.fontSizeRatio, 0, 1) &&
-    isRatio(value.gapRatio, 0, 0.1) &&
+    isRatio(value.gapRatio, 0, 0.2) &&
     isRatio(value.radiusRatio, 0, 0.5)
   );
 }
@@ -109,8 +109,8 @@ function isThemeInnerBorder(value: unknown): value is ThemeInnerBorder {
   return (
     isRecord(value) &&
     typeof value.color === 'string' &&
-    isValidBlankColor(value.color) &&
-    isRatio(value.widthRatio, 0, 0.1)
+    isValidColorOrTransparent(value.color) &&
+    isRatio(value.widthRatio, 0, 0.2)
   );
 }
 
@@ -135,11 +135,7 @@ function isColorMode(value: unknown): value is ColorMode {
     return false;
   }
 
-  return (
-    typeof value.blankColor === 'string' &&
-    isValidBlankColor(value.blankColor) &&
-    isFontPalette(value.fontPalette, palette.length)
-  );
+  return isFontPalette(value.fontPalette, palette.length);
 }
 
 /**
