@@ -64,7 +64,7 @@ function createFallbackWarning(sizes: readonly PuzzleSize[]): HTMLParagraphEleme
 
   const warning = document.createElement('p');
   warning.className = 'theme-fallback-warning';
-  warning.textContent = `${formatCoverageDetail(sizes)} 当前使用系统回退主题，请点击下方主题卡为这些阶数重新选择。`;
+  warning.textContent = `${formatCoverageDetail(sizes)} 未选择主题，请点击下方主题卡为这些阶数选择主题。`;
   return warning;
 }
 
